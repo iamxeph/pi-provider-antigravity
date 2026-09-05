@@ -246,18 +246,25 @@ function translateTurnTrace(
       const isSameProviderAndModel = isSameProvider && isSameModel;
 
       const parts: Array<any> = [];
+      // agy CLI shape (1.1.27 turn4 fixture): a thinking replay never carries its
+      // own signature — it stays pending and rides on the NEXT text/functionCall
+      // part. Only when the turn ends with no carrying part does it fall back
+      // onto the last part (uncovered edge, same as the message-level fallback).
+      let pendingThinkingSig: string | undefined;
       if (typeof msg.content === "string") {
         parts.push({ text: msg.content });
       } else if (Array.isArray(msg.content)) {
         for (const item of msg.content) {
           if (item.type === "text") {
             const part: any = { text: item.text };
-            const sig = resolveThoughtSignature(
-              isSameProviderAndModel,
-              item.thoughtSignature || (item as any).textSignature
-            );
+            const sig =
+              resolveThoughtSignature(
+                isSameProviderAndModel,
+                item.thoughtSignature || (item as any).textSignature
+              ) || pendingThinkingSig;
             if (sig) {
               part.thoughtSignature = sig;
+              pendingThinkingSig = undefined;
             }
             parts.push(part);
           } else if (item.type === "thinking") {
@@ -268,13 +275,15 @@ function translateTurnTrace(
               (typeof candidateSig === "string" && candidateSig.trim().startsWith("{"));
 
             if (!isForeignReasoning) {
+              // No thoughtSignature here by design: it stays pending for the
+              // next text/functionCall part (agy CLI part-split shape).
               const part: any = {
                 thought: true,
                 text: item.thinking || "",
               };
               const sig = resolveThoughtSignature(true, candidateSig);
               if (sig) {
-                part.thoughtSignature = sig;
+                pendingThinkingSig = sig;
               }
               parts.push(part);
             } else {
@@ -307,18 +316,23 @@ function translateTurnTrace(
                 args: item.input || item.arguments || {},
               },
             };
-            const sig = resolveThoughtSignature(
-              isSameProviderAndModel,
-              item.thoughtSignature || (msg as any).thoughtSignature
-            );
+            const sig =
+              resolveThoughtSignature(
+                isSameProviderAndModel,
+                item.thoughtSignature || (msg as any).thoughtSignature
+              ) || pendingThinkingSig;
             if (sig) {
               part.thoughtSignature = sig;
+              pendingThinkingSig = undefined;
             }
             parts.push(part);
           }
         }
       }
       if (parts.length > 0) {
+        if (pendingThinkingSig && !parts.some((p) => p.thoughtSignature)) {
+          parts[parts.length - 1].thoughtSignature = pendingThinkingSig;
+        }
         const msgSig = resolveThoughtSignature(
           isSameProviderAndModel,
           (msg as any).thoughtSignature

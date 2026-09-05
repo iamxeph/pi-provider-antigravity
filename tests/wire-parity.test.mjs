@@ -99,3 +99,26 @@ test("Wire parity (agy_cli_1.1.27): catalog delta vs 1.1.26", () => {
     ["gemini-3.5-flash-lite", "MODEL_PLACEHOLDER_M277"],
   ]);
 });
+
+test("Wire parity (#15): thought:true parts never carry thoughtSignature (part-split shape)", () => {
+  for (const dir of DIRS) {
+    const files = fs
+      .readdirSync(`captures/${dir}`)
+      .filter((f) => f.endsWith(".req.json"));
+    for (const f of files) {
+      const req = JSON.parse(fs.readFileSync(`captures/${dir}/${f}`, "utf-8"));
+      const contents = req.body?.request?.contents ?? [];
+      for (const c of contents) {
+        for (const p of c.parts ?? []) {
+          if (p.thought === true) {
+            assert.equal(
+              "thoughtSignature" in p,
+              false,
+              `${dir}/${f}: thought part must not carry a signature`
+            );
+          }
+        }
+      }
+    }
+  }
+});
