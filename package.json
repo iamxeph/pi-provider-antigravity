@@ -1,6 +1,6 @@
 {
   "name": "pi-provider-antigravity",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Minimal Antigravity (Cloud Code Assist) provider for Pi Coding Agent",
   "license": "MIT",
   "repository": {
