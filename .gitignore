@@ -2,6 +2,7 @@ node_modules/
 dist/
 .devenv/
 .pi-glla/
+.pi/
 
 # secrets & local noise (public repo hardening)
 .env
