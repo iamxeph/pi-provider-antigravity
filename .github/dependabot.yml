@@ -1,0 +1,12 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 5
+    groups:
+      # pi SDK packages release in lockstep; keep them in a single PR
+      pi-sdk:
+        patterns:
+          - "@earendil-works/*"

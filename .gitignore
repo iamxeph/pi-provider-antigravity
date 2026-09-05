@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.devenv/
+.pi-glla/
+
+# secrets & local noise (public repo hardening)
+.env
+.env.*
+*.log
+.direnv/

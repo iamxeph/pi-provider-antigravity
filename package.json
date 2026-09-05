@@ -1,0 +1,46 @@
+{
+  "name": "pi-provider-antigravity",
+  "version": "0.1.0",
+  "description": "Minimal Antigravity (Cloud Code Assist) provider for Pi Coding Agent",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "antigravity",
+    "google",
+    "oauth",
+    "provider"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "pi": {
+    "extensions": [
+      "./dist/index.js"
+    ]
+  },
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "typecheck": "tsc --noEmit",
+    "sanitize:captures": "node scripts/sanitize-captures.mjs",
+    "lint:captures": "node scripts/lint-captures.mjs",
+    "test": "npm run lint:captures && node --experimental-strip-types --test 'tests/**/*.test.mjs' 'tests/**/*.test.ts'",
+    "prepublishOnly": "npm run typecheck && npm run test && npm run build"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": ">=0.80.0",
+    "@earendil-works/pi-coding-agent": ">=0.80.0"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "^0.84.4",
+    "@earendil-works/pi-coding-agent": "^0.84.4",
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.8.0"
+  }
+}

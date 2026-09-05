@@ -1,0 +1,17 @@
+{
+  "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist",
+  "method": "POST",
+  "headers": {
+    "Host": "daily-cloudcode-pa.googleapis.com",
+    "User-Agent": "antigravity/cli/1.1.23 (aidev_client; os_type=linux; arch=amd64; cl=974125021; auth_method=consumer)",
+    "Content-Length": "38",
+    "Authorization": "Bearer <REDACTED_ACCESS_TOKEN>",
+    "Content-Type": "application/json",
+    "Accept-Encoding": "gzip"
+  },
+  "body": {
+    "metadata": {
+      "ideType": "ANTIGRAVITY"
+    }
+  }
+}
