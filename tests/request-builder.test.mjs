@@ -170,7 +170,10 @@ test("Seam 1: assistant thinking blocks serialize as thought: true with text pro
   assert.equal(typeof thinkingPart.thought, "boolean");
   assert.equal(thinkingPart.thought, true);
   assert.equal(thinkingPart.text, "Deconstructing SHA-256 Algorithm...");
-  assert.equal(thinkingPart.thoughtSignature, "sig_12345");
+  // agy CLI part-split (#15): the thinking part never carries the signature —
+  // it rides on the next visible-text part instead.
+  assert.equal("thoughtSignature" in thinkingPart, false);
+  assert.equal(assistantTurn.parts[1].thoughtSignature, "sig_12345");
 });
 
 test("Seam 1: toolResult role from pi-ai is properly formatted as functionResponse", () => {
@@ -1168,7 +1171,9 @@ test("Seam 1: buildAntigravityRequestBody preserves valid thoughtSignature for s
   const modelTurn = body.request.contents[1];
   assert.equal(modelTurn.role, "model");
   assert.equal(modelTurn.parts[0].thought, true);
-  assert.equal(modelTurn.parts[0].thoughtSignature, validSig);
+  // agy CLI part-split (#15): thinking stays signature-free, the signature
+  // rides on the following functionCall part.
+  assert.equal("thoughtSignature" in modelTurn.parts[0], false);
   assert.equal(modelTurn.parts[1].thoughtSignature, validSig);
 });
 
@@ -1336,4 +1341,100 @@ test("Seam 1: buildAntigravityRequestBody skips aborted and errored assistant me
   assert.equal(body.request.contents.length, 2);
   assert.equal(body.request.contents[0].parts[0].text, "Query 1");
   assert.equal(body.request.contents[1].parts[0].text, "Query 2 (retried)");
+});
+
+test("Seam 1 (#15): thinking replay matches the agy CLI part-split byte-for-byte (1.1.27 turn4)", () => {
+  const turn4 = JSON.parse(
+    fs.readFileSync("captures/agy_cli_1.1.27/stream_turn4_thinking.req.json", "utf-8")
+  );
+  const fixtureTurn = turn4.body.request.contents[1];
+  assert.equal(fixtureTurn.parts[0].thought, true);
+  assert.equal("thoughtSignature" in fixtureTurn.parts[0], false);
+
+  // Stored history as this provider's own stream adapter leaves it: the thinking
+  // block carries the closing signature, the visible text carries none, and the
+  // message carries it too.
+  const sig = fixtureTurn.parts[1].thoughtSignature;
+  const context = {
+    messages: [
+      { role: "user", content: "train problem" },
+      {
+        role: "assistant",
+        provider: "antigravity",
+        model: "gemini-3.7-flash-high",
+        thoughtSignature: sig,
+        content: [
+          { type: "thinking", thinking: fixtureTurn.parts[0].text, thoughtSignature: sig },
+          { type: "text", text: fixtureTurn.parts[1].text },
+        ],
+      },
+      { role: "user", content: "reply with exactly this one word: done" },
+    ],
+  };
+
+  const body = buildAntigravityRequestBody({
+    projectId: "aicode-consumers",
+    plan: staticPlan("gemini-3.7-flash-high"),
+    context,
+  });
+
+  assert.deepEqual(body.request.contents[1], fixtureTurn);
+});
+
+test("Seam 1 (#15): thinking signature forwards onto a following functionCall", () => {
+  const sig = "EtUOCtIOARFNMg8lE2aQ3yiigw==";
+  const context = {
+    messages: [
+      { role: "user", content: "list files" },
+      {
+        role: "assistant",
+        provider: "antigravity",
+        model: "gemini-3.7-flash-high",
+        content: [
+          { type: "thinking", thinking: "Need a directory listing.", thoughtSignature: sig },
+          { type: "toolCall", id: "call_1", name: "bash", arguments: { command: "ls" } },
+        ],
+      },
+      { role: "user", content: "next" },
+    ],
+  };
+
+  const body = buildAntigravityRequestBody({
+    projectId: "aicode-consumers",
+    plan: staticPlan("gemini-3.7-flash-high"),
+    context,
+  });
+
+  const turn = body.request.contents[1];
+  assert.equal(turn.parts[0].thought, true);
+  assert.equal("thoughtSignature" in turn.parts[0], false);
+  assert.equal(turn.parts[1].functionCall.name, "bash");
+  assert.equal(turn.parts[1].thoughtSignature, sig);
+});
+
+test("Seam 1 (#15): thinking-only turn falls back to the last part (uncovered edge)", () => {
+  const sig = "EtUOCtIOARFNMg8lE2aQ3yiigw==";
+  const context = {
+    messages: [
+      { role: "user", content: "think only" },
+      {
+        role: "assistant",
+        provider: "antigravity",
+        model: "gemini-3.7-flash-high",
+        content: [{ type: "thinking", thinking: "Silent reasoning.", thoughtSignature: sig }],
+      },
+      { role: "user", content: "next" },
+    ],
+  };
+
+  const body = buildAntigravityRequestBody({
+    projectId: "aicode-consumers",
+    plan: staticPlan("gemini-3.7-flash-high"),
+    context,
+  });
+
+  const turn = body.request.contents[1];
+  assert.equal(turn.parts.length, 1);
+  assert.equal(turn.parts[0].thought, true);
+  assert.equal(turn.parts[0].thoughtSignature, sig);
 });

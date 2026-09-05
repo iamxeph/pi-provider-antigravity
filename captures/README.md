@@ -79,7 +79,7 @@ unless the scenario needs otherwise. Every run ends with `--dangerously-skip-per
 | thinking level | `agy -p "reply with exactly this one word: ok" --model gemini-3.7-flash --effort {low,medium,high}` | runtime ID + `thinkingConfig` per level (ref: 1.1.27 `stream_turn{7,3,1}` pins low=1000, medium=4000, high=-1 with `-low/-medium/-high` suffix + integer `thinkingBudget`, never `-tiered`/`thinkingLevel`) |
 | tool success | prompt that creates/lists a file | `functionResponse` role, merge behavior, `{output}` key, `id` on Gemini calls |
 | tool error | `agy -p "Read the file /tmp/agy-no-such-file-xyz.txt and tell me its exact contents"` | failed `view_file` shape (ref: 1.1.26 embeds `Encountered error in tool execution: ...` in `response.output`, no `error` key) |
-| thinking | prompt needing reasoning, then inspect `thought` parts + `thoughtSignature` replay | thinking envelope, signature placement |
+| thinking | two turns in the SAME session: `agy -p "<reasoning prompt>" --model <m> --effort high` then `agy -c -p "reply with exactly this one word: done"` (or two `{"event":"user",…}` lines via `--input-format stream-json --output-format stream-json`) | thinking envelope, signature placement — the replay shape only appears in the follow-up request, never the first |
 | multiturn | follow-up in same session (`-c`/`--continue`) | signature + tool-state propagation across turns (min 5 turns for a Turn Trace). `-c` appends to the SAME session: verify by shared `requestId` prefix (`agent/<sid>/…`) with a grown turn counter, not by a new session id. Counters skip: +2 after tool execution (`/1`→`/3`), so gaps are normal |
 
 Expect one extra `gemini-3.1-flash-lite` + `{includeThoughts:false,thinkingBudget:0}`
@@ -110,6 +110,18 @@ Spot-check before sanitizing:
 ```bash
 jq '{model: .body.model, gen: .body.request.generationConfig}' captures/.../*.req.json
 jq -c '.body.request.contents[] | {role, p: [.parts[] | keys_unsorted]}' captures/.../*.req.json
+```
+
+Red gate for the thinking replay — a first turn alone never replays, so empty
+output here means the follow-up turn is missing and you must rerun §2:
+
+```bash
+jq -c 'select(.req.body.requestId?) | .req.body.requestId as $r
+  | .req.body.request.contents[] | select(.role=="model") | .parts[]
+  | select(.thought==true) | {rid: $r, hasSig: has("thoughtSignature")}' flows.jsonl
+# Must print ≥1 line. hasSig tells you the version's placement:
+# false = signature rides the next part (1.1.27 shape), true = combined shape.
+# Either way, eyeball it against tests/wire-parity before freezing the fixture.
 ```
 
 ## 4. Mandatory hygiene (in this order)
