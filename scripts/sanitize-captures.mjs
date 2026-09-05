@@ -50,6 +50,14 @@ function sanitizeString(str) {
   // 3. Bare Google OAuth Access Tokens (ya29...) outside Authorization headers.
   text = text.replace(/ya29\.[A-Za-z0-9_.-]+/g, "ya29.<REDACTED_ACCESS_TOKEN>");
 
+  // 3b. Google OIDC ID Tokens (JWT): a bearer credential whose payload holds
+  // email, name, sub, and picture. Only matches real JWT values so an
+  // already-redacted "<REDACTED_ID_TOKEN>" passes through untouched.
+  text = text.replace(
+    /(["']?id_token["']?\s*[:=]\s*["']?)eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+(["']?)/g,
+    "$1<REDACTED_ID_TOKEN>$2"
+  );
+
   // 4. Email addresses (URL-encoded and plain)
   text = text.replace(/Email=[^&"'\s]+/gi, "Email=user%40example.com");
   text = text.replace(
@@ -80,6 +88,12 @@ function sanitizeObject(obj) {
   if (typeof obj === "object") {
     const out = {};
     for (const [k, v] of Object.entries(obj)) {
+      // Parsed JSON detaches the value from its key, so the id_token regex
+      // in sanitizeString can't see it — guard the key directly.
+      if (k.toLowerCase() === "id_token" && typeof v === "string") {
+        out[k] = "<REDACTED_ID_TOKEN>";
+        continue;
+      }
       out[k] = sanitizeObject(v);
     }
     return out;

@@ -1,0 +1,5 @@
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": "continued"}]}}],"usageMetadata": {"promptTokenCount": 16230,"candidatesTokenCount": 1,"totalTokenCount": 16258,"thoughtsTokenCount": 27},"modelVersion": "gemini-3.7-flash-exp-b","responseId": "VpecapWTC_fH0-kPla6KiQI"},"traceId": "9c84d43577208614","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thoughtSignature": "EvoBCvcBARFNMg8U7Jg/8y9tBN8YEdys/d6SF2iOyDZ9Hz2h8PaqkO6ERdnih6cbHPdoIyjOXcd0WvPj4HQegk/eSnk+oms7lqY3xN2doZjFNA0Cl8fZlUD9fwCqWX0IXqvlVItGCxRqyC72i7jMNTP86uXhPZH0IqY8RVZ93BZ8MXqvkD8j6JyIwbGSVmB4nmb3k4p1EzX8RV27zmMDJjpm+5BJadPFd0Tymp+od4UntFUiXVAzHyYz4JYsKahY3++GryeIuEO8ZhYlMOZ0VtJ3a4kF+1xo9Rx4H4C+H1DMG0R1a1WuWyqnP6lBID5H0XJ57KDuAohAjzp9gA==","text": ""}]},"finishReason": "STOP"}],"usageMetadata": {"promptTokenCount": 17370,"candidatesTokenCount": 1,"totalTokenCount": 17398,"cachedContentTokenCount": 12341,"thoughtsTokenCount": 27},"modelVersion": "gemini-3.7-flash-exp-b","responseId": "VpecapWTC_fH0-kPla6KiQI"},"traceId": "9c84d43577208614","metadata": {}}
+
+

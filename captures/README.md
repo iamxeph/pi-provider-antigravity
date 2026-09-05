@@ -76,14 +76,16 @@ unless the scenario needs otherwise. Every run ends with `--dangerously-skip-per
 
 | Scenario | Command | What it proves |
 |---|---|---|
-| thinking level | `agy -p "reply with exactly this one word: ok" --model gemini-3.7-flash --effort {low,medium,high}` | runtime ID + `thinkingConfig` per level (ref: 1.1.26 sends `-low/-medium/-high` + integer `thinkingBudget`, never `-tiered`/`thinkingLevel`) |
+| thinking level | `agy -p "reply with exactly this one word: ok" --model gemini-3.7-flash --effort {low,medium,high}` | runtime ID + `thinkingConfig` per level (ref: 1.1.27 `stream_turn{7,3,1}` pins low=1000, medium=4000, high=-1 with `-low/-medium/-high` suffix + integer `thinkingBudget`, never `-tiered`/`thinkingLevel`) |
 | tool success | prompt that creates/lists a file | `functionResponse` role, merge behavior, `{output}` key, `id` on Gemini calls |
 | tool error | `agy -p "Read the file /tmp/agy-no-such-file-xyz.txt and tell me its exact contents"` | failed `view_file` shape (ref: 1.1.26 embeds `Encountered error in tool execution: ...` in `response.output`, no `error` key) |
 | thinking | prompt needing reasoning, then inspect `thought` parts + `thoughtSignature` replay | thinking envelope, signature placement |
-| multiturn | follow-up in same session (`-c`/`--continue`) | signature + tool-state propagation across turns (min 5 turns for a Turn Trace) |
+| multiturn | follow-up in same session (`-c`/`--continue`) | signature + tool-state propagation across turns (min 5 turns for a Turn Trace). `-c` appends to the SAME session: verify by shared `requestId` prefix (`agent/<sid>/…`) with a grown turn counter, not by a new session id. Counters skip: +2 after tool execution (`/1`→`/3`), so gaps are normal |
 
 Expect one extra `gemini-3.1-flash-lite` + `{includeThoughts:false,thinkingBudget:0}`
 request per run — agy's internal title summarizer, not your scenario.
+System-injected `SYSTEM_MESSAGE` user contents (e.g. server-restart notices) are genuine
+wire behavior — keep them in the fixture, don't scrub.
 
 ## 3. Extract fixtures
 
@@ -127,9 +129,8 @@ rm -f /tmp/agy-capture/flows.jsonl        # raw flows hold Bearer tokens — nev
 
 ## 5. Pin it in tests
 
-A fixture without an assertion rots. Add a `test()` in `tests/` that reads the new
-fixture and asserts the exact wire shape it was captured for (see the turn6
-`output`-key test in `tests/request-builder.test.mjs`). Run the full gate:
+A fixture without an assertion rots. Extend `tests/wire-parity.test.mjs`
+(new `EXPECTED_UA` row + any version-delta assertions) — never a new test file per version.
 
 ```bash
 npm test  # lint:captures + all suites
