@@ -8,7 +8,11 @@ import path from "node:path";
  * private user instructions, or unredacted credentials.
  */
 
-const SCAN_DIRS = ["captures", "tests"];
+// CAPTURE_LINT_DIRS overrides the scan roots (comma-separated). Production use
+// scans the repo fixtures; tests point it at a temp dir instead.
+const SCAN_DIRS = process.env.CAPTURE_LINT_DIRS
+  ? process.env.CAPTURE_LINT_DIRS.split(",")
+  : ["captures", "tests"];
 
 const RULES = [
   {
@@ -20,6 +24,12 @@ const RULES = [
     id: "unmasked-google-access-token",
     description: "Unmasked Google OAuth Access Token in capture",
     regex: /ya29\.(?!<REDACTED)[a-zA-Z0-9_.-]{30,}/g,
+  },
+  {
+    id: "unmasked-jwt",
+    description:
+      "Unmasked JWT in capture (likely Google OIDC id_token with email/name/sub)",
+    regex: /eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/g,
   },
   {
     id: "personal-email-encoded",
