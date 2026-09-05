@@ -3,6 +3,14 @@
   "version": "0.1.0",
   "description": "Minimal Antigravity (Cloud Code Assist) provider for Pi Coding Agent",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iamxeph/pi-provider-antigravity.git"
+  },
+  "bugs": {
+    "url": "https://github.com/iamxeph/pi-provider-antigravity/issues"
+  },
+  "homepage": "https://github.com/iamxeph/pi-provider-antigravity#readme",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
