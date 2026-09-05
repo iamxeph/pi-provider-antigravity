@@ -1,6 +1,6 @@
 # Antigravity Provider Context
 
-Pi Coding Agent를 위한 Google Antigravity (Cloud Code Assist) 연동 확장 프로그램의 도메인 모델.
+Pi Coding Agent를 위한 Google Antigravity 연동 확장 프로그램의 도메인 모델.
 
 ## Language
 

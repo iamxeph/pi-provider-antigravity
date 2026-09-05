@@ -13,7 +13,7 @@ Always inspect Pi's official type definitions, documentation, and reference exam
   If a method or property is missing on `ctx.modelRegistry`, `ctx.ui`, or callback contexts, inspect the `.d.ts` declaration to locate the canonical API (e.g. `getApiKeyForProvider(provider)` instead of non-existent `getApiKey(provider)`). Never use `as any` to silence type errors on Pi interfaces.
 
 ## 2. Strict `agy` CLI Parity (Behavioral & Wire Ground Truth)
-- **Strict Parity with Official `agy` CLI**: All provider behaviors—authentication flows, request headers, payload envelopes, session/trajectory labels, model identifier mapping, and quota inspection—must strictly match the official Cloud Code Assist (`agy`) CLI. Never introduce speculative API shapes or deviate from official agy CLI behavior.
+- **Strict Parity with Official `agy` CLI**: All provider behaviors—authentication flows, request headers, payload envelopes, session/trajectory labels, model identifier mapping, and quota inspection—must strictly match the official `agy` CLI. Never introduce speculative API shapes or deviate from official agy CLI behavior.
 - **Captures as Ground Truth**: Wire fixtures in `captures/agy_cli_1.1.26/` represent authoritative agy CLI behavior. Header casing, payload structures, sequence counters, and query parameters must conform to these captures.
 - **Mandatory Capture Sanitization**: When capturing network traffic from new `agy` CLI versions into `captures/`:
   - Always run `npm run sanitize:captures <dir>` immediately after capturing.
