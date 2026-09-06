@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.2.0...v0.2.1) (2026-09-06)
+
+
+### Bug Fixes
+
+* agy wire parity (tool parameters, usage accounting, Claude defaults) ([#31](https://github.com/iamxeph/pi-provider-antigravity/issues/31)) ([ccf58b4](https://github.com/iamxeph/pi-provider-antigravity/commit/ccf58b401ee00901c0e71055d6733a616cfdef43))
+
 ## [0.2.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.1.1...v0.2.0) (2026-09-06)
 
 
