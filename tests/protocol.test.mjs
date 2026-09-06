@@ -5,6 +5,7 @@ import {
   DEFAULT_USER_AGENT,
   PROVIDER_ID,
   buildAntigravityHeaders,
+  formatApiError,
 } from "../src/protocol.ts";
 
 test("Seam Protocol: buildAntigravityHeaders matches wire fingerprint", () => {
@@ -24,4 +25,32 @@ test("Seam Protocol: buildAntigravityHeaders matches wire fingerprint", () => {
 test("Seam Protocol: constants match expected provider configuration", () => {
   assert.equal(PROVIDER_ID, "antigravity");
   assert.equal(DEFAULT_ENDPOINT, "https://daily-cloudcode-pa.googleapis.com");
+});
+
+test("Seam Protocol: formatApiError maps 401/403 to the re-login hint", () => {
+  assert.match(formatApiError(401, "unauthorized"), /\/login antigravity/);
+  assert.match(formatApiError(403, "forbidden"), /\/login antigravity/);
+});
+
+test("Seam Protocol: formatApiError maps 429 to the quota hint", () => {
+  assert.match(formatApiError(429, "too many requests"), /\/antigravity usage/);
+});
+
+test("Seam Protocol: formatApiError labels 5xx as a backend error", () => {
+  assert.match(formatApiError(503, "unavailable"), /backend error/);
+});
+
+test("Seam Protocol: formatApiError sniffs invalid_grant for the re-login hint", () => {
+  assert.match(formatApiError(400, '{"error":"invalid_grant"}'), /\/login antigravity/);
+});
+
+test("Seam Protocol: formatApiError truncates long bodies at 500 chars", () => {
+  const body = "x".repeat(600);
+  const out = formatApiError(500, body);
+  assert.ok(out.endsWith("... This looks like a backend error; retry later."));
+  assert.ok(out.length < 600);
+});
+
+test("Seam Protocol: formatApiError keeps short bodies verbatim", () => {
+  assert.equal(formatApiError(400, "bad request"), "(400): bad request");
 });

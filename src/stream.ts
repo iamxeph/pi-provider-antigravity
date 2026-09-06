@@ -9,7 +9,7 @@ import {
 import { parseStoredCredentials } from "./auth.ts";
 import { createSseFeed, type SseBlockEvent } from "./parser.ts";
 import { buildAntigravityRequestBody } from "./builder.ts";
-import { buildAntigravityHeaders, DEFAULT_ENDPOINT } from "./protocol.ts";
+import { buildAntigravityHeaders, DEFAULT_ENDPOINT, formatApiError } from "./protocol.ts";
 import { resolveModelPlan, getCatalogSnapshot } from "./catalog.ts";
 
 export function streamAntigravity(
@@ -74,7 +74,7 @@ export function streamAntigravity(
 
       if (!res.ok) {
         const errText = await res.text();
-        throw new Error(`Antigravity stream failed (${res.status}): ${errText}`);
+        throw new Error(`Antigravity stream failed ${formatApiError(res.status, errText)}`);
       }
 
       if (!res.body) {

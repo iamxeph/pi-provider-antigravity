@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { OAuthCredentials, OAuthLoginCallbacks } from "@earendil-works/pi-ai";
-import { buildAntigravityHeaders, DEFAULT_ENDPOINT } from "./protocol.ts";
+import { buildAntigravityHeaders, DEFAULT_ENDPOINT, formatApiError } from "./protocol.ts";
 
 export const REDIRECT_URI = "https://antigravity.google/oauth-callback";
 export const AUTH_URL = "https://accounts.google.com/o/oauth2/auth";
@@ -137,7 +137,7 @@ export async function loginAntigravity(callbacks: OAuthLoginCallbacks): Promise<
 
   if (!tokenRes.ok) {
     const errText = await tokenRes.text();
-    throw new Error(`Failed to exchange token (${tokenRes.status}): ${errText}`);
+    throw new Error(`Failed to exchange token ${formatApiError(tokenRes.status, errText)}`);
   }
 
   const tokens = (await tokenRes.json()) as any;
@@ -170,7 +170,7 @@ export async function refreshAntigravityToken(
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`Failed to refresh token (${res.status}): ${errText}`);
+    throw new Error(`Failed to refresh token ${formatApiError(res.status, errText)}`);
   }
 
   const tokens = (await res.json()) as any;

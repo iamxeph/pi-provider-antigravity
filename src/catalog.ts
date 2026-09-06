@@ -1,5 +1,5 @@
 import type { Model } from "@earendil-works/pi-ai";
-import { DEFAULT_ENDPOINT, PROVIDER_ID, buildAntigravityHeaders } from "./protocol.ts";
+import { DEFAULT_ENDPOINT, PROVIDER_ID, buildAntigravityHeaders, formatApiError } from "./protocol.ts";
 import { parseStoredCredentials } from "./auth.ts";
 
 export function extractBaseModelId(runtimeId: string): string {
@@ -471,7 +471,7 @@ export async function fetchAvailableModelsCatalog(
   });
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`Failed to fetch models (${res.status}): ${errText}`);
+    throw new Error(`Failed to fetch models ${formatApiError(res.status, errText)}`);
   }
   const json = await res.json();
   return parseAvailableModels(json);

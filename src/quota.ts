@@ -1,4 +1,4 @@
-import { buildAntigravityHeaders, DEFAULT_ENDPOINT } from "./protocol.ts";
+import { buildAntigravityHeaders, DEFAULT_ENDPOINT, formatApiError } from "./protocol.ts";
 
 export interface QuotaBucket {
   bucketId: string;
@@ -128,7 +128,7 @@ export async function fetchQuotaSummary(
   });
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`Failed to fetch quota summary (${res.status}): ${errText}`);
+    throw new Error(`Failed to fetch quota summary ${formatApiError(res.status, errText)}`);
   }
   const json = await res.json();
   return parseQuotaSummary(json);
