@@ -4,6 +4,9 @@ import {
   type Context,
   type Model,
   type SimpleStreamOptions,
+  type TextContent,
+  type ThinkingContent,
+  type ToolCall,
   createAssistantMessageEventStream,
 } from "@earendil-works/pi-ai";
 import { parseStoredCredentials } from "./auth.ts";
@@ -11,6 +14,14 @@ import { createSseFeed, type SseBlockEvent } from "./parser.ts";
 import { buildAntigravityRequestBody } from "./builder.ts";
 import { buildAntigravityHeaders, DEFAULT_ENDPOINT } from "./protocol.ts";
 import { resolveModelPlan, getCatalogSnapshot } from "./catalog.ts";
+
+// Provider extras beyond the SDK message shape, kept identical at runtime:
+// thinking blocks and the message itself carry the replayable thoughtSignature.
+type ThinkingBlock = ThinkingContent & { thoughtSignature?: string };
+type StreamOutput = Omit<AssistantMessage, "content"> & {
+  content: (TextContent | ThinkingBlock | ToolCall)[];
+  thoughtSignature?: string;
+};
 
 export function streamAntigravity(
   model: Model<any>,
@@ -20,7 +31,7 @@ export function streamAntigravity(
   const stream = createAssistantMessageEventStream();
 
   (async () => {
-    const output: AssistantMessage = {
+    const output: StreamOutput = {
       role: "assistant",
       content: [],
       api: model.api,
@@ -48,10 +59,13 @@ export function streamAntigravity(
 
       const { token, projectId } = parseStoredCredentials(rawApiKey);
 
-      const effort =
-        (options as any)?.reasoning ||
-        (options as any)?.reasoningEffort ||
-        (options as any)?.thinking;
+      const effort = options?.reasoning;
+      // trajectoryId is provider-specific (absent from the SDK options
+      // type), so read it via runtime-checked `in` narrowing instead of a cast.
+      const trajectoryId =
+        options && "trajectoryId" in options && typeof options.trajectoryId === "string"
+          ? options.trajectoryId
+          : undefined;
       const snapshot = getCatalogSnapshot();
       const plan = resolveModelPlan(model.id, effort, snapshot);
 
@@ -59,10 +73,10 @@ export function streamAntigravity(
         projectId,
         plan,
         context,
-        sessionId: (options as any)?.sessionId,
-        trajectoryId: (options as any)?.trajectoryId,
+        sessionId: options?.sessionId,
+        trajectoryId,
         maxOutputTokens: model.maxTokens,
-        toolChoice: (options as any)?.toolChoice,
+        toolChoice: options?.toolChoice,
       });
 
       const res = await fetch(`${DEFAULT_ENDPOINT}/v1internal:streamGenerateContent?alt=sse`, {
@@ -119,7 +133,7 @@ export function streamAntigravity(
           if (ev.kind === "text_start" || ev.kind === "thinking_start") {
             const isThinking = ev.kind === "thinking_start";
             output.content.push(
-              isThinking ? ({ type: "thinking", thinking: "" } as any) : ({ type: "text", text: "" } as any)
+              isThinking ? { type: "thinking", thinking: "" } : { type: "text", text: "" }
             );
             stream.push(
               isThinking
@@ -127,11 +141,11 @@ export function streamAntigravity(
                 : { type: "text_start", contentIndex: ev.index, partial: output }
             );
           } else if (ev.kind === "text_delta" || ev.kind === "thinking_delta") {
-            const block = output.content[ev.index] as any;
-            if (ev.kind === "text_delta") {
+            const block = output.content[ev.index];
+            if (ev.kind === "text_delta" && block?.type === "text") {
               block.text += ev.delta;
               stream.push({ type: "text_delta", contentIndex: ev.index, delta: ev.delta, partial: output });
-            } else {
+            } else if (ev.kind === "thinking_delta" && block?.type === "thinking") {
               block.thinking += ev.delta;
               if (ev.thoughtSignature) block.thoughtSignature = ev.thoughtSignature;
               stream.push({ type: "thinking_delta", contentIndex: ev.index, delta: ev.delta, partial: output });
@@ -146,12 +160,12 @@ export function streamAntigravity(
             const toolCall = {
               type: "toolCall" as const,
               id: ev.block.id || `call_${output.content.length}`,
-              name: ev.block.name,
+              name: ev.block.name as string,
               arguments: ev.block.arguments || {},
               thoughtSignature: ev.block.thoughtSignature,
             };
 
-            output.content.push(toolCall as any);
+            output.content.push(toolCall);
 
             stream.push({ type: "toolcall_start", contentIndex: ev.index, partial: output });
             stream.push({
@@ -163,7 +177,7 @@ export function streamAntigravity(
             stream.push({
               type: "toolcall_end",
               contentIndex: ev.index,
-              toolCall: toolCall as any,
+              toolCall: toolCall,
               partial: output,
             });
           }
@@ -186,11 +200,11 @@ export function streamAntigravity(
       translate(closing.events);
 
       if (closing.thoughtSignature) {
-        const thinkingBlock = output.content.find((c: any) => c.type === "thinking") as any;
+        const thinkingBlock = output.content.find((c): c is ThinkingBlock => c.type === "thinking");
         if (thinkingBlock && !thinkingBlock.thoughtSignature) {
           thinkingBlock.thoughtSignature = closing.thoughtSignature;
         }
-        (output as any).thoughtSignature = closing.thoughtSignature;
+        output.thoughtSignature = closing.thoughtSignature;
       }
 
       const doneReason: "stop" | "toolUse" | "length" =
