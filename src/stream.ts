@@ -6,7 +6,6 @@ import {
   type SimpleStreamOptions,
   type TextContent,
   type ThinkingContent,
-  type ToolCall,
   createAssistantMessageEventStream,
 } from "@earendil-works/pi-ai";
 import { parseStoredCredentials } from "./auth.ts";
@@ -14,14 +13,6 @@ import { createSseFeed, type SseBlockEvent } from "./parser.ts";
 import { buildAntigravityRequestBody } from "./builder.ts";
 import { buildAntigravityHeaders, DEFAULT_ENDPOINT } from "./protocol.ts";
 import { resolveModelPlan, getCatalogSnapshot } from "./catalog.ts";
-
-// Provider extras beyond the SDK message shape, kept identical at runtime:
-// thinking blocks and the message itself carry the replayable thoughtSignature.
-type ThinkingBlock = ThinkingContent & { thoughtSignature?: string };
-type StreamOutput = Omit<AssistantMessage, "content"> & {
-  content: (TextContent | ThinkingBlock | ToolCall)[];
-  thoughtSignature?: string;
-};
 
 export function streamAntigravity(
   model: Model<any>,
@@ -31,7 +22,7 @@ export function streamAntigravity(
   const stream = createAssistantMessageEventStream();
 
   (async () => {
-    const output: StreamOutput = {
+    const output: AssistantMessage = {
       role: "assistant",
       content: [],
       api: model.api,
@@ -147,7 +138,7 @@ export function streamAntigravity(
               stream.push({ type: "text_delta", contentIndex: ev.index, delta: ev.delta, partial: output });
             } else if (ev.kind === "thinking_delta" && block?.type === "thinking") {
               block.thinking += ev.delta;
-              if (ev.thoughtSignature) block.thoughtSignature = ev.thoughtSignature;
+              if (ev.thoughtSignature) block.thinkingSignature = ev.thoughtSignature;
               stream.push({ type: "thinking_delta", contentIndex: ev.index, delta: ev.delta, partial: output });
             }
           } else if (ev.kind === "text_end" || ev.kind === "thinking_end") {
@@ -200,11 +191,17 @@ export function streamAntigravity(
       translate(closing.events);
 
       if (closing.thoughtSignature) {
-        const thinkingBlock = output.content.find((c): c is ThinkingBlock => c.type === "thinking");
-        if (thinkingBlock && !thinkingBlock.thoughtSignature) {
-          thinkingBlock.thoughtSignature = closing.thoughtSignature;
+        const thinkingBlock = output.content.find((c): c is ThinkingContent => c.type === "thinking");
+        if (thinkingBlock && !thinkingBlock.thinkingSignature) {
+          thinkingBlock.thinkingSignature = closing.thoughtSignature;
+        } else if (!thinkingBlock) {
+          // Lone-signature turn (no thinking block): the signature rides the
+          // last text block's canonical textSignature, never the message.
+          const textBlock = [...output.content].reverse().find((c): c is TextContent => c.type === "text");
+          if (textBlock && !textBlock.textSignature) {
+            textBlock.textSignature = closing.thoughtSignature;
+          }
         }
-        output.thoughtSignature = closing.thoughtSignature;
       }
 
       const doneReason: "stop" | "toolUse" | "length" =

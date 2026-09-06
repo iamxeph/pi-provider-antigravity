@@ -252,6 +252,9 @@ function translateTurnTrace(
       // own signature — it stays pending and rides on the NEXT text/functionCall
       // part. Only when the turn ends with no carrying part does it fall back
       // onto the last part (uncovered edge, same as the message-level fallback).
+      // Signature fields are canonical SDK spellings only (textSignature /
+      // thinkingSignature on blocks, thoughtSignature on toolCalls). No
+      // legacy-spelling reads: pre-#26 sessions are abandoned (see #26).
       let pendingThinkingSig: string | undefined;
       if (typeof msg.content === "string") {
         parts.push({ text: msg.content });
@@ -262,7 +265,7 @@ function translateTurnTrace(
             const sig =
               resolveThoughtSignature(
                 isSameProviderAndModel,
-                item.thoughtSignature || (item as any).textSignature
+                item.textSignature
               ) || pendingThinkingSig;
             if (sig) {
               part.thoughtSignature = sig;
@@ -270,8 +273,7 @@ function translateTurnTrace(
             }
             parts.push(part);
           } else if (item.type === "thinking") {
-            const candidateSig =
-              item.thoughtSignature || item.thinkingSignature || (msg as any).thoughtSignature;
+            const candidateSig = item.thinkingSignature;
             const isForeignReasoning =
               !isSameProviderAndModel ||
               (typeof candidateSig === "string" && candidateSig.trim().startsWith("{"));
@@ -321,7 +323,7 @@ function translateTurnTrace(
             const sig =
               resolveThoughtSignature(
                 isSameProviderAndModel,
-                item.thoughtSignature || (msg as any).thoughtSignature
+                item.thoughtSignature
               ) || pendingThinkingSig;
             if (sig) {
               part.thoughtSignature = sig;
@@ -334,13 +336,6 @@ function translateTurnTrace(
       if (parts.length > 0) {
         if (pendingThinkingSig && !parts.some((p) => p.thoughtSignature)) {
           parts[parts.length - 1].thoughtSignature = pendingThinkingSig;
-        }
-        const msgSig = resolveThoughtSignature(
-          isSameProviderAndModel,
-          (msg as any).thoughtSignature
-        );
-        if (msgSig && !parts.some((p) => p.thoughtSignature)) {
-          parts[parts.length - 1].thoughtSignature = msgSig;
         }
         contents.push({ role: "model", parts });
       }
