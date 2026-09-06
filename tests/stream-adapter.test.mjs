@@ -81,11 +81,13 @@ test("Seam 2 (#16): lone thoughtSignature surfaces on the message and replays in
     globalThis.fetch = realFetch;
   }
 
-  // Lone signature: text stays, no thinking block, signature rides top-level.
+  // Lone signature: text stays, no thinking block, signature rides the text
+  // block's canonical textSignature (#26: no message-level extra).
   assert.equal(message.content.length, 1);
   assert.equal(message.content[0].type, "text");
   assert.equal(message.content[0].text, "ok");
-  assert.equal(message.thoughtSignature, loneSig);
+  assert.equal(message.content[0].textSignature, loneSig);
+  assert.equal("thoughtSignature" in message, false);
 
   // Builder continuation replays it as [{text, thoughtSignature}] (agy CLI shape).
   const body = buildAntigravityRequestBody({

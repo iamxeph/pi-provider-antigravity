@@ -141,7 +141,7 @@ test("Seam 1: assistant thinking blocks serialize as thought: true with text pro
           {
             type: "thinking",
             thinking: "Deconstructing SHA-256 Algorithm...",
-            thoughtSignature: "sig_12345",
+            thinkingSignature: "sig_12345",
           },
           {
             type: "text",
@@ -942,7 +942,7 @@ test("Seam 1: Thought Signature validation accepts base64 and strips invalid/for
           { role: "user", content: "hi" },
           {
             role: "assistant",
-            content: [{ type: "text", text: "ans", thoughtSignature: badSig }],
+            content: [{ type: "text", text: "ans", textSignature: badSig }],
           },
           { role: "user", content: "next" },
         ],
@@ -965,7 +965,7 @@ test("Seam 1: Thought Signature validation accepts base64 and strips invalid/for
           { role: "user", content: "hi" },
           {
             role: "assistant",
-            content: [{ type: "text", text: "ans", thoughtSignature: goodSig }],
+            content: [{ type: "text", text: "ans", textSignature: goodSig }],
           },
           { role: "user", content: "next" },
         ],
@@ -1000,7 +1000,6 @@ test("Seam 1: buildAntigravityRequestBody ignores foreign JSON thoughtSignatures
         role: "assistant",
         provider: "openai",
         model: "gpt-5.4",
-        thoughtSignature: openAiJsonSig,
         content: [
           {
             type: "thinking",
@@ -1114,7 +1113,7 @@ test("Seam 1: buildAntigravityRequestBody drops cross-model thoughtSignature bet
           {
             type: "thinking",
             thinking: "Claude thinking...",
-            thoughtSignature: "claude_sig_1234",
+            thinkingSignature: "claude_sig_1234",
           },
         ],
       },
@@ -1148,7 +1147,7 @@ test("Seam 1: buildAntigravityRequestBody preserves valid thoughtSignature for s
           {
             type: "thinking",
             thinking: "Gemini thinking...",
-            thoughtSignature: validSig,
+            thinkingSignature: validSig,
           },
           {
             type: "toolCall",
@@ -1191,7 +1190,7 @@ test("Seam 1 (Verified via agy mitmproxy): Gemini 3.7 and Gemini 3.8 share thoug
           {
             type: "text",
             text: "Hello to you!",
-            thoughtSignature: validSig37,
+            textSignature: validSig37,
           },
         ],
       },
@@ -1222,7 +1221,7 @@ test("Seam 1 (Verified via agy mitmproxy): Gemini 3.7 and Gemini 3.8 share thoug
           role: "assistant",
           provider: "antigravity",
           model: "claude-sonnet-4-6",
-          content: [{ type: "text", text: "Claude response", thoughtSignature: validSig37 }],
+          content: [{ type: "text", text: "Claude response", textSignature: validSig37 }],
         },
         { role: "user", content: "next" },
       ],
@@ -1241,7 +1240,7 @@ test("Seam 1 (Verified via agy mitmproxy): Gemini 3.7 and Gemini 3.8 share thoug
           role: "assistant",
           provider: "antigravity",
           model: "claude-sonnet-4-6",
-          content: [{ type: "text", text: "Claude response", thoughtSignature: validSig37 }],
+          content: [{ type: "text", text: "Claude response", textSignature: validSig37 }],
         },
         { role: "user", content: "next" },
       ],
@@ -1352,8 +1351,8 @@ test("Seam 1 (#15): thinking replay matches the agy CLI part-split byte-for-byte
   assert.equal("thoughtSignature" in fixtureTurn.parts[0], false);
 
   // Stored history as this provider's own stream adapter leaves it: the thinking
-  // block carries the closing signature, the visible text carries none, and the
-  // message carries it too.
+  // block carries the closing signature in its canonical thinkingSignature,
+  // the visible text carries none, and nothing rides message-level.
   const sig = fixtureTurn.parts[1].thoughtSignature;
   const context = {
     messages: [
@@ -1362,9 +1361,8 @@ test("Seam 1 (#15): thinking replay matches the agy CLI part-split byte-for-byte
         role: "assistant",
         provider: "antigravity",
         model: "gemini-3.7-flash-high",
-        thoughtSignature: sig,
         content: [
-          { type: "thinking", thinking: fixtureTurn.parts[0].text, thoughtSignature: sig },
+          { type: "thinking", thinking: fixtureTurn.parts[0].text, thinkingSignature: sig },
           { type: "text", text: fixtureTurn.parts[1].text },
         ],
       },
@@ -1402,9 +1400,8 @@ test("Seam 1 (#14): Claude thinking replay matches the agy CLI part-split byte-f
         role: "assistant",
         provider: "antigravity",
         model: "claude-sonnet-4-6",
-        thoughtSignature: sig,
         content: [
-          { type: "thinking", thinking: fixtureTurn.parts[0].text, thoughtSignature: sig },
+          { type: "thinking", thinking: fixtureTurn.parts[0].text, thinkingSignature: sig },
           { type: "text", text: fixtureTurn.parts[1].text },
         ],
       },
@@ -1431,7 +1428,7 @@ test("Seam 1 (#15): thinking signature forwards onto a following functionCall", 
         provider: "antigravity",
         model: "gemini-3.7-flash-high",
         content: [
-          { type: "thinking", thinking: "Need a directory listing.", thoughtSignature: sig },
+          { type: "thinking", thinking: "Need a directory listing.", thinkingSignature: sig },
           { type: "toolCall", id: "call_1", name: "bash", arguments: { command: "ls" } },
         ],
       },
@@ -1461,7 +1458,7 @@ test("Seam 1 (#15): thinking-only turn falls back to the last part (uncovered ed
         role: "assistant",
         provider: "antigravity",
         model: "gemini-3.7-flash-high",
-        content: [{ type: "thinking", thinking: "Silent reasoning.", thoughtSignature: sig }],
+        content: [{ type: "thinking", thinking: "Silent reasoning.", thinkingSignature: sig }],
       },
       { role: "user", content: "next" },
     ],
