@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.1.1...v0.2.0) (2026-09-06)
+
+
+### Features
+
+* **capture:** pin agy CLI 1.1.27 wire fingerprint ([#17](https://github.com/iamxeph/pi-provider-antigravity/issues/17)) ([973842a](https://github.com/iamxeph/pi-provider-antigravity/commit/973842abeceeb3e644fdd9f9e88f44d7890250d3))
+
 ## [0.1.1](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.1.0...v0.1.1) (2026-09-05)
 
 
