@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { createSseFeed, parseAntigravitySseChunks } from "../src/parser.ts";
+import { createSseFeed } from "../src/parser.ts";
 
 const sseTurn1 = fs.readFileSync("captures/agy_cli_1.1.26/stream_turn1_initial.resp.sse", "utf-8");
 const sseTurn5 = fs.readFileSync("captures/agy_cli_1.1.26/stream_turn5_multiturn.resp.sse", "utf-8");
@@ -64,9 +64,3 @@ test("Seam 2: close() flushes an unterminated trailing line", () => {
   assert.ok(feed.result().content.length >= 1, "flushed line must produce a block");
 });
 
-test("Seam 2: batch wrapper delegates to the feeder", () => {
-  const feed = createSseFeed();
-  feed.feed(sseTurn1);
-  feed.close();
-  assert.deepEqual(parseAntigravitySseChunks(sseTurn1), feed.result());
-});

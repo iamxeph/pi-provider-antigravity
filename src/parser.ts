@@ -188,9 +188,3 @@ export function createSseFeed(): {
   };
 }
 
-export function parseAntigravitySseChunks(rawSse: string): ParsedStreamResult {
-  const feed = createSseFeed();
-  feed.feed(rawSse);
-  feed.close();
-  return feed.result();
-}
