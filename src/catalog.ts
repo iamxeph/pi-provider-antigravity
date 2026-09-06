@@ -1,5 +1,5 @@
 import type { Model } from "@earendil-works/pi-ai";
-import { DEFAULT_ENDPOINT, PROVIDER_ID, buildAntigravityHeaders, formatApiError } from "./protocol.ts";
+import { DEFAULT_ENDPOINT, PROVIDER_ID, buildAntigravityHeaders, formatApiError, withMetadataTimeout } from "./protocol.ts";
 import { parseStoredCredentials } from "./auth.ts";
 
 export function extractBaseModelId(runtimeId: string): string {
@@ -463,18 +463,23 @@ export async function fetchAvailableModelsCatalog(
   endpoint = DEFAULT_ENDPOINT,
   signal?: AbortSignal
 ): Promise<AvailableModelsCatalog> {
-  const res = await fetch(`${endpoint}/v1internal:fetchAvailableModels`, {
-    method: "POST",
-    headers: buildAntigravityHeaders(token),
-    body: JSON.stringify({ project: projectId }),
-    signal,
-  });
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Failed to fetch models ${formatApiError(res.status, errText)}`);
+  const timeout = withMetadataTimeout(signal);
+  try {
+    const res = await fetch(`${endpoint}/v1internal:fetchAvailableModels`, {
+      method: "POST",
+      headers: buildAntigravityHeaders(token),
+      body: JSON.stringify({ project: projectId }),
+      signal: timeout.signal,
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Failed to fetch models ${formatApiError(res.status, errText)}`);
+    }
+    const json = await res.json();
+    return parseAvailableModels(json);
+  } finally {
+    timeout.dispose();
   }
-  const json = await res.json();
-  return parseAvailableModels(json);
 }
 
 function formatTokenCount(n?: number): string {

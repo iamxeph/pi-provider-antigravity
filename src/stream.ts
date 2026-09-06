@@ -12,6 +12,53 @@ import { buildAntigravityRequestBody } from "./builder.ts";
 import { buildAntigravityHeaders, DEFAULT_ENDPOINT, formatApiError } from "./protocol.ts";
 import { resolveModelPlan, getCatalogSnapshot } from "./catalog.ts";
 
+// Statuses worth retrying before the first byte arrives. Only non-ok
+// responses are retried, never a mid-stream read.
+const RETRYABLE_STREAM_STATUS = new Set([408, 429, 500, 502, 503, 504]);
+const MAX_STREAM_RETRIES = 2;
+
+function abortableSleep(ms: number, signal?: AbortSignal): Promise<void> {
+  if (signal?.aborted) return Promise.reject(new Error("aborted"));
+  return new Promise((resolve, reject) => {
+    const cleanup = () => {
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", onAbort);
+    };
+    const timer = setTimeout(() => {
+      cleanup();
+      resolve();
+    }, ms);
+    const onAbort = () => {
+      cleanup();
+      reject(new Error("Antigravity stream aborted during retry backoff."));
+    };
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
+async function postStreamWithRetry(url: string, body: string, token: string, signal?: AbortSignal): Promise<Response> {
+  let status = 0;
+  let errText = "";
+  for (let attempt = 0; ; attempt++) {
+    if (signal?.aborted) {
+      throw new Error("Antigravity stream aborted before the request completed.");
+    }
+    const res = await fetch(url, {
+      method: "POST",
+      headers: buildAntigravityHeaders(token),
+      body,
+      signal,
+    });
+    if (res.ok) return res;
+    status = res.status;
+    errText = await res.text();
+    if (!RETRYABLE_STREAM_STATUS.has(status) || attempt >= MAX_STREAM_RETRIES) {
+      throw new Error(`Antigravity stream failed ${formatApiError(status, errText)}`);
+    }
+    await abortableSleep(1000 * (attempt + 1), signal);
+  }
+}
+
 export function streamAntigravity(
   model: Model<any>,
   context: Context,
@@ -65,17 +112,12 @@ export function streamAntigravity(
         toolChoice: (options as any)?.toolChoice,
       });
 
-      const res = await fetch(`${DEFAULT_ENDPOINT}/v1internal:streamGenerateContent?alt=sse`, {
-        method: "POST",
-        headers: buildAntigravityHeaders(token),
-        body: JSON.stringify(requestBody),
-        signal: options?.signal,
-      });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`Antigravity stream failed ${formatApiError(res.status, errText)}`);
-      }
+      const res = await postStreamWithRetry(
+        `${DEFAULT_ENDPOINT}/v1internal:streamGenerateContent?alt=sse`,
+        JSON.stringify(requestBody),
+        token,
+        options?.signal
+      );
 
       if (!res.body) {
         throw new Error("No response stream received from Antigravity.");

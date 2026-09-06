@@ -1,4 +1,4 @@
-import { buildAntigravityHeaders, DEFAULT_ENDPOINT, formatApiError } from "./protocol.ts";
+import { buildAntigravityHeaders, DEFAULT_ENDPOINT, formatApiError, withMetadataTimeout } from "./protocol.ts";
 
 export interface QuotaBucket {
   bucketId: string;
@@ -120,16 +120,21 @@ export async function fetchQuotaSummary(
   endpoint = DEFAULT_ENDPOINT,
   signal?: AbortSignal
 ): Promise<QuotaSummary> {
-  const res = await fetch(`${endpoint}/v1internal:retrieveUserQuotaSummary`, {
-    method: "POST",
-    headers: buildAntigravityHeaders(token),
-    body: JSON.stringify({ project: projectId }),
-    signal,
-  });
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Failed to fetch quota summary ${formatApiError(res.status, errText)}`);
+  const timeout = withMetadataTimeout(signal);
+  try {
+    const res = await fetch(`${endpoint}/v1internal:retrieveUserQuotaSummary`, {
+      method: "POST",
+      headers: buildAntigravityHeaders(token),
+      body: JSON.stringify({ project: projectId }),
+      signal: timeout.signal,
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Failed to fetch quota summary ${formatApiError(res.status, errText)}`);
+    }
+    const json = await res.json();
+    return parseQuotaSummary(json);
+  } finally {
+    timeout.dispose();
   }
-  const json = await res.json();
-  return parseQuotaSummary(json);
 }

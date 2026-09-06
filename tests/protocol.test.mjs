@@ -6,6 +6,7 @@ import {
   PROVIDER_ID,
   buildAntigravityHeaders,
   formatApiError,
+  withMetadataTimeout,
 } from "../src/protocol.ts";
 
 test("Seam Protocol: buildAntigravityHeaders matches wire fingerprint", () => {
@@ -53,4 +54,28 @@ test("Seam Protocol: formatApiError truncates long bodies at 500 chars", () => {
 
 test("Seam Protocol: formatApiError keeps short bodies verbatim", () => {
   assert.equal(formatApiError(400, "bad request"), "(400): bad request");
+});
+
+test("Seam Protocol: withMetadataTimeout aborts after the timeout", async () => {
+  const t = withMetadataTimeout(undefined, 20);
+  await new Promise((resolve, reject) => {
+    const fail = setTimeout(() => reject(new Error("never aborted")), 1000);
+    t.signal.addEventListener(
+      "abort",
+      () => {
+        clearTimeout(fail);
+        t.dispose();
+        resolve();
+      },
+      { once: true }
+    );
+  });
+});
+
+test("Seam Protocol: withMetadataTimeout propagates caller abort", () => {
+  const caller = new AbortController();
+  const t = withMetadataTimeout(caller.signal);
+  caller.abort();
+  assert.equal(t.signal.aborted, true);
+  t.dispose();
 });

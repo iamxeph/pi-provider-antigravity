@@ -25,6 +25,34 @@ export function formatApiError(status: number, body: string): string {
   return `(${status}): ${trimmed}${hint}`;
 }
 
+export const METADATA_TIMEOUT_MS = 30_000;
+
+/**
+ * Combines the caller's signal with a timeout for metadata calls
+ * (quota/models/token/loadCodeAssist). Never use for streams: long
+ * generations are not stalls. Call dispose() once the body is consumed.
+ */
+export function withMetadataTimeout(
+  caller?: AbortSignal,
+  ms = METADATA_TIMEOUT_MS
+): { signal: AbortSignal; dispose: () => void } {
+  const controller = new AbortController();
+  const onAbort = () => controller.abort(caller?.reason);
+  if (caller?.aborted) {
+    controller.abort(caller.reason);
+  } else {
+    caller?.addEventListener("abort", onAbort, { once: true });
+  }
+  const timer = setTimeout(() => controller.abort(new Error(`metadata call timed out after ${ms}ms`)), ms);
+  return {
+    signal: controller.signal,
+    dispose: () => {
+      clearTimeout(timer);
+      caller?.removeEventListener("abort", onAbort);
+    },
+  };
+}
+
 /**
  * Builds the canonical HTTP request headers matching the official agy CLI Wire Fingerprint.
  */

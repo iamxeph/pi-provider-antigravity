@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { OAuthCredentials, OAuthLoginCallbacks } from "@earendil-works/pi-ai";
-import { buildAntigravityHeaders, DEFAULT_ENDPOINT, formatApiError } from "./protocol.ts";
+import { buildAntigravityHeaders, DEFAULT_ENDPOINT, formatApiError, withMetadataTimeout } from "./protocol.ts";
 
 export const REDIRECT_URI = "https://antigravity.google/oauth-callback";
 export const AUTH_URL = "https://accounts.google.com/o/oauth2/auth";
@@ -67,12 +67,13 @@ export async function fetchProjectId(
   endpoint = DEFAULT_ENDPOINT,
   signal?: AbortSignal
 ): Promise<string> {
+  const timeout = withMetadataTimeout(signal);
   try {
     const res = await fetch(`${endpoint}/v1internal:loadCodeAssist`, {
       method: "POST",
       headers: buildAntigravityHeaders(token),
       body: JSON.stringify({ metadata: { ideType: "ANTIGRAVITY" } }),
-      signal,
+      signal: timeout.signal,
     });
     if (res.ok) {
       const data = (await res.json()) as any;
@@ -82,6 +83,8 @@ export async function fetchProjectId(
     }
   } catch {
     // Fall back to standard project
+  } finally {
+    timeout.dispose();
   }
   return "aicode-consumers";
 }
@@ -129,18 +132,25 @@ export async function loginAntigravity(callbacks: OAuthLoginCallbacks): Promise<
     code_verifier: verifier,
   });
 
-  const tokenRes = await fetch(TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: tokenParams.toString(),
-  });
+  const tokenTimeout = withMetadataTimeout();
+  let tokens: any;
+  try {
+    const tokenRes = await fetch(TOKEN_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: tokenParams.toString(),
+      signal: tokenTimeout.signal,
+    });
 
-  if (!tokenRes.ok) {
-    const errText = await tokenRes.text();
-    throw new Error(`Failed to exchange token ${formatApiError(tokenRes.status, errText)}`);
+    if (!tokenRes.ok) {
+      const errText = await tokenRes.text();
+      throw new Error(`Failed to exchange token ${formatApiError(tokenRes.status, errText)}`);
+    }
+
+    tokens = (await tokenRes.json()) as any;
+  } finally {
+    tokenTimeout.dispose();
   }
-
-  const tokens = (await tokenRes.json()) as any;
   const projectId = await fetchProjectId(tokens.access_token);
 
   return {
@@ -161,19 +171,25 @@ export async function refreshAntigravityToken(
     grant_type: "refresh_token",
   });
 
-  const res = await fetch(TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: params.toString(),
-    signal,
-  });
+  const timeout = withMetadataTimeout(signal);
+  let tokens: any;
+  try {
+    const res = await fetch(TOKEN_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params.toString(),
+      signal: timeout.signal,
+    });
 
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Failed to refresh token ${formatApiError(res.status, errText)}`);
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Failed to refresh token ${formatApiError(res.status, errText)}`);
+    }
+
+    tokens = (await res.json()) as any;
+  } finally {
+    timeout.dispose();
   }
-
-  const tokens = (await res.json()) as any;
 
   let existingProjectId = "aicode-consumers";
   try {
