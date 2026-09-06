@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { DEFAULT_USER_AGENT } from "../src/protocol.ts";
 import { parseAvailableModels } from "../src/catalog.ts";
-import { parseAntigravitySseChunks } from "../src/parser.ts";
+import { createSseFeed } from "../src/parser.ts";
 
 // Cross-version wire parity: every captures/agy_cli_<version>/ dir must satisfy
 // the same invariants. A new agy release means a new fixture dir + one row in
@@ -25,6 +25,15 @@ const load = (dir, name) => {
   const p = `captures/${dir}/${name}.req.json`;
   return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, "utf-8")) : null;
 };
+
+// Production-path whole-input parse: feed() + close(), the same exits
+// streamAntigravity uses. Assert on the returned result().
+function parseWhole(rawSse) {
+  const feed = createSseFeed();
+  feed.feed(rawSse);
+  feed.close();
+  return feed.result();
+}
 
 for (const dir of DIRS) {
   const turn1 = load(dir, "stream_turn1_initial");
@@ -71,7 +80,7 @@ test("Wire parity: every captured SSE parses with usage and stop reason", () => 
     assert.ok(files.length > 0, `${dir} must ship response fixtures`);
     for (const f of files) {
       const sse = fs.readFileSync(`captures/${dir}/${f}`, "utf-8");
-      const parsed = parseAntigravitySseChunks(sse);
+      const parsed = parseWhole(sse);
       assert.ok(parsed.content.length >= 1, `${dir}/${f}: at least one block`);
       assert.ok(parsed.usage, `${dir}/${f}: usage metadata`);
       assert.ok(["stop", "toolUse"].includes(parsed.stopReason), `${dir}/${f}: stop reason`);
