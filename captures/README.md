@@ -142,7 +142,9 @@ rm -f /tmp/agy-capture/flows.jsonl        # raw flows hold Bearer tokens — nev
 ## 5. Pin it in tests
 
 A fixture without an assertion rots. Extend `tests/wire-parity.test.mjs`
-(new `EXPECTED_UA` row + any version-delta assertions) — never a new test file per version.
+with one `EXPECTED_UA` row — endpoint, header casing, auth/quota/load shapes,
+and builder envelope reproduction apply automatically per version directory.
+Add version-delta assertions only for genuine behavior changes — never a new test file per version.
 
 ```bash
 npm test  # lint:captures + all suites

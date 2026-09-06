@@ -1381,6 +1381,46 @@ test("Seam 1 (#15): thinking replay matches the agy CLI part-split byte-for-byte
   assert.deepEqual(body.request.contents[1], fixtureTurn);
 });
 
+test("Seam 1 (#14): Claude thinking replay matches the agy CLI part-split byte-for-byte (1.1.27 turn9)", () => {
+  // Counter-capture verdict: Claude signatures DO replay within the Claude
+  // family, part-split exactly like Gemini (#15) — the drop rule stays for
+  // cross-family only. SSE carries the signature combined on the closing
+  // thought part; history stores it on the thinking block, as the adapter leaves it.
+  const turn9 = JSON.parse(
+    fs.readFileSync("captures/agy_cli_1.1.27/stream_turn9_claude_followup.req.json", "utf-8")
+  );
+  const fixtureTurn = turn9.body.request.contents[1];
+  assert.equal(fixtureTurn.parts[0].thought, true);
+  assert.equal("thoughtSignature" in fixtureTurn.parts[0], false);
+  const sig = fixtureTurn.parts[1].thoughtSignature;
+  assert.ok(sig, "turn9 must replay the turn8 thinking signature");
+
+  const context = {
+    messages: [
+      { role: "user", content: "train problem" },
+      {
+        role: "assistant",
+        provider: "antigravity",
+        model: "claude-sonnet-4-6",
+        thoughtSignature: sig,
+        content: [
+          { type: "thinking", thinking: fixtureTurn.parts[0].text, thoughtSignature: sig },
+          { type: "text", text: fixtureTurn.parts[1].text },
+        ],
+      },
+      { role: "user", content: "reply with exactly this one word: done" },
+    ],
+  };
+
+  const body = buildAntigravityRequestBody({
+    projectId: "aicode-consumers",
+    plan: staticPlan("claude-sonnet-4-6"),
+    context,
+  });
+
+  assert.deepEqual(body.request.contents[1], fixtureTurn);
+});
+
 test("Seam 1 (#15): thinking signature forwards onto a following functionCall", () => {
   const sig = "EtUOCtIOARFNMg8lE2aQ3yiigw==";
   const context = {
