@@ -134,9 +134,11 @@ export function getCatalogSnapshot(): CatalogSnapshot {
 }
 
 function updateCatalogStore(enums: Record<string, string>, runtimeIds: string[]): void {
+  // A fresh generation is complete: replace instead of merging, so enums for
+  // server-removed models are evicted instead of pinned forever.
   activeStore = {
-    enums: { ...STATIC_MODEL_ENUMS, ...activeStore.enums, ...enums },
-    runtimeIds: [...new Set([...activeStore.runtimeIds, ...runtimeIds])],
+    enums: { ...STATIC_MODEL_ENUMS, ...enums },
+    runtimeIds: [...new Set(runtimeIds)],
     version: activeStore.version + 1,
   };
 }
@@ -361,10 +363,12 @@ export function buildDynamicPublicModels(catalog?: AvailableModelsCatalog): Arra
 }
 
 export async function refreshCatalog(context: any): Promise<Array<Model<any>>> {
-  // Restore from context.stored first (Issue #41: offline restart support)
+  // Restore from context.stored first for offline restart support,
+  // but only into a pristine store: a failed refresh must not clobber a
+  // fresher in-memory snapshot with older persisted data.
   const storedEnums = context.stored?.["pi-provider-antigravity"]?.modelEnums;
   const storedRuntimeIds = context.stored?.["pi-provider-antigravity"]?.runtimeIds;
-  if (storedEnums || storedRuntimeIds) {
+  if ((storedEnums || storedRuntimeIds) && getCatalogSnapshot().version === 0) {
     updateCatalogStore(storedEnums || {}, storedRuntimeIds || []);
   }
 
