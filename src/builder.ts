@@ -14,7 +14,7 @@ export interface BuildRequestBodyParams {
   sessionId?: string;
   trajectoryId?: string;
   maxOutputTokens?: number;
-  toolChoice?: any;
+  toolChoice?: string;
 }
 
 const BASE64_SIGNATURE_PATTERN = /^[A-Za-z0-9+/_-]+={0,2}$/;

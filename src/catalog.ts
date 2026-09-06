@@ -312,7 +312,7 @@ export function synthesizeDynamicModel(baseId: string, items: AvailableModelItem
     id: baseId,
     name: formatModelDisplayName(baseId, repItem?.displayName),
     provider: PROVIDER_ID,
-    api: "antigravity-api" as any,
+    api: "antigravity-api",
     baseUrl: DEFAULT_ENDPOINT,
     reasoning: repItem?.supportsThinking ?? true,
     input: repItem?.supportsImages ? ["text", "image"] : ["text"],

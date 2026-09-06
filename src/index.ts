@@ -12,7 +12,7 @@ export default function (pi: ExtensionAPI): void {
   pi.registerProvider(PROVIDER_ID, {
     name: PROVIDER_NAME,
     baseUrl: DEFAULT_ENDPOINT,
-    api: "antigravity-api" as any,
+    api: "antigravity-api",
     models: [], // Purely dynamic provider per Pi SDK architecture
     oauth: {
       name: PROVIDER_NAME,
