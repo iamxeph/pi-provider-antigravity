@@ -13,6 +13,27 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 
 Infer the repo from `git remote -v`; `gh` does this automatically when run inside a clone.
 
+## Auto-closing issues from a PR
+
+Put one closing keyword per issue in the PR body and GitHub closes them
+when the PR merges into the default branch (`main`) — no manual close needed:
+
+```markdown
+Fixes #9
+Fixes #8
+```
+
+Keywords: `Close(s/d)`, `Fix(es/ed)`, `Resolve(s/d)`. Rules:
+
+- Fires only on merge into the **default branch**. A stacked PR merging into
+  another feature branch ignores the keywords.
+- The sidebar "Development" link alone only shows a relationship; closing
+  still needs a keyword.
+- Not retroactive: editing the body after merge closes nothing. A PR merged
+  without keywords leaves its issues open for a manual
+  `gh issue close <n> --comment "..."`.
+- Batch PRs list one `Fixes #<n>` line per issue in the batch.
+
 ## Pull requests as a triage surface
 
 **PRs as a request surface: yes.** _(Set to `yes` if this repo treats external PRs as feature requests; `/triage` reads this flag.)_
