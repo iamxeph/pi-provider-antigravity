@@ -20,21 +20,6 @@ export interface QuotaSummary {
   description?: string;
 }
 
-export function formatResetTime(resetTime?: string): string {
-  if (!resetTime) return "n/a";
-  const ts = Date.parse(resetTime);
-  if (!Number.isFinite(ts)) return resetTime;
-  const delta = ts - Date.now();
-  if (delta <= 0) return "now";
-  const totalMin = Math.round(delta / 60000);
-  const days = Math.floor(totalMin / (60 * 24));
-  const hours = Math.floor((totalMin % (60 * 24)) / 60);
-  const mins = totalMin % 60;
-  if (days > 0) return `${days}d ${hours}h`;
-  if (hours > 0) return `${hours}h ${mins}m`;
-  return `${mins}m`;
-}
-
 export function renderProgressBar(fraction: number, width = 10): string {
   const clamped = Math.max(0, Math.min(1, fraction));
   const filled = Math.round(clamped * width);
