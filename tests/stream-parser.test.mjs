@@ -42,9 +42,29 @@ test("Seam 2: parseWhole extracts usage metadata", () => {
 
   assert.ok(result.usage);
   assert.equal(result.usage.input, 15615 - 8137);
-  assert.equal(result.usage.output, 50);
+  // output includes thinking tokens (candidates 50 + thoughts 381, per fixture)
+  assert.equal(result.usage.output, 50 + 381);
   assert.equal(result.usage.cacheRead, 8137);
   assert.equal(result.stopReason, "toolUse");
+});
+
+test("Seam 2: non-STOP finish reasons map to error and stick", () => {
+  const line = (reason, text = "x") =>
+    `data: {"response": {"candidates": [{"content": {"role": "model", "parts": [{"text": "${text}"}]}, "finishReason": "${reason}"}]}}\n`;
+  for (const reason of ["SAFETY", "RECITATION", "BLOCKLIST", "MALFORMED_FUNCTION_CALL", "OTHER"]) {
+    const result = parseWhole(line(reason));
+    assert.equal(result.stopReason, "error", `${reason} must map to error`);
+  }
+  const lengthResult = parseWhole(line("MAX_TOKENS"));
+  assert.equal(lengthResult.stopReason, "length");
+
+  // A later STOP must not downgrade an earlier error.
+  const feed = createSseFeed();
+  feed.feed(line("RECITATION", "a"));
+  const closing = feed.feed(line("STOP", "b"));
+  assert.equal(closing.stopReason, "error");
+  feed.close();
+  assert.equal(feed.result().stopReason, "error");
 });
 
 test("Seam 2: parseWhole handles text responses from Turn 4", () => {

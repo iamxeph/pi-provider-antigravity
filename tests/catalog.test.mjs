@@ -33,6 +33,14 @@ test("Seam 3: parseAvailableModels extracts models and model_enum", () => {
   assert.equal(catalog.modelEnums["gemini-3.7-flash-high"], "MODEL_PLACEHOLDER_M298");
 });
 
+test("Seam 3: synthesizeDynamicModel static fallbacks match captured catalog (Claude 250000/64000)", () => {
+  // Offline path (no maxTokens/maxOutputTokens): must mirror
+  // captures/agy_cli_1.1.27/models.resp.json, also seen on the wire (turn8/9).
+  const claude = synthesizeDynamicModel("claude-sonnet-4-6", [{ id: "claude-sonnet-4-6" }]);
+  assert.equal(claude.contextWindow, 250000);
+  assert.equal(claude.maxTokens, 64000);
+});
+
 test("Seam 3: formatModelsList formats clean table view", () => {
   const catalog = parseAvailableModels(modelsJson);
   const output = formatModelsList(catalog);

@@ -64,6 +64,31 @@ for (const dir of DIRS) {
     }
   });
 
+  test(`Wire parity (${dir}): tool declarations use legacy parameters only`, () => {
+    // Every frozen turn (not just the five named ones) pins this: agy sends
+    // legacy `parameters` on all models, zero `parametersJsonSchema` anywhere.
+    const files = fs
+      .readdirSync(`captures/${dir}`)
+      .filter((f) => f.startsWith("stream_turn") && f.endsWith(".req.json"));
+    assert.ok(files.length > 0, `${dir} must ship stream turn fixtures`);
+    let decls = 0;
+    for (const f of files) {
+      const turn = JSON.parse(fs.readFileSync(`captures/${dir}/${f}`, "utf-8"));
+      for (const tool of turn.body.request.tools ?? []) {
+        for (const decl of tool.functionDeclarations ?? []) {
+          assert.ok(decl.parameters, `${f}/${decl.name}: must carry legacy parameters`);
+          assert.equal(
+            decl.parametersJsonSchema,
+            undefined,
+            `${f}/${decl.name}: parametersJsonSchema diverges from every capture`
+          );
+          decls++;
+        }
+      }
+    }
+    assert.ok(decls > 0, `${dir}: no tool declarations frozen to pin`);
+  });
+
   test(`Wire parity (${dir}): thoughtSignature replays across turns`, () => {
     const replayed = (turn) =>
       (turn?.body.request.contents ?? [])
