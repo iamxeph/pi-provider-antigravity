@@ -169,7 +169,7 @@ test("Seam 3: buildDynamicPublicModels dynamically synthesizes unreleased future
   assert.equal(synthesized.maxTokens, 65536);
   assert.equal(synthesized.reasoning, true);
   assert.deepEqual(synthesized.input, ["text", "image"]);
-  assert.deepEqual(synthesized.cost, { input: 0.1, output: 0.4, cacheRead: 0.025, cacheWrite: 0.1 });
+  assert.deepEqual(synthesized.cost, { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 });
 });
 
 test("Seam 3: resolveModelPlan dynamically resolves tiers for new models", () => {

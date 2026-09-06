@@ -289,23 +289,11 @@ export function formatModelDisplayName(baseId: string, rawDisplayName?: string):
   return words.join(" ");
 }
 
-export function estimateModelCost(baseId: string): Model<any>["cost"] {
-  if (baseId.includes("flash")) {
-    return { input: 0.1, output: 0.4, cacheRead: 0.025, cacheWrite: 0.1 };
-  }
-  if (baseId.includes("pro")) {
-    return { input: 1.25, output: 5.0, cacheRead: 0.3, cacheWrite: 1.25 };
-  }
-  if (baseId.startsWith("claude-opus")) {
-    return { input: 15.0, output: 75.0, cacheRead: 1.5, cacheWrite: 18.75 };
-  }
-  if (baseId.startsWith("claude-")) {
-    return { input: 3.0, output: 15.0, cacheRead: 0.3, cacheWrite: 3.75 };
-  }
-  if (baseId.startsWith("gpt-oss-")) {
-    return { input: 0.5, output: 2.0, cacheRead: 0.1, cacheWrite: 0.5 };
-  }
-  return { input: 1.0, output: 5.0, cacheRead: 0.25, cacheWrite: 1.0 };
+// Antigravity is quota-based with no per-token billing, so every model
+// reports zero cost instead of fictitious Gemini API prices.
+// Revisit if a metered paid tier ever appears.
+export function estimateModelCost(_baseId: string): Model<any>["cost"] {
+  return { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
 }
 
 export function synthesizeDynamicModel(baseId: string, items: AvailableModelItem[]): Model<any> {
