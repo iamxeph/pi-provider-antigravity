@@ -103,3 +103,55 @@ test("Catalog refresh: fetch failure falls back to stored models", async () => {
     globalThis.fetch = realFetch;
   }
 });
+
+test("Catalog refresh: sequential refreshes evict stale enums", async () => {
+  const realFetch = globalThis.fetch;
+  const staleJson = {
+    ...modelsJson,
+    models: {
+      ...modelsJson.models,
+      "stale-model-high": { model: "MODEL_STALE", displayName: "Stale" },
+    },
+  };
+  const credential = { access: JSON.stringify({ token: "t", projectId: "p" }) };
+  try {
+    globalThis.fetch = async () => ({ ok: true, json: async () => staleJson });
+    await refreshCatalog({ allowNetwork: true, credential, stored: {} });
+    assert.equal(getCatalogSnapshot().enums["stale-model-high"], "MODEL_STALE");
+
+    globalThis.fetch = async () => ({ ok: true, json: async () => modelsJson });
+    await refreshCatalog({ allowNetwork: true, credential, stored: {} });
+    const snap = getCatalogSnapshot();
+    assert.ok(!("stale-model-high" in snap.enums), "stale enum must be evicted by the fresh generation");
+    assert.ok(snap.runtimeIds.length > 0);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Catalog refresh: persisted state never clobbers a fresher snapshot", async () => {
+  const realFetch = globalThis.fetch;
+  const credential = { access: JSON.stringify({ token: "t", projectId: "p" }) };
+  try {
+    // Ensure the in-memory snapshot is non-pristine first (order-independent).
+    globalThis.fetch = async () => ({ ok: true, json: async () => modelsJson });
+    await refreshCatalog({ allowNetwork: true, credential, stored: {} });
+    assert.ok(getCatalogSnapshot().version > 0);
+
+    await refreshCatalog({
+      allowNetwork: false,
+      stored: {
+        models: storedModels,
+        "pi-provider-antigravity": {
+          modelEnums: { "stale-model-high": "MODEL_STALE" },
+          runtimeIds: ["stale-model-high"],
+        },
+      },
+    });
+    const snap = getCatalogSnapshot();
+    assert.ok(!("stale-model-high" in snap.enums), "older persisted data must not clobber the snapshot");
+    assert.ok(snap.runtimeIds.length > 0, "fresher runtime IDs must survive");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

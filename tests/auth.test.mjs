@@ -176,3 +176,48 @@ test("Seam Auth: /antigravity model is an alias of models", async () => {
     globalThis.fetch = originalFetch;
   }
 });
+
+test("Token refresh re-resolves projectId on successful lookup", async () => {
+  const { refreshAntigravityToken } = await import("../src/auth.ts");
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    if (String(url).includes("loadCodeAssist")) {
+      return { ok: true, json: async () => ({ cloudaicompanionProject: "new-project" }) };
+    }
+    return { ok: true, json: async () => ({ access_token: "new-token", expires_in: 3600 }) };
+  };
+  try {
+    const out = await refreshAntigravityToken({
+      refresh: "r",
+      access: JSON.stringify({ token: "old-token", projectId: "old-project" }),
+      expires: 0,
+    });
+    const parsed = JSON.parse(out.access);
+    assert.equal(parsed.token, "new-token");
+    assert.equal(parsed.projectId, "new-project");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Token refresh keeps the stored projectId when lookup fails", async () => {
+  const { refreshAntigravityToken } = await import("../src/auth.ts");
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    if (String(url).includes("loadCodeAssist")) {
+      return { ok: false, json: async () => ({}) };
+    }
+    return { ok: true, json: async () => ({ access_token: "new-token", expires_in: 3600 }) };
+  };
+  try {
+    const out = await refreshAntigravityToken({
+      refresh: "r",
+      access: JSON.stringify({ token: "old-token", projectId: "old-project" }),
+      expires: 0,
+    });
+    const parsed = JSON.parse(out.access);
+    assert.equal(parsed.projectId, "old-project");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

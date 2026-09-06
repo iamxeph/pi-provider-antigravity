@@ -134,9 +134,11 @@ export function getCatalogSnapshot(): CatalogSnapshot {
 }
 
 function updateCatalogStore(enums: Record<string, string>, runtimeIds: string[]): void {
+  // A fresh generation is complete: replace instead of merging, so enums for
+  // server-removed models are evicted instead of pinned forever.
   activeStore = {
-    enums: { ...STATIC_MODEL_ENUMS, ...activeStore.enums, ...enums },
-    runtimeIds: [...new Set([...activeStore.runtimeIds, ...runtimeIds])],
+    enums: { ...STATIC_MODEL_ENUMS, ...enums },
+    runtimeIds: [...new Set(runtimeIds)],
     version: activeStore.version + 1,
   };
 }
@@ -289,23 +291,11 @@ export function formatModelDisplayName(baseId: string, rawDisplayName?: string):
   return words.join(" ");
 }
 
-export function estimateModelCost(baseId: string): Model<any>["cost"] {
-  if (baseId.includes("flash")) {
-    return { input: 0.1, output: 0.4, cacheRead: 0.025, cacheWrite: 0.1 };
-  }
-  if (baseId.includes("pro")) {
-    return { input: 1.25, output: 5.0, cacheRead: 0.3, cacheWrite: 1.25 };
-  }
-  if (baseId.startsWith("claude-opus")) {
-    return { input: 15.0, output: 75.0, cacheRead: 1.5, cacheWrite: 18.75 };
-  }
-  if (baseId.startsWith("claude-")) {
-    return { input: 3.0, output: 15.0, cacheRead: 0.3, cacheWrite: 3.75 };
-  }
-  if (baseId.startsWith("gpt-oss-")) {
-    return { input: 0.5, output: 2.0, cacheRead: 0.1, cacheWrite: 0.5 };
-  }
-  return { input: 1.0, output: 5.0, cacheRead: 0.25, cacheWrite: 1.0 };
+// Antigravity is quota-based with no per-token billing, so every model
+// reports zero cost instead of fictitious Gemini API prices.
+// Revisit if a metered paid tier ever appears.
+export function estimateModelCost(_baseId: string): Model<any>["cost"] {
+  return { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
 }
 
 export function synthesizeDynamicModel(baseId: string, items: AvailableModelItem[]): Model<any> {
@@ -373,10 +363,12 @@ export function buildDynamicPublicModels(catalog?: AvailableModelsCatalog): Arra
 }
 
 export async function refreshCatalog(context: any): Promise<Array<Model<any>>> {
-  // Restore from context.stored first (Issue #41: offline restart support)
+  // Restore from context.stored first for offline restart support,
+  // but only into a pristine store: a failed refresh must not clobber a
+  // fresher in-memory snapshot with older persisted data.
   const storedEnums = context.stored?.["pi-provider-antigravity"]?.modelEnums;
   const storedRuntimeIds = context.stored?.["pi-provider-antigravity"]?.runtimeIds;
-  if (storedEnums || storedRuntimeIds) {
+  if ((storedEnums || storedRuntimeIds) && getCatalogSnapshot().version === 0) {
     updateCatalogStore(storedEnums || {}, storedRuntimeIds || []);
   }
 

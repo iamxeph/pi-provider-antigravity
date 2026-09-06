@@ -62,12 +62,17 @@ function generatePKCE(): { verifier: string; challenge: string } {
   return { verifier, challenge };
 }
 
-export async function fetchProjectId(token: string, endpoint = DEFAULT_ENDPOINT): Promise<string> {
+export async function fetchProjectId(
+  token: string,
+  endpoint = DEFAULT_ENDPOINT,
+  signal?: AbortSignal
+): Promise<string> {
   try {
     const res = await fetch(`${endpoint}/v1internal:loadCodeAssist`, {
       method: "POST",
       headers: buildAntigravityHeaders(token),
       body: JSON.stringify({ metadata: { ideType: "ANTIGRAVITY" } }),
+      signal,
     });
     if (res.ok) {
       const data = (await res.json()) as any;
@@ -178,9 +183,15 @@ export async function refreshAntigravityToken(
     // ignore
   }
 
+  // Re-resolve: a login-time lookup failure pins the "aicode-consumers"
+  // default forever unless refresh retries it. A failed lookup yields that
+  // same default, which must never clobber a known value.
+  const freshProjectId = await fetchProjectId(tokens.access_token, DEFAULT_ENDPOINT, signal);
+  const projectId = freshProjectId !== "aicode-consumers" ? freshProjectId : existingProjectId;
+
   return {
     refresh: tokens.refresh_token || credentials.refresh,
-    access: JSON.stringify({ token: tokens.access_token, projectId: existingProjectId }),
+    access: JSON.stringify({ token: tokens.access_token, projectId }),
     expires: Date.now() + (tokens.expires_in || 3600) * 1000,
   };
 }
