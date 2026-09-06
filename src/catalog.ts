@@ -305,8 +305,11 @@ export function synthesizeDynamicModel(baseId: string, items: AvailableModelItem
   const isClaude = baseId.startsWith("claude-");
   const isGpt = baseId.startsWith("gpt-");
 
-  const defaultContext = isFlash ? 1048576 : isClaude ? 200000 : isGpt ? 128000 : 1048576;
-  const defaultMaxOutput = isGpt ? 32768 : 65536;
+  // Static fallbacks mirror captures/agy_cli_1.1.27/models.resp.json
+  // (Claude maxTokens 250000 / maxOutputTokens 64000, also seen on the wire
+  // in stream_turn8/9). Live refresh overwrites these with catalog values.
+  const defaultContext = isFlash ? 1048576 : isClaude ? 250000 : isGpt ? 128000 : 1048576;
+  const defaultMaxOutput = isClaude ? 64000 : isGpt ? 32768 : 65536;
 
   return {
     id: baseId,
