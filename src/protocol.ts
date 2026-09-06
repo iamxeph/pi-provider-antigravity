@@ -25,7 +25,7 @@ export function formatApiError(status: number, body: string): string {
   return `(${status}): ${trimmed}${hint}`;
 }
 
-export const METADATA_TIMEOUT_MS = 30_000;
+export const METADATA_TIMEOUT_MS = 60_000;
 
 /**
  * Combines the caller's signal with a timeout for metadata calls
@@ -43,7 +43,10 @@ export function withMetadataTimeout(
   } else {
     caller?.addEventListener("abort", onAbort, { once: true });
   }
-  const timer = setTimeout(() => controller.abort(new Error(`metadata call timed out after ${ms}ms`)), ms);
+  const timer = setTimeout(
+    () => controller.abort(new Error(`request timed out after ${Math.round(ms / 1000)}s`)),
+    ms
+  );
   return {
     signal: controller.signal,
     dispose: () => {

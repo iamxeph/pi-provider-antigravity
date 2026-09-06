@@ -473,7 +473,7 @@ export async function fetchAvailableModelsCatalog(
     });
     if (!res.ok) {
       const errText = await res.text();
-      throw new Error(`Failed to fetch models ${formatApiError(res.status, errText)}`);
+      throw new Error(formatApiError(res.status, errText));
     }
     const json = await res.json();
     return parseAvailableModels(json);
