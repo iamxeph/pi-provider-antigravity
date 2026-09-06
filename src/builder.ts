@@ -185,9 +185,14 @@ function normalizeCustomToolSchema(schema: unknown): unknown {
   return out;
 }
 
+/**
+ * Strict agy parity: versioned captures (1.1.26/1.1.27, every declaration)
+ * always use legacy `parameters`, never `parametersJsonSchema` — for Gemini
+ * and non-Gemini models alike. Captured declarations also carry no
+ * anyOf/patternProperties/const keys, hence the normalization below.
+ */
 function convertTools(
-  tools: Array<any> | undefined,
-  useLegacyParameters = false
+  tools: Array<any> | undefined
 ): Array<{ functionDeclarations: Array<any> }> | undefined {
   if (!tools?.length) return undefined;
   return [
@@ -197,9 +202,7 @@ function convertTools(
         return {
           name: tool.name,
           description: tool.description,
-          ...(useLegacyParameters
-            ? { parameters: normalizeCustomToolSchema(schema) }
-            : { parametersJsonSchema: schema }),
+          parameters: normalizeCustomToolSchema(schema),
         };
       }),
     },
@@ -484,7 +487,7 @@ export function buildAntigravityRequestBody(params: BuildRequestBodyParams): Rec
     };
   }
 
-  const tools = convertTools(context.tools, plan.isNonGemini);
+  const tools = convertTools(context.tools);
   if (tools) {
     request.tools = tools;
   }

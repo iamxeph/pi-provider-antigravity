@@ -316,7 +316,7 @@ test("Seam 1: session trajectory and numeric sessionId are deterministic v5 UUID
   assert.ok(n >= minInt64 && n <= maxInt64);
 });
 
-test("Seam 1: tool conversion formats parametersJsonSchema for Gemini and normalizes const", () => {
+test("Seam 1: tool conversion formats legacy parameters for Gemini (agy parity, never parametersJsonSchema)", () => {
   const agentTool = {
     name: "Agent",
     description: "Launch a new agent",
@@ -358,17 +358,20 @@ test("Seam 1: tool conversion formats parametersJsonSchema for Gemini and normal
   const decls = body.request.tools[0].functionDeclarations;
   assert.equal(decls.length, 2);
 
-  // Gemini must use parametersJsonSchema, not parameters
-  assert.equal(decls[0].parameters, undefined);
-  assert.ok(decls[0].parametersJsonSchema);
-  assert.deepEqual(decls[0].parametersJsonSchema.properties.subagent_type, agentTool.parameters.properties.subagent_type);
+  // Strict agy parity: Gemini uses legacy parameters, never parametersJsonSchema
+  // (captures 1.1.26/1.1.27 carry zero parametersJsonSchema declarations).
+  // anyOf/patternProperties are stripped just like the captured declarations.
+  assert.equal(decls[0].parametersJsonSchema, undefined);
+  assert.ok(decls[0].parameters);
+  assert.equal(decls[0].parameters.properties.subagent_type.type, "string");
+  assert.equal(decls[0].parameters.properties.subagent_type.anyOf, undefined);
 
-  // patternProperties must be preserved in parametersJsonSchema for Gemini
-  const todoSchema = decls[1].parametersJsonSchema;
-  assert.ok(todoSchema.properties.metadata.patternProperties);
+  const todoSchema = decls[1].parameters;
+  assert.equal(todoSchema.properties.metadata.patternProperties, undefined);
+  assert.equal(todoSchema.properties.metadata.type, "object");
 });
 
-test("Seam 1: tool conversion formats legacy parameters for Claude/GPT-OSS and strips unsupported fields", () => {
+test("Seam 1: tool conversion formats legacy parameters for non-Gemini and strips unsupported fields", () => {
   const agentTool = {
     name: "Agent",
     description: "Launch a new agent",
@@ -419,7 +422,7 @@ test("Seam 1: tool conversion formats legacy parameters for Claude/GPT-OSS and s
   const decls = body.request.tools[0].functionDeclarations;
   assert.equal(decls.length, 2);
 
-  // Claude/GPT-OSS must use legacy parameters, not parametersJsonSchema
+  // Non-Gemini models use legacy parameters, not parametersJsonSchema (same as Gemini now)
   assert.equal(decls[0].parametersJsonSchema, undefined);
   assert.ok(decls[0].parameters);
 
@@ -466,9 +469,10 @@ test("Seam 1: tool conversion strips $defs and $schema metadata", () => {
     context: { messages: [{ role: "user", content: "hi" }], tools: [toolWithMeta] },
   });
   const geminiDecl = geminiBody.request.tools[0].functionDeclarations[0];
-  assert.ok(geminiDecl?.parametersJsonSchema);
-  assert.equal(geminiDecl.parametersJsonSchema.$schema, undefined);
-  assert.equal(geminiDecl.parametersJsonSchema.$defs, undefined);
+  assert.ok(geminiDecl?.parameters);
+  assert.equal(geminiDecl.parametersJsonSchema, undefined);
+  assert.equal(geminiDecl.parameters.$schema, undefined);
+  assert.equal(geminiDecl.parameters.$defs, undefined);
 
   const claudeBody = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
@@ -618,9 +622,9 @@ test("Seam 1: buildAntigravityRequestBody with complex tools generates valid pay
   assert.ok(geminiBody.request.tools);
   const geminiDecls = geminiBody.request.tools[0].functionDeclarations;
   assert.equal(geminiDecls.length, 2);
-  assert.ok(geminiDecls[0].parametersJsonSchema);
-  assert.equal(geminiDecls[0].parameters, undefined);
-  assert.ok(geminiDecls[0].parametersJsonSchema.properties.subagent_type);
+  assert.ok(geminiDecls[0].parameters);
+  assert.equal(geminiDecls[0].parametersJsonSchema, undefined);
+  assert.ok(geminiDecls[0].parameters.properties.subagent_type);
 
   // Claude request
   const claudeBody = buildAntigravityRequestBody({
