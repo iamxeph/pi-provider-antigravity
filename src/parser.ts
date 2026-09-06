@@ -90,14 +90,18 @@ export function createSseFeed(): {
 
     const response = payload.response || payload;
 
-    // Usage metadata (promptTokenCount includes cached tokens per Google spec)
+    // Usage metadata (promptTokenCount includes cached tokens per Google spec).
+    // output counts thinking tokens too, mirroring the pi-ai Google adapter:
+    // usageMetadata reports candidates and thoughts separately.
     if (response.usageMetadata) {
       const um = response.usageMetadata;
       const promptTokens = typeof um.promptTokenCount === "number" ? um.promptTokenCount : 0;
       const cacheRead = typeof um.cachedContentTokenCount === "number" ? um.cachedContentTokenCount : 0;
       usage.input = Math.max(0, promptTokens - cacheRead);
       usage.cacheRead = cacheRead;
-      if (typeof um.candidatesTokenCount === "number") usage.output = um.candidatesTokenCount;
+      const candidates = typeof um.candidatesTokenCount === "number" ? um.candidatesTokenCount : 0;
+      const thoughts = typeof um.thoughtsTokenCount === "number" ? um.thoughtsTokenCount : 0;
+      usage.output = candidates + thoughts;
       if (typeof um.totalTokenCount === "number") usage.total = um.totalTokenCount;
     }
 
@@ -105,9 +109,11 @@ export function createSseFeed(): {
     if (!candidate) return;
 
     // Sticky: length/error/toolUse are never downgraded by a later STOP.
+    // Mirrors pi-ai mapStopReasonString: only STOP is benign, MAX_TOKENS is
+    // length, every other reason (SAFETY, RECITATION, BLOCKLIST, ...) is error.
     if (candidate.finishReason === "MAX_TOKENS") {
       stopReason = "length";
-    } else if (candidate.finishReason === "SAFETY") {
+    } else if (typeof candidate.finishReason === "string" && candidate.finishReason !== "STOP") {
       stopReason = "error";
     }
 
