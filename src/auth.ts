@@ -75,7 +75,7 @@ export async function fetchProjectId(
       signal,
     });
     if (res.ok) {
-      const data = (await res.json()) as any;
+      const data = (await res.json()) as { cloudaicompanionProject?: string };
       if (data.cloudaicompanionProject) {
         return data.cloudaicompanionProject;
       }
@@ -140,7 +140,11 @@ export async function loginAntigravity(callbacks: OAuthLoginCallbacks): Promise<
     throw new Error(`Failed to exchange token (${tokenRes.status}): ${errText}`);
   }
 
-  const tokens = (await tokenRes.json()) as any;
+  const tokens = (await tokenRes.json()) as {
+    access_token: string;
+    refresh_token?: string;
+    expires_in?: number;
+  };
   const projectId = await fetchProjectId(tokens.access_token);
 
   return {
@@ -173,7 +177,11 @@ export async function refreshAntigravityToken(
     throw new Error(`Failed to refresh token (${res.status}): ${errText}`);
   }
 
-  const tokens = (await res.json()) as any;
+  const tokens = (await res.json()) as {
+    access_token: string;
+    refresh_token?: string;
+    expires_in?: number;
+  };
 
   let existingProjectId = "aicode-consumers";
   try {
