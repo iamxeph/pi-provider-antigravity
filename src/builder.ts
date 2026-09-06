@@ -45,6 +45,8 @@ function resolveThoughtSignature(
  * Checks model family compatibility for thoughtSignature replay.
  * Official agy CLI wire captures demonstrate that:
  * - Gemini models (gemini-3.7, gemini-3.8, etc.) share thoughtSignatures seamlessly.
+ * - Claude models replay thoughtSignatures within the Claude family, part-split
+ *   like Gemini (1.1.27 stream_turn8/9 counter-capture).
  * - Non-Gemini models (Claude, GPT-OSS) do NOT share signatures with Gemini models.
  */
 function isCompatibleModelFamily(msgModel?: string, targetModelId?: string): boolean {

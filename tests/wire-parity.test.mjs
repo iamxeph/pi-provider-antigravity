@@ -243,6 +243,41 @@ for (const dir of DIRS) {
   });
 }
 
+for (const dir of DIRS) {
+  test(`Wire parity (${dir}): Claude thinking replays part-split (counter-capture #14)`, (t) => {
+    const claudeTurns = streamReqs(dir)
+      .map((f) => ({ file: f, req: JSON.parse(fs.readFileSync(`captures/${f}`, "utf-8")) }))
+      .filter(({ req }) => String(req.body?.model ?? "").startsWith("claude-"));
+    if (claudeTurns.length === 0) return t.skip("no Claude turns frozen in this version");
+    const sseBodies = streamReqs(dir).map((f) =>
+      fs.readFileSync(`captures/${f.replace(/\.req\.json$/, ".resp.sse")}`, "utf-8")
+    );
+    const replayed = [];
+    for (const { file, req } of claudeTurns) {
+      const labels = req.body.request.labels;
+      assert.equal(labels.used_claude, "true", `${file}: used_claude`);
+      assert.equal(labels.used_claude_conservative, "true", `${file}: used_claude_conservative`);
+      assert.equal(labels.used_non_gemini_model, "true", `${file}: used_non_gemini_model`);
+      assert.ok(labels.model_enum, `${file}: model_enum`);
+      for (const c of req.body.request.contents) {
+        for (const p of c.parts ?? []) {
+          // Same part-split as Gemini (#15): a thought:true part never carries
+          // the signature — it rides the following visible-text part.
+          if (p.thought === true) assert.equal("thoughtSignature" in p, false, `${file}: thought part`);
+          if (p.thoughtSignature) replayed.push([file, p.thoughtSignature]);
+        }
+      }
+    }
+    // The fixture must prove replay, not drop: at least one follow-up turn
+    // carries a signature, and every replayed value matches the thinking
+    // response SSE verbatim (Claude sends it combined on the closing thought part).
+    assert.ok(replayed.length >= 1, `${dir}: no Claude turn replays a thoughtSignature`);
+    for (const [file, sig] of replayed) {
+      assert.ok(sseBodies.some((sse) => sse.includes(sig)), `${file}: replayed sig missing from Claude SSE`);
+    }
+  });
+}
+
 test("Wire parity: DEFAULT_USER_AGENT tracks the newest capture", () => {
   const newest = DIRS[DIRS.length - 1];
   assert.equal(DEFAULT_USER_AGENT, EXPECTED_UA[newest]);
