@@ -7,12 +7,11 @@ const sseTurn1 = fs.readFileSync("captures/agy_cli_1.1.26/stream_turn1_initial.r
 const sseTurn4 = fs.readFileSync("captures/agy_cli_1.1.26/stream_turn4_thinking.resp.sse", "utf-8");
 
 // Production-path whole-input parse: feed() + close(), the same exits
-// streamAntigravity uses. Assert on the returned result().
+// streamAntigravity uses. Assert on the returned close().
 function parseWhole(rawSse) {
   const feed = createSseFeed();
   feed.feed(rawSse);
-  feed.close();
-  return feed.result();
+  return feed.close();
 }
 
 test("Seam 2: parseWhole extracts thinking and thoughtSignature from Turn 1", () => {
@@ -63,8 +62,8 @@ test("Seam 2: non-STOP finish reasons map to error and stick", () => {
   feed.feed(line("RECITATION", "a"));
   const closing = feed.feed(line("STOP", "b"));
   assert.equal(closing.stopReason, "error");
-  feed.close();
-  assert.equal(feed.result().stopReason, "error");
+  const final = feed.close();
+  assert.equal(final.stopReason, "error");
 });
 
 test("Seam 2: parseWhole handles text responses from Turn 4", () => {

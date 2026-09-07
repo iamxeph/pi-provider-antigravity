@@ -10,22 +10,23 @@ test("Seam 2: feeding in split chunks equals one-shot feed", () => {
   for (const raw of [sseTurn1, sseTurn5]) {
     const whole = createSseFeed();
     whole.feed(raw);
-    whole.close();
-    const expected = whole.result();
+    const { events: _wholeEvents, ...expected } = whole.close();
 
     for (const cut of [1, Math.floor(raw.length / 2), raw.length - 1]) {
       const split = createSseFeed();
       split.feed(raw.slice(0, cut));
       split.feed(raw.slice(cut));
-      split.close();
-      assert.deepEqual(split.result(), expected, `split at ${cut} must match one-shot`);
+      const { events: _splitEvents, ...actual } = split.close();
+      assert.deepEqual(actual, expected, `split at ${cut} must match one-shot`);
     }
   }
 });
 
 test("Seam 2: start/end events balance and deltas reconstruct blocks", () => {
   const feed = createSseFeed();
-  const events = [...feed.feed(sseTurn5).events, ...feed.close().events];
+  const fedEvents = feed.feed(sseTurn5).events;
+  const closing = feed.close();
+  const events = [...fedEvents, ...closing.events];
 
   const starts = events.filter((e) => e.kind === "text_start" || e.kind === "thinking_start");
   const ends = events.filter((e) => e.kind === "text_end" || e.kind === "thinking_end");
@@ -36,7 +37,7 @@ test("Seam 2: start/end events balance and deltas reconstruct blocks", () => {
   }
 
   // Deltas joined per block must equal the accumulated block content.
-  const { content } = feed.result();
+  const { content } = closing;
   const deltas = new Map();
   for (const e of events) {
     if (e.kind === "text_delta" || e.kind === "thinking_delta") {
@@ -61,6 +62,6 @@ test("Seam 2: close() flushes an unterminated trailing line", () => {
   assert.equal(out.events.length, 0, "partial line must not emit yet");
   const closing = feed.close();
   assert.ok(closing.events.length > 0, "close must flush the buffered line");
-  assert.ok(feed.result().content.length >= 1, "flushed line must produce a block");
+  assert.ok(closing.content.length >= 1, "flushed line must produce a block");
 });
 

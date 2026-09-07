@@ -111,14 +111,6 @@ export function streamAntigravity(
         }
       };
 
-      const applyStopReason = (r: "stop" | "toolUse" | "length" | "error") => {
-        if (r === "stop") {
-          if (output.stopReason === "pending") output.stopReason = "stop";
-        } else {
-          output.stopReason = r;
-        }
-      };
-
       const translate = (events: SseBlockEvent[]) => {
         for (const ev of events) {
           if (ev.kind === "text_start" || ev.kind === "thinking_start") {
@@ -150,7 +142,7 @@ export function streamAntigravity(
           } else if (ev.kind === "toolCall") {
             const toolCall = {
               type: "toolCall" as const,
-              id: ev.block.id || `call_${output.content.length}`,
+              id: ev.block.id,
               name: ev.block.name as string,
               arguments: ev.block.arguments || {},
               thoughtSignature: ev.block.thoughtSignature,
@@ -181,28 +173,27 @@ export function streamAntigravity(
 
         const fed = feed.feed(decoder.decode(value, { stream: true }));
         applyUsage(fed.usage);
-        applyStopReason(fed.stopReason);
+        output.stopReason = fed.stopReason;
         translate(fed.events);
       }
 
       const closing = feed.close();
       applyUsage(closing.usage);
-      applyStopReason(closing.stopReason);
+      output.stopReason = closing.stopReason;
       translate(closing.events);
 
-      if (closing.thoughtSignature) {
-        const thinkingBlock = output.content.find((c): c is ThinkingContent => c.type === "thinking");
-        if (thinkingBlock && !thinkingBlock.thinkingSignature) {
-          thinkingBlock.thinkingSignature = closing.thoughtSignature;
-        } else if (!thinkingBlock) {
-          // Lone-signature turn (no thinking block): the signature rides the
-          // last text block's canonical textSignature, never the message.
-          const textBlock = [...output.content].reverse().find((c): c is TextContent => c.type === "text");
-          if (textBlock && !textBlock.textSignature) {
-            textBlock.textSignature = closing.thoughtSignature;
-          }
+      // Signature placement comes from the feed's final content: thinking
+      // blocks take thinkingSignature, text blocks take textSignature.
+      closing.content.forEach((block, index) => {
+        const sig = block.thoughtSignature;
+        if (!sig) return;
+        const target = output.content[index];
+        if (target?.type === "thinking" && !target.thinkingSignature) {
+          target.thinkingSignature = sig;
+        } else if (target?.type === "text" && !target.textSignature) {
+          target.textSignature = sig;
         }
-      }
+      });
 
       const doneReason: "stop" | "toolUse" | "length" =
         output.stopReason === "toolUse" || output.stopReason === "length"
