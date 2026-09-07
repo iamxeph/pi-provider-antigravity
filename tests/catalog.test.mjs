@@ -5,13 +5,11 @@ import {
   parseAvailableModels,
 } from "../src/catalog-refresh.ts";
 import {
-  formatModelsList,
-  formatModelDisplayName,
-} from "../src/catalog-view.ts";
-import {
   buildDynamicPublicModels,
   buildThinkingMap,
   estimateModelCost,
+  formatModelDisplayName,
+  formatModelsList,
   synthesizeDynamicModel,
   resolveModelPlan,
   isCompatibleFamily,
