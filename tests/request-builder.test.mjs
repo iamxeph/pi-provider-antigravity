@@ -4,17 +4,25 @@ import fs from "node:fs";
 import {
   buildAntigravityRequestBody,
 } from "../src/builder.ts";
-import { refreshCatalog } from "../src/catalog-refresh.ts";
+import { refreshCatalog, parseAvailableModels } from "../src/catalog-refresh.ts";
 import {
   resolveModelPlan,
   getCatalogSnapshot,
   getThinkingConfig,
-  STATIC_MODEL_ENUMS,
+  buildThinkingMap,
 } from "../src/model-catalog.ts";
 
-const STATIC_SNAPSHOT = { enums: STATIC_MODEL_ENUMS, runtimeIds: [], version: 0 };
+const modelsJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.1.26/models.resp.json", "utf-8"));
+const FIXTURE_CATALOG = parseAvailableModels(modelsJson);
+const FIXTURE_SNAPSHOT = {
+  enums: FIXTURE_CATALOG.modelEnums,
+  runtimeIds: FIXTURE_CATALOG.models.map((m) => m.id),
+  thinking: buildThinkingMap(FIXTURE_CATALOG.models),
+  deprecated: FIXTURE_CATALOG.deprecated,
+  version: 0,
+};
 const staticPlan = (runtimeModelId) =>
-  resolveModelPlan(runtimeModelId, undefined, STATIC_SNAPSHOT);
+  resolveModelPlan(runtimeModelId, undefined, FIXTURE_SNAPSHOT);
 
 const fixtureTurn1 = JSON.parse(
   fs.readFileSync("captures/agy_cli_1.1.26/stream_turn1_initial.req.json", "utf-8")
@@ -486,47 +494,49 @@ test("Seam 1: tool conversion strips $defs and $schema metadata", () => {
 });
 
 test("Seam 1: resolveModelPlan maps Public Model IDs to Runtime Model IDs", () => {
-  assert.equal(resolveModelPlan("gemini-3.8-flash", "high", STATIC_SNAPSHOT).runtimeModelId, "gemini-3.8-flash-high");
-  assert.equal(resolveModelPlan("gemini-3.8-flash", "medium", STATIC_SNAPSHOT).runtimeModelId, "gemini-3.8-flash-medium");
-  assert.equal(resolveModelPlan("gemini-3.8-flash", "low", STATIC_SNAPSHOT).runtimeModelId, "gemini-3.8-flash-low");
-  assert.equal(resolveModelPlan("gemini-3.8-flash", "off", STATIC_SNAPSHOT).runtimeModelId, "gemini-3.8-flash-low");
+  assert.equal(resolveModelPlan("gemini-3.8-flash", "high", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-3.8-flash-high");
+  assert.equal(resolveModelPlan("gemini-3.8-flash", "medium", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-3.8-flash-medium");
+  assert.equal(resolveModelPlan("gemini-3.8-flash", "low", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-3.8-flash-low");
+  assert.equal(resolveModelPlan("gemini-3.8-flash", "off", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-3.8-flash-low");
 
-  assert.equal(resolveModelPlan("gemini-3.1-pro", "high", STATIC_SNAPSHOT).runtimeModelId, "gemini-pro-agent");
-  assert.equal(resolveModelPlan("gemini-3.1-pro", "low", STATIC_SNAPSHOT).runtimeModelId, "gemini-3.1-pro-low");
+  assert.equal(resolveModelPlan("gemini-3.1-pro", "high", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-pro-agent");
+  assert.equal(resolveModelPlan("gemini-3.1-pro", "low", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-3.1-pro-low");
 
-  assert.equal(resolveModelPlan("claude-opus-4-6", undefined, STATIC_SNAPSHOT).runtimeModelId, "claude-opus-4-6-thinking");
-  assert.equal(resolveModelPlan("claude-sonnet-4-6", undefined, STATIC_SNAPSHOT).runtimeModelId, "claude-sonnet-4-6");
-  assert.equal(resolveModelPlan("gpt-oss-120b", undefined, STATIC_SNAPSHOT).runtimeModelId, "gpt-oss-120b-medium");
+  assert.equal(resolveModelPlan("claude-opus-4-6", undefined, FIXTURE_SNAPSHOT).runtimeModelId, "claude-opus-4-6-thinking");
+  assert.equal(resolveModelPlan("claude-sonnet-4-6", undefined, FIXTURE_SNAPSHOT).runtimeModelId, "claude-sonnet-4-6");
+  assert.equal(resolveModelPlan("gpt-oss-120b", undefined, FIXTURE_SNAPSHOT).runtimeModelId, "gpt-oss-120b-medium");
 
   // Live-captured 2026-09-06 (agy 1.1.26): effort selects the variant runtime ID.
-  assert.equal(resolveModelPlan("gemini-3.7-flash", "high", STATIC_SNAPSHOT).runtimeModelId, "gemini-3.7-flash-high");
-  assert.equal(resolveModelPlan("gemini-3.7-flash", "medium", STATIC_SNAPSHOT).runtimeModelId, "gemini-3.7-flash-medium");
-  assert.equal(resolveModelPlan("gemini-3.7-flash", "low", STATIC_SNAPSHOT).runtimeModelId, "gemini-3.7-flash-low");
+  assert.equal(resolveModelPlan("gemini-3.7-flash", "high", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-3.7-flash-high");
+  assert.equal(resolveModelPlan("gemini-3.7-flash", "medium", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-3.7-flash-medium");
+  assert.equal(resolveModelPlan("gemini-3.7-flash", "low", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-3.7-flash-low");
 
   // If already suffixed, keep it unchanged
-  assert.equal(resolveModelPlan("gemini-3.7-flash-high", undefined, STATIC_SNAPSHOT).runtimeModelId, "gemini-3.7-flash-high");
+  assert.equal(resolveModelPlan("gemini-3.7-flash-high", undefined, FIXTURE_SNAPSHOT).runtimeModelId, "gemini-3.7-flash-high");
 });
 
 test("Seam 1: resolveModelPlan bundles enum, thinking budget, and non-Gemini flag", () => {
-  const flash = resolveModelPlan("gemini-3.8-flash", "high", STATIC_SNAPSHOT);
+  const flash = resolveModelPlan("gemini-3.8-flash", "high", FIXTURE_SNAPSHOT);
   assert.equal(flash.modelEnum, "MODEL_PLACEHOLDER_M318");
   assert.deepEqual(flash.thinkingConfig, { includeThoughts: true, thinkingBudget: -1 });
   assert.equal(flash.isNonGemini, false);
   assert.equal(flash.isClaude, false);
 
-  const claude = resolveModelPlan("claude-opus-4-6", undefined, STATIC_SNAPSHOT);
+  const claude = resolveModelPlan("claude-opus-4-6", undefined, FIXTURE_SNAPSHOT);
   assert.equal(claude.modelEnum, "MODEL_PLACEHOLDER_M26");
   assert.deepEqual(claude.thinkingConfig, { includeThoughts: true, thinkingBudget: 1024 });
   assert.equal(claude.isNonGemini, true);
   assert.equal(claude.isClaude, true);
 
-  const unknown = resolveModelPlan("gemini-99.9-flash-high", undefined, STATIC_SNAPSHOT);
-  assert.equal(unknown.modelEnum, "");
+  assert.throws(
+    () => resolveModelPlan("gemini-99.9-flash-high", undefined, FIXTURE_SNAPSHOT),
+    /Unknown model "gemini-99.9-flash-high"/
+  );
 });
 
 test("Seam 1: resolveModelPlan reads the passed snapshot, not live globals", async () => {
-  const stale = getCatalogSnapshot();
-  assert.equal(resolveModelPlan("x-high", undefined, stale).modelEnum, "");
+  const stale = { enums: {}, runtimeIds: [], thinking: {}, version: 0 };
+  assert.throws(() => resolveModelPlan("x-high", undefined, stale), /Unknown model "x-high"/);
 
   await refreshCatalog({
     allowNetwork: false,
@@ -541,7 +551,7 @@ test("Seam 1: resolveModelPlan reads the passed snapshot, not live globals", asy
 
   const live = getCatalogSnapshot();
   assert.ok(live.version > stale.version);
-  assert.equal(resolveModelPlan("x-high", undefined, stale).modelEnum, "");
+  assert.throws(() => resolveModelPlan("x-high", undefined, stale), /Unknown model "x-high"/);
   assert.equal(resolveModelPlan("x-high", undefined, live).modelEnum, "ENUM_X");
 });
 

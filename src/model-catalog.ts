@@ -44,48 +44,6 @@ export function isCompatibleFamily(msgModel?: string, targetModelId?: string): b
   return extractBaseModelId(msgModel) === extractBaseModelId(targetModelId);
 }
 
-/**
- * Static fallback model enums captured directly from agy CLI models.resp.json.
- * Single definition: Model Catalog merges these with the active snapshot,
- * and the request builder falls back to them when no snapshot enums apply.
- */
-export const STATIC_MODEL_ENUMS: Record<string, string> = {
-  // Gemini 3.8 Flash
-  "gemini-3.8-flash": "MODEL_PLACEHOLDER_M318",
-  "gemini-3.8-flash-high": "MODEL_PLACEHOLDER_M318",
-  "gemini-3.8-flash-medium": "MODEL_PLACEHOLDER_M319",
-  "gemini-3.8-flash-low": "MODEL_PLACEHOLDER_M320",
-  "gemini-3.8-flash-tiered": "MODEL_PLACEHOLDER_M322",
-  // Gemini 3.7 Flash
-  "gemini-3.7-flash": "MODEL_PLACEHOLDER_M298",
-  "gemini-3.7-flash-high": "MODEL_PLACEHOLDER_M298",
-  "gemini-3.7-flash-medium": "MODEL_PLACEHOLDER_M299",
-  "gemini-3.7-flash-low": "MODEL_PLACEHOLDER_M300",
-  "gemini-3.7-flash-tiered": "MODEL_PLACEHOLDER_M301",
-  // Gemini 3.6 Flash
-  "gemini-3.6-flash": "MODEL_PLACEHOLDER_M71",
-  "gemini-3.6-flash-high": "MODEL_PLACEHOLDER_M71",
-  "gemini-3.6-flash-medium": "MODEL_PLACEHOLDER_M72",
-  "gemini-3.6-flash-low": "MODEL_PLACEHOLDER_M73",
-  // Gemini 3.5 Flash
-  "gemini-3.5-flash": "MODEL_PLACEHOLDER_M84",
-  "gemini-3.5-flash-low": "MODEL_PLACEHOLDER_M20",
-  "gemini-3.5-flash-extra-low": "MODEL_PLACEHOLDER_M187",
-  "gemini-3-flash-agent": "MODEL_PLACEHOLDER_M84",
-  // Gemini 3.1 Pro
-  "gemini-3.1-pro": "MODEL_PLACEHOLDER_M16",
-  "gemini-3.1-pro-high": "MODEL_PLACEHOLDER_M37",
-  "gemini-3.1-pro-low": "MODEL_PLACEHOLDER_M36",
-  "gemini-pro-agent": "MODEL_PLACEHOLDER_M16",
-  // Claude
-  "claude-sonnet-4-6": "MODEL_PLACEHOLDER_M35",
-  "claude-opus-4-6": "MODEL_PLACEHOLDER_M26",
-  "claude-opus-4-6-thinking": "MODEL_PLACEHOLDER_M26",
-  // GPT-OSS
-  "gpt-oss-120b": "MODEL_OPENAI_GPT_OSS_120B_MEDIUM",
-  "gpt-oss-120b-medium": "MODEL_OPENAI_GPT_OSS_120B_MEDIUM",
-};
-
 export function getThinkingConfig(modelId: string, effort?: string): { includeThoughts: boolean; thinkingBudget: number } {
   const isOff = effort === "off" || effort === "none";
   if (isOff) {
@@ -134,6 +92,8 @@ export interface AvailableModelItem {
   remainingFraction?: number;
   resetTime?: string;
   supportsThinking?: boolean;
+  thinkingBudget?: number;
+  minThinkingBudget?: number;
   supportsImages?: boolean;
   maxTokens?: number;
   maxOutputTokens?: number;
@@ -143,20 +103,47 @@ export interface AvailableModelsCatalog {
   models: AvailableModelItem[];
   modelEnums: Record<string, string>;
   agentModelSorts?: string[];
+  deprecated?: Record<string, string>;
 }
 
 // Active catalog state: single versioned snapshot. refreshCatalog owns writes;
-// request paths take one snapshot per call so enums and runtime IDs always come
-// from the same refresh generation (see Model Plan in CONTEXT.md).
+// request paths take one snapshot per call so enums, runtime IDs, and thinking
+// configs always come from the same refresh generation (see Model Plan in CONTEXT.md).
+export interface CatalogThinking {
+  budget?: number;
+  supportsThinking?: boolean;
+}
+
 export interface CatalogSnapshot {
   enums: Record<string, string>;
   runtimeIds: string[];
+  thinking?: Record<string, CatalogThinking>;
+  deprecated?: Record<string, string>;
   version: number;
 }
 
+/**
+ * Builds the per-Runtime-ID thinking lookup for a snapshot generation from
+ * parsed catalog items. Pure: shared by the refresh path and tests so both
+ * derive the same snapshot shape from one parse.
+ */
+export function buildThinkingMap(models: AvailableModelItem[]): Record<string, CatalogThinking> {
+  return Object.fromEntries(
+    models.map((m) => [
+      m.id,
+      {
+        ...(typeof m.thinkingBudget === "number" ? { budget: m.thinkingBudget } : {}),
+        supportsThinking: m.supportsThinking ?? false,
+      },
+    ]),
+  );
+}
+
 let activeStore: CatalogSnapshot = {
-  enums: { ...STATIC_MODEL_ENUMS },
+  enums: {},
   runtimeIds: [],
+  thinking: {},
+  deprecated: {},
   version: 0,
 };
 
@@ -164,6 +151,10 @@ export function getCatalogSnapshot(): CatalogSnapshot {
   return {
     enums: { ...activeStore.enums },
     runtimeIds: [...activeStore.runtimeIds],
+    thinking: Object.fromEntries(
+      Object.entries(activeStore.thinking ?? {}).map(([id, info]) => [id, { ...info }]),
+    ),
+    deprecated: { ...(activeStore.deprecated ?? {}) },
     version: activeStore.version,
   };
 }
@@ -173,12 +164,19 @@ export function getCatalogSnapshot(): CatalogSnapshot {
  * the refresh path in catalog-refresh.ts. Request paths never call this —
  * they read via getCatalogSnapshot and pass the snapshot explicitly.
  */
-export function updateCatalogStore(enums: Record<string, string>, runtimeIds: string[]): void {
+export function updateCatalogStore(
+  enums: Record<string, string>,
+  runtimeIds: string[],
+  thinking: Record<string, CatalogThinking> = {},
+  deprecated: Record<string, string> = {}
+): void {
   // A fresh generation is complete: replace instead of merging, so enums for
   // server-removed models are evicted instead of pinned forever.
   activeStore = {
-    enums: { ...STATIC_MODEL_ENUMS, ...enums },
+    enums: { ...enums },
     runtimeIds: [...new Set(runtimeIds)],
+    thinking: { ...thinking },
+    deprecated: { ...deprecated },
     version: activeStore.version + 1,
   };
 }
@@ -204,49 +202,9 @@ function resolveRuntimeModelId(
   const isLow = isOff || effort === "low" || effort === "minimal";
   const isMedium = effort === "medium";
 
-  // Known specific models with legacy parity mappings
-  if (modelId === "gemini-3.8-flash") {
-    if (isLow) return "gemini-3.8-flash-low";
-    if (isMedium) return "gemini-3.8-flash-medium";
-    return "gemini-3.8-flash-high";
-  }
-
-  if (modelId === "gemini-3.7-flash") {
-    if (isLow) return "gemini-3.7-flash-low";
-    if (isMedium) return "gemini-3.7-flash-medium";
-    return "gemini-3.7-flash-high";
-  }
-
-  if (modelId === "gemini-3.6-flash") {
-    if (isLow) return "gemini-3.6-flash-low";
-    if (isMedium) return "gemini-3.6-flash-medium";
-    return "gemini-3.6-flash-high";
-  }
-
-  if (modelId === "gemini-3.5-flash") {
-    if (isLow) return "gemini-3.5-flash-extra-low";
-    if (isMedium) return "gemini-3.5-flash-low";
-    return "gemini-3-flash-agent";
-  }
-
-  if (modelId === "gemini-3.1-pro") {
-    if (effort === "high" || effort === "xhigh") return "gemini-pro-agent";
-    return "gemini-3.1-pro-low";
-  }
-
-  if (modelId === "claude-opus-4-6") {
-    return "claude-opus-4-6-thinking";
-  }
-
-  if (modelId === "claude-sonnet-4-6") {
-    return "claude-sonnet-4-6";
-  }
-
-  if (modelId === "gpt-oss-120b") {
-    return "gpt-oss-120b-medium";
-  }
-
-  // Dynamic tier resolution for newly introduced models (e.g. gemini-3.9-flash, claude-opus-4-7, etc.)
+  // Tier resolution against the live snapshot: effort picks suffix candidates
+  // in preference order, the first one the server lists wins — so newly
+  // released models (e.g. gemini-3.9-flash) resolve with no code change.
   if (Array.isArray(availableRuntimeIds) && availableRuntimeIds.length > 0) {
     const candidates: string[] = [];
     if (isLow) {
@@ -307,14 +265,70 @@ export function resolveModelPlan(
   effort?: string,
   snapshot: CatalogSnapshot = getCatalogSnapshot()
 ): ModelPlan {
-  const runtimeModelId = resolveRuntimeModelId(publicModelId, effort, snapshot.runtimeIds);
+  const runtimeModelId = followRenames(
+    resolveRuntimeModelId(publicModelId, effort, snapshot.runtimeIds),
+    snapshot
+  );
+  const modelEnum = snapshot.enums[runtimeModelId];
+  if (!modelEnum) {
+    // Fail fast: a retired or mistyped ID must surface here with guidance,
+    // not as a cryptic server rejection for an empty model_enum label.
+    throw new Error(
+      `Unknown model "${runtimeModelId}" (not in catalog snapshot v${snapshot.version}). ` +
+        `Run /antigravity refresh and pick a current model.`
+    );
+  }
   return {
     runtimeModelId,
-    modelEnum: snapshot.enums[runtimeModelId] || "",
-    thinkingConfig: getThinkingConfig(runtimeModelId, effort),
+    modelEnum,
+    thinkingConfig: resolveThinkingConfig(runtimeModelId, effort, snapshot),
     isNonGemini: !runtimeModelId.startsWith("gemini-"),
     isClaude: runtimeModelId.startsWith("claude-"),
   };
+}
+
+/**
+ * Follows server-directed renames (deprecatedModelIds), e.g.
+ * gemini-3.1-pro-high → gemini-pro-agent. Applied uniformly to derived and
+ * explicitly passed IDs: the server lists the old ID as deprecated, so new
+ * code must not keep sending it. Cycles terminate via the visited set.
+ */
+function followRenames(runtimeModelId: string, snapshot: CatalogSnapshot): string {
+  const renamed = snapshot.deprecated;
+  if (!renamed) return runtimeModelId;
+  let current = runtimeModelId;
+  const seen = new Set<string>([current]);
+  while (renamed[current] && !seen.has(renamed[current])) {
+    current = renamed[current];
+    seen.add(current);
+  }
+  return current;
+}
+
+/**
+ * Resolves the thinking config for one Runtime Model ID from a single snapshot
+ * generation. Snapshot wire values win; the hardcoded heuristic below only
+ * serves snapshots without per-ID thinking data (pre-budget persists) and
+ * models the wire marks as non-thinking resolve to disabled thoughts.
+ */
+function resolveThinkingConfig(
+  runtimeModelId: string,
+  effort?: string,
+  snapshot: CatalogSnapshot = getCatalogSnapshot()
+): { includeThoughts: boolean; thinkingBudget: number } {
+  if (effort === "off" || effort === "none") {
+    return { includeThoughts: false, thinkingBudget: 0 };
+  }
+  const info = snapshot.thinking?.[runtimeModelId];
+  if (info) {
+    if (typeof info.budget === "number") {
+      return { includeThoughts: true, thinkingBudget: info.budget };
+    }
+    if (!info.supportsThinking) {
+      return { includeThoughts: false, thinkingBudget: 0 };
+    }
+  }
+  return getThinkingConfig(runtimeModelId, effort);
 }
 
 // Antigravity is quota-based with no per-token billing, so every model

@@ -10,6 +10,7 @@ import {
 } from "../src/catalog-view.ts";
 import {
   buildDynamicPublicModels,
+  buildThinkingMap,
   estimateModelCost,
   synthesizeDynamicModel,
   resolveModelPlan,
@@ -29,9 +30,32 @@ test("Seam 3: parseAvailableModels extracts models and model_enum", () => {
   assert.equal(flash37.modelEnum, "MODEL_PLACEHOLDER_M298");
   assert.equal(flash37.supportsThinking, true);
 
+  // thinkingBudget/minThinkingBudget ride the wire per Runtime Model ID
+  // (captures/agy_cli_1.1.26/models.resp.json) — parse must keep them.
+  assert.equal(flash37.thinkingBudget, -1);
+  assert.equal(flash37.minThinkingBudget, 32);
+
+  const flash37med = catalog.models.find((m) => m.id === "gemini-3.7-flash-medium");
+  assert.ok(flash37med);
+  assert.equal(flash37med.thinkingBudget, 4000);
+
+  const flash37low = catalog.models.find((m) => m.id === "gemini-3.7-flash-low");
+  assert.ok(flash37low);
+  assert.equal(flash37low.thinkingBudget, 1000);
+
   const claudeSonnet = catalog.models.find((m) => m.id === "claude-sonnet-4-6");
   assert.ok(claudeSonnet);
   assert.equal(claudeSonnet.modelEnum, "MODEL_PLACEHOLDER_M35");
+  assert.equal(claudeSonnet.thinkingBudget, 1024);
+
+  const gpt = catalog.models.find((m) => m.id === "gpt-oss-120b-medium");
+  assert.ok(gpt);
+  assert.equal(gpt.thinkingBudget, 8192);
+
+  // Models without thinking fields on the wire keep them undefined.
+  const lite = catalog.models.find((m) => m.id === "gemini-2.5-flash");
+  assert.ok(lite);
+  assert.equal(lite.thinkingBudget, undefined);
 
   // modelEnums dictionary mapping
   assert.equal(catalog.modelEnums["gemini-3.7-flash-high"], "MODEL_PLACEHOLDER_M298");
@@ -193,7 +217,11 @@ test("Seam 3: buildDynamicPublicModels dynamically synthesizes unreleased future
 
 test("Seam 3: resolveModelPlan dynamically resolves tiers for new models", () => {
   const snapshot = {
-    enums: {},
+    enums: {
+      "gemini-99.9-flash-high": "ENUM_99_HIGH",
+      "gemini-99.9-flash-medium": "ENUM_99_MED",
+      "gemini-99.9-flash-low": "ENUM_99_LOW",
+    },
     runtimeIds: [
       "gemini-99.9-flash-high",
       "gemini-99.9-flash-medium",
@@ -207,6 +235,69 @@ test("Seam 3: resolveModelPlan dynamically resolves tiers for new models", () =>
   assert.equal(resolveModelPlan("gemini-99.9-flash", "low", snapshot).runtimeModelId, "gemini-99.9-flash-low");
   assert.equal(resolveModelPlan("gemini-99.9-flash", "off", snapshot).runtimeModelId, "gemini-99.9-flash-low");
   assert.equal(resolveModelPlan("gemini-99.9-flash", undefined, snapshot).runtimeModelId, "gemini-99.9-flash-high");
+  // No per-ID thinking data in this snapshot: the hardcoded heuristic fills in.
+  assert.deepEqual(resolveModelPlan("gemini-99.9-flash", "medium", snapshot).thinkingConfig, {
+    includeThoughts: true,
+    thinkingBudget: 4000,
+  });
+});
+
+test("Seam 3: resolveModelPlan prefers snapshot wire values over heuristics", () => {
+  const catalog = parseAvailableModels(modelsJson);
+  const snapshot = {
+    enums: catalog.modelEnums,
+    runtimeIds: catalog.models.map((m) => m.id),
+    thinking: buildThinkingMap(catalog.models),
+    deprecated: catalog.deprecated,
+    version: 1,
+  };
+
+  // Expected values read from the fixture itself, never hardcoded here.
+  const cases = [
+    ["gemini-3.7-flash", "high", "gemini-3.7-flash-high"],
+    ["gemini-3.7-flash", "medium", "gemini-3.7-flash-medium"],
+    ["gemini-3.7-flash", "low", "gemini-3.7-flash-low"],
+    ["gemini-3.1-pro", "high", "gemini-pro-agent"],
+    ["gemini-3.1-pro", "low", "gemini-3.1-pro-low"],
+    ["claude-sonnet-4-6", undefined, "claude-sonnet-4-6"],
+    ["gpt-oss-120b", undefined, "gpt-oss-120b-medium"],
+  ];
+  for (const [publicId, effort, runtimeId] of cases) {
+    const wire = modelsJson.models[runtimeId];
+    const plan = resolveModelPlan(publicId, effort, snapshot);
+    assert.equal(plan.runtimeModelId, runtimeId);
+    assert.equal(plan.modelEnum, wire.model);
+    assert.deepEqual(plan.thinkingConfig, {
+      includeThoughts: true,
+      thinkingBudget: wire.thinkingBudget,
+    });
+  }
+});
+
+test("Seam 3: resolveModelPlan disables thoughts for wire-marked non-thinking models", () => {
+  const catalog = parseAvailableModels(modelsJson);
+  const snapshot = {
+    enums: catalog.modelEnums,
+    runtimeIds: catalog.models.map((m) => m.id),
+    thinking: buildThinkingMap(catalog.models),
+    version: 1,
+  };
+  // gemini-2.5-flash ships no thinking fields on the wire: absent means off.
+  const plan = resolveModelPlan("gemini-2.5-flash", undefined, snapshot);
+  assert.deepEqual(plan.thinkingConfig, { includeThoughts: false, thinkingBudget: 0 });
+});
+
+test("Seam 3: resolveModelPlan throws for IDs missing from the snapshot", () => {
+  const snapshot = {
+    enums: { "gemini-3.7-flash-high": "MODEL_PLACEHOLDER_M298" },
+    runtimeIds: ["gemini-3.7-flash-high"],
+    thinking: {},
+    version: 3,
+  };
+  assert.throws(
+    () => resolveModelPlan("gemini-3.6-flash-high", undefined, snapshot),
+    /Unknown model "gemini-3.6-flash-high".*\/antigravity refresh/
+  );
 });
 
 test("Seam 3: buildAntigravityRequestBody uses the plan model_enum", () => {
@@ -223,4 +314,44 @@ test("Seam 3: buildAntigravityRequestBody uses the plan model_enum", () => {
   });
 
   assert.equal(body.request.labels.model_enum, "MODEL_PLACEHOLDER_M999");
+});
+
+test("Seam 3: parseAvailableModels extracts server-directed renames", () => {
+  const catalog = parseAvailableModels(modelsJson);
+  assert.deepEqual(catalog.deprecated, {
+    "gemini-3.1-pro-high": "gemini-pro-agent",
+  });
+});
+
+test("Seam 3: resolveModelPlan follows server-directed renames", () => {
+  const catalog = parseAvailableModels(modelsJson);
+  const snapshot = {
+    enums: catalog.modelEnums,
+    runtimeIds: catalog.models.map((m) => m.id),
+    thinking: buildThinkingMap(catalog.models),
+    deprecated: catalog.deprecated,
+    version: 1,
+  };
+  // Redirect applies uniformly, whether the old ID was derived or passed directly.
+  assert.equal(resolveModelPlan("gemini-3.1-pro", "high", snapshot).runtimeModelId, "gemini-pro-agent");
+  assert.equal(resolveModelPlan("gemini-3.1-pro-high", undefined, snapshot).runtimeModelId, "gemini-pro-agent");
+  assert.equal(
+    resolveModelPlan("gemini-3.1-pro-high", undefined, snapshot).modelEnum,
+    modelsJson.models["gemini-pro-agent"].model
+  );
+});
+
+test("Seam 3: unlisted 3.5 tiers fail fast instead of guessing", () => {
+  const catalog = parseAvailableModels(modelsJson);
+  const snapshot = {
+    enums: catalog.modelEnums,
+    runtimeIds: catalog.models.map((m) => m.id),
+    thinking: buildThinkingMap(catalog.models),
+    deprecated: catalog.deprecated,
+    version: 1,
+  };
+  // gemini-3.5-flash-low exists on the wire so low resolves; -medium/-high
+  // were never listed (3.5 sits outside Recommended sorts) → throw, don't guess.
+  assert.equal(resolveModelPlan("gemini-3.5-flash", "low", snapshot).runtimeModelId, "gemini-3.5-flash-low");
+  assert.throws(() => resolveModelPlan("gemini-3.5-flash", "medium", snapshot), /Unknown model/);
 });

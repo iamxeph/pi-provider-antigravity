@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { streamAntigravity } from "../src/stream.ts";
 import { buildAntigravityRequestBody } from "../src/builder.ts";
-import { resolveModelPlan, STATIC_MODEL_ENUMS } from "../src/model-catalog.ts";
+import { resolveModelPlan, buildThinkingMap, updateCatalogStore } from "../src/model-catalog.ts";
+import { parseAvailableModels } from "../src/catalog-refresh.ts";
 
 const sseTurn5 = fs.readFileSync("captures/agy_cli_1.1.26/stream_turn5_multiturn.resp.sse", "utf-8");
 const sseLoneSig = fs.readFileSync(
@@ -13,7 +14,25 @@ const sseLoneSig = fs.readFileSync(
 // Expected signature straight from the fixture text — independent of the parser.
 const loneSig = sseLoneSig.match(/"thoughtSignature":\s*"([^"]+)"/)[1];
 
-const STATIC_SNAPSHOT = { enums: STATIC_MODEL_ENUMS, runtimeIds: [], version: 0 };
+const FIXTURE_CATALOG = parseAvailableModels(
+  JSON.parse(fs.readFileSync("captures/agy_cli_1.1.26/models.resp.json", "utf-8"))
+);
+const FIXTURE_SNAPSHOT = {
+  enums: FIXTURE_CATALOG.modelEnums,
+  runtimeIds: FIXTURE_CATALOG.models.map((m) => m.id),
+  thinking: buildThinkingMap(FIXTURE_CATALOG.models),
+  deprecated: FIXTURE_CATALOG.deprecated,
+  version: 0,
+};
+
+// streamAntigravity resolves against the live snapshot: seed it as a completed
+// refresh would, so adapter tests exercise parsing — not catalog misses.
+updateCatalogStore(
+  FIXTURE_SNAPSHOT.enums,
+  FIXTURE_SNAPSHOT.runtimeIds,
+  FIXTURE_SNAPSHOT.thinking,
+  FIXTURE_SNAPSHOT.deprecated || {}
+);
 
 function stubFetchWithSse(rawSse, chunkBytes = 4096) {
   const bytes = new TextEncoder().encode(rawSse);
@@ -92,7 +111,7 @@ test("Seam 2 (#16): lone thoughtSignature surfaces on the message and replays in
   // Builder continuation replays it as [{text, thoughtSignature}] (agy CLI shape).
   const body = buildAntigravityRequestBody({
     projectId: "test-project",
-    plan: resolveModelPlan("gemini-3.8-flash-high", undefined, STATIC_SNAPSHOT),
+    plan: resolveModelPlan("gemini-3.8-flash-high", undefined, FIXTURE_SNAPSHOT),
     context: {
       messages: [{ role: "user", content: "hi" }, message, { role: "user", content: "next" }],
     },

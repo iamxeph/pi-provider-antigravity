@@ -25,8 +25,8 @@ test("Catalog refresh: offline returns stored models without fetching", async ()
     });
     assert.deepEqual(models, storedModels);
     assert.equal(fetched, false);
-    // Static fallback enums ship in the snapshot even before any refresh.
-    assert.ok(getCatalogSnapshot().enums["gemini-3.8-flash-high"]);
+    // Before any refresh the snapshot is empty: enums come only from fetch or restore.
+    assert.deepEqual(getCatalogSnapshot().enums, {});
   } finally {
     globalThis.fetch = realFetch;
   }
@@ -49,6 +49,8 @@ test("Catalog refresh: stored enums and runtime IDs restore active state", async
       "pi-provider-antigravity": {
         modelEnums: { "x-high": "ENUM_X" },
         runtimeIds: ["x-high"],
+        thinking: { "x-high": { budget: 4000, supportsThinking: true } },
+        deprecated: { "old-high": "x-high" },
       },
     },
   });
@@ -56,6 +58,8 @@ test("Catalog refresh: stored enums and runtime IDs restore active state", async
   const snap = getCatalogSnapshot();
   assert.ok(snap.runtimeIds.includes("x-high"));
   assert.equal(snap.enums["x-high"], "ENUM_X");
+  assert.deepEqual(snap.thinking?.["x-high"], { budget: 4000, supportsThinking: true });
+  assert.deepEqual(snap.deprecated, { "old-high": "x-high" });
 });
 
 test("Catalog refresh: fresh fetch builds dynamic models and publishes", async () => {
@@ -84,6 +88,8 @@ test("Catalog refresh: fresh fetch builds dynamic models and publishes", async (
     assert.deepEqual(persist.models, models);
     assert.equal(typeof persist.checkedAt, "number");
     assert.deepEqual(persist["pi-provider-antigravity"].modelEnums, expected.modelEnums);
+    assert.equal(persist["pi-provider-antigravity"].thinking["gemini-3.7-flash-medium"].budget, 4000);
+    assert.deepEqual(persist["pi-provider-antigravity"].deprecated, expected.deprecated);
   } finally {
     globalThis.fetch = realFetch;
   }
@@ -151,6 +157,29 @@ test("Catalog refresh: persisted state never clobbers a fresher snapshot", async
     const snap = getCatalogSnapshot();
     assert.ok(!("stale-model-high" in snap.enums), "older persisted data must not clobber the snapshot");
     assert.ok(snap.runtimeIds.length > 0, "fresher runtime IDs must survive");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Catalog refresh: server-removed models evict uniformly, no pinned fallbacks", async () => {
+  const realFetch = globalThis.fetch;
+  const prunedJson = {
+    ...modelsJson,
+    models: { ...modelsJson.models },
+  };
+  delete prunedJson.models["gemini-3.6-flash-high"];
+  const credential = { access: JSON.stringify({ token: "t", projectId: "p" }) };
+  try {
+    globalThis.fetch = async () => ({ ok: true, json: async () => modelsJson });
+    await refreshCatalog({ allowNetwork: true, credential, stored: {} });
+    assert.ok("gemini-3.6-flash-high" in getCatalogSnapshot().enums);
+
+    globalThis.fetch = async () => ({ ok: true, json: async () => prunedJson });
+    await refreshCatalog({ allowNetwork: true, credential, stored: {} });
+    const snap = getCatalogSnapshot();
+    assert.ok(!("gemini-3.6-flash-high" in snap.enums), "retired IDs must evict like any other");
+    assert.ok(!snap.runtimeIds.includes("gemini-3.6-flash-high"));
   } finally {
     globalThis.fetch = realFetch;
   }
