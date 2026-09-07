@@ -8,8 +8,7 @@ import type { Model } from "@earendil-works/pi-ai";
  * Model Catalog refresh (wire, ports & adapters): fetchAvailableModels fetch,
  * Capture Fixture-shaped parse, and Catalog Persistence publish.
  * Produces AvailableModelsCatalog values and records generations via
- * updateCatalogStore; all pure mapping lives in model-catalog.ts and all
- * presentation (formatModelsList) lives in catalog-view.ts.
+ * updateCatalogStore; all pure mapping and presentation lives in model-catalog.ts.
  */
 export async function refreshCatalog(context: any): Promise<Array<Model<any>>> {
   // Restore from context.stored first for offline restart support,

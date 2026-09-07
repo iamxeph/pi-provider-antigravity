@@ -10,7 +10,7 @@ import {
 } from "./catalog-refresh.ts";
 import {
   formatModelsList,
-} from "./catalog-view.ts";
+} from "./model-catalog.ts";
 
 const USAGE_TEXT =
   "Usage: /antigravity <command>\n\nCommands:\n  usage    Show 5h and weekly quota pool limits\n  models   List recommended models with context window and remaining quota (alias: model)\n  refresh  Force refresh model catalog\n  login    Run /login antigravity";
