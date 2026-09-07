@@ -30,9 +30,11 @@ test("Seam 2: parseWhole extracts thinking and thoughtSignature from Turn 1", ()
   assert.equal(toolCallBlock.id, "call_123908");
   assert.equal(toolCallBlock.arguments.DirectoryPath, "/home/user/.gemini/antigravity-cli/scratch");
 
-  // Critical: thoughtSignature must be captured!
-  assert.ok(toolCallBlock.thoughtSignature || thinkingBlock.thoughtSignature, "thoughtSignature must be present");
-  const sig = toolCallBlock.thoughtSignature || thinkingBlock.thoughtSignature;
+  // Critical: thoughtSignature must be captured, SDK-spelled by the parser:
+  // toolCalls keep thoughtSignature, thinking blocks take thinkingSignature.
+  assert.ok(toolCallBlock.thoughtSignature || thinkingBlock.thinkingSignature, "thoughtSignature must be present");
+  assert.equal("thoughtSignature" in thinkingBlock, false, "thinking blocks must not carry the wire spelling");
+  const sig = toolCallBlock.thoughtSignature || thinkingBlock.thinkingSignature;
   assert.ok(sig.startsWith("EtUOCtIOARFN"), "Signature should match base64 fixture");
 });
 

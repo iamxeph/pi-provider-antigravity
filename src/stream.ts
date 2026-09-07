@@ -130,7 +130,7 @@ export function streamAntigravity(
               stream.push({ type: "text_delta", contentIndex: ev.index, delta: ev.delta, partial: output });
             } else if (ev.kind === "thinking_delta" && block?.type === "thinking") {
               block.thinking += ev.delta;
-              if (ev.thoughtSignature) block.thinkingSignature = ev.thoughtSignature;
+              if (ev.thinkingSignature !== undefined) block.thinkingSignature = ev.thinkingSignature;
               stream.push({ type: "thinking_delta", contentIndex: ev.index, delta: ev.delta, partial: output });
             }
           } else if (ev.kind === "text_end" || ev.kind === "thinking_end") {
@@ -182,16 +182,15 @@ export function streamAntigravity(
       output.stopReason = closing.stopReason;
       translate(closing.events);
 
-      // Signature placement comes from the feed's final content: thinking
-      // blocks take thinkingSignature, text blocks take textSignature.
+      // Signature placement is complete in the feed's final content
+      // (SDK-spelled by the parser): copy verbatim, no respelling here.
       closing.content.forEach((block, index) => {
-        const sig = block.thoughtSignature;
-        if (!sig) return;
         const target = output.content[index];
-        if (target?.type === "thinking" && !target.thinkingSignature) {
-          target.thinkingSignature = sig;
-        } else if (target?.type === "text" && !target.textSignature) {
-          target.textSignature = sig;
+        if (!target) return;
+        if (block.type === "thinking" && target.type === "thinking") {
+          if (block.thinkingSignature !== undefined) target.thinkingSignature = block.thinkingSignature;
+        } else if (block.type === "text" && target.type === "text") {
+          if (block.textSignature !== undefined) target.textSignature = block.textSignature;
         }
       });
 
