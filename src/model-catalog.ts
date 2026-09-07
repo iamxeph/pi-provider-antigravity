@@ -18,6 +18,33 @@ export function extractBaseModelId(runtimeId: string): string {
 }
 
 /**
+ * Checks Model Family compatibility for thoughtSignature replay.
+ * Official agy CLI wire captures demonstrate that:
+ * - Gemini models (gemini-3.7, gemini-3.8, etc.) share thoughtSignatures seamlessly.
+ * - Claude models replay thoughtSignatures within the Claude family, part-split
+ *   like Gemini (1.1.27 stream_turn8/9 counter-capture).
+ * - Non-Gemini models (Claude, GPT-OSS) do NOT share signatures with Gemini models.
+ */
+export function isCompatibleFamily(msgModel?: string, targetModelId?: string): boolean {
+  if (!msgModel || !targetModelId) return true;
+  if (msgModel === targetModelId) return true;
+
+  const isMsgGemini = msgModel.startsWith("gemini-");
+  const isTargetGemini = targetModelId.startsWith("gemini-");
+  if (isMsgGemini && isTargetGemini) return true;
+
+  const isMsgClaude = msgModel.startsWith("claude-");
+  const isTargetClaude = targetModelId.startsWith("claude-");
+  if (isMsgClaude && isTargetClaude) return true;
+
+  const isMsgGpt = msgModel.startsWith("gpt-");
+  const isTargetGpt = targetModelId.startsWith("gpt-");
+  if (isMsgGpt && isTargetGpt) return true;
+
+  return extractBaseModelId(msgModel) === extractBaseModelId(targetModelId);
+}
+
+/**
  * Static fallback model enums captured directly from agy CLI models.resp.json.
  * Single definition: Model Catalog merges these with the active snapshot,
  * and the request builder falls back to them when no snapshot enums apply.
