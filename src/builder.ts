@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
-import type { ModelPlan } from "./catalog.ts";
-import { extractBaseModelId } from "./catalog.ts";
+import type { ModelPlan } from "./model-catalog.ts";
+import { isCompatibleFamily } from "./model-catalog.ts";
 import { PROVIDER_ID } from "./protocol.ts";
 
 export interface BuildRequestBodyParams {
@@ -39,33 +39,6 @@ function resolveThoughtSignature(
 ): string | undefined {
   if (!isSameProviderAndModel) return undefined;
   return isValidThoughtSignature(sig) ? sig : undefined;
-}
-
-/**
- * Checks model family compatibility for thoughtSignature replay.
- * Official agy CLI wire captures demonstrate that:
- * - Gemini models (gemini-3.7, gemini-3.8, etc.) share thoughtSignatures seamlessly.
- * - Claude models replay thoughtSignatures within the Claude family, part-split
- *   like Gemini (1.1.27 stream_turn8/9 counter-capture).
- * - Non-Gemini models (Claude, GPT-OSS) do NOT share signatures with Gemini models.
- */
-function isCompatibleModelFamily(msgModel?: string, targetModelId?: string): boolean {
-  if (!msgModel || !targetModelId) return true;
-  if (msgModel === targetModelId) return true;
-
-  const isMsgGemini = msgModel.startsWith("gemini-");
-  const isTargetGemini = targetModelId.startsWith("gemini-");
-  if (isMsgGemini && isTargetGemini) return true;
-
-  const isMsgClaude = msgModel.startsWith("claude-");
-  const isTargetClaude = targetModelId.startsWith("claude-");
-  if (isMsgClaude && isTargetClaude) return true;
-
-  const isMsgGpt = msgModel.startsWith("gpt-");
-  const isTargetGpt = targetModelId.startsWith("gpt-");
-  if (isMsgGpt && isTargetGpt) return true;
-
-  return extractBaseModelId(msgModel) === extractBaseModelId(targetModelId);
 }
 
 /**
@@ -247,7 +220,7 @@ function translateTurnTrace(
       }
 
       const isSameProvider = !msg.provider || msg.provider === PROVIDER_ID;
-      const isSameModel = isCompatibleModelFamily(msg.model, runtimeModelId);
+      const isSameModel = isCompatibleFamily(msg.model, runtimeModelId);
       const isSameProviderAndModel = isSameProvider && isSameModel;
 
       const parts: Array<any> = [];

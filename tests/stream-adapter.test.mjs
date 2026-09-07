@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { streamAntigravity } from "../src/stream.ts";
 import { buildAntigravityRequestBody } from "../src/builder.ts";
-import { resolveModelPlan, STATIC_MODEL_ENUMS } from "../src/catalog.ts";
+import { resolveModelPlan, STATIC_MODEL_ENUMS } from "../src/model-catalog.ts";
 
 const sseTurn5 = fs.readFileSync("captures/agy_cli_1.1.26/stream_turn5_multiturn.resp.sse", "utf-8");
 const sseLoneSig = fs.readFileSync(

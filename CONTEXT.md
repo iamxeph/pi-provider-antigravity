@@ -48,6 +48,10 @@ _Avoid_: Model cache, local storage, custom catalog file
 하나의 `Public Model ID`와 thinking effort 조합에 대해 `Model Catalog`가 한 번에 해결하는 묶음 (`Runtime Model ID`, 모델 enum, thinking budget, non-Gemini 여부, Claude 여부).
 _Avoid_: Resolved model, model config, runtime bundle
 
+**Model Family**:
+Thought Signature replay 가능 여부를 가르는 `Runtime Model ID` 그룹 (`gemini-`/`claude-`/`gpt-` prefix + base-id 동등성). 같은 family 안에서만 signature를 이어붙인다.
+_Avoid_: Model group, vendor prefix
+
 ### Quota & Account
 
 **Quota Pool**:

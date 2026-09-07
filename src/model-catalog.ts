@@ -1,12 +1,47 @@
 import type { Model } from "@earendil-works/pi-ai";
-import { DEFAULT_ENDPOINT, PROVIDER_ID, buildAntigravityHeaders } from "./protocol.ts";
-import { parseStoredCredentials } from "./auth.ts";
+import { DEFAULT_ENDPOINT, PROVIDER_ID } from "./protocol.ts";
+import { formatModelDisplayName } from "./catalog-view.ts";
 
+/**
+ * Model Catalog map (pure, in-process): Public Model ID ↔ Runtime Model ID
+ * mapping, Model Plan resolution, the versioned snapshot store, and Pi Model
+ * synthesis. No network, no credentials, no persistence — the wire side
+ * (fetch/parse/publish) lives in catalog-refresh.ts and talks to this
+ * module only through CatalogSnapshot values and updateCatalogStore;
+ * presentation (display names, table format) lives in catalog-view.ts.
+ */
 export function extractBaseModelId(runtimeId: string): string {
   if (runtimeId === "gemini-pro-agent") return "gemini-3.1-pro";
   if (runtimeId.startsWith("gemini-3.1-pro-")) return "gemini-3.1-pro";
 
   return runtimeId.replace(/-(?:high|medium|low|tiered|thinking|agent|extra-low)$/, "");
+}
+
+/**
+ * Checks Model Family compatibility for thoughtSignature replay.
+ * Official agy CLI wire captures demonstrate that:
+ * - Gemini models (gemini-3.7, gemini-3.8, etc.) share thoughtSignatures seamlessly.
+ * - Claude models replay thoughtSignatures within the Claude family, part-split
+ *   like Gemini (1.1.27 stream_turn8/9 counter-capture).
+ * - Non-Gemini models (Claude, GPT-OSS) do NOT share signatures with Gemini models.
+ */
+export function isCompatibleFamily(msgModel?: string, targetModelId?: string): boolean {
+  if (!msgModel || !targetModelId) return true;
+  if (msgModel === targetModelId) return true;
+
+  const isMsgGemini = msgModel.startsWith("gemini-");
+  const isTargetGemini = targetModelId.startsWith("gemini-");
+  if (isMsgGemini && isTargetGemini) return true;
+
+  const isMsgClaude = msgModel.startsWith("claude-");
+  const isTargetClaude = targetModelId.startsWith("claude-");
+  if (isMsgClaude && isTargetClaude) return true;
+
+  const isMsgGpt = msgModel.startsWith("gpt-");
+  const isTargetGpt = targetModelId.startsWith("gpt-");
+  if (isMsgGpt && isTargetGpt) return true;
+
+  return extractBaseModelId(msgModel) === extractBaseModelId(targetModelId);
 }
 
 /**
@@ -133,7 +168,12 @@ export function getCatalogSnapshot(): CatalogSnapshot {
   };
 }
 
-function updateCatalogStore(enums: Record<string, string>, runtimeIds: string[]): void {
+/**
+ * Records one complete refresh generation. Wire-side only: the sole writer is
+ * the refresh path in catalog-refresh.ts. Request paths never call this —
+ * they read via getCatalogSnapshot and pass the snapshot explicitly.
+ */
+export function updateCatalogStore(enums: Record<string, string>, runtimeIds: string[]): void {
   // A fresh generation is complete: replace instead of merging, so enums for
   // server-removed models are evicted instead of pinned forever.
   activeStore = {
@@ -277,20 +317,6 @@ export function resolveModelPlan(
   };
 }
 
-export function formatModelDisplayName(baseId: string, rawDisplayName?: string): string {
-  if (rawDisplayName) {
-    const cleaned = rawDisplayName.replace(/\s*\([^)]*\)/g, "").trim();
-    if (cleaned.length > 0) {
-      return cleaned;
-    }
-  }
-  const words = baseId.split("-").map((w) => {
-    if (/^\d+(\.\d+)?$/.test(w)) return w;
-    return w.charAt(0).toUpperCase() + w.slice(1);
-  });
-  return words.join(" ");
-}
-
 // Antigravity is quota-based with no per-token billing, so every model
 // reports zero cost instead of fictitious Gemini API prices.
 // Revisit if a metered paid tier ever appears.
@@ -363,172 +389,4 @@ export function buildDynamicPublicModels(catalog?: AvailableModelsCatalog): Arra
   }
 
   return orderedBaseIds.map((baseId) => synthesizeDynamicModel(baseId, runtimeGroups.get(baseId)!));
-}
-
-export async function refreshCatalog(context: any): Promise<Array<Model<any>>> {
-  // Restore from context.stored first for offline restart support,
-  // but only into a pristine store: a failed refresh must not clobber a
-  // fresher in-memory snapshot with older persisted data.
-  const storedEnums = context.stored?.["pi-provider-antigravity"]?.modelEnums;
-  const storedRuntimeIds = context.stored?.["pi-provider-antigravity"]?.runtimeIds;
-  if ((storedEnums || storedRuntimeIds) && getCatalogSnapshot().version === 0) {
-    updateCatalogStore(storedEnums || {}, storedRuntimeIds || []);
-  }
-
-  if (!context.allowNetwork) {
-    return context.stored?.models || [];
-  }
-
-  try {
-    const apiKey = context.credential?.access;
-    if (!apiKey) {
-      return context.stored?.models || [];
-    }
-
-    const { token, projectId } = parseStoredCredentials(apiKey);
-    const catalog = await fetchAvailableModelsCatalog(token, projectId, DEFAULT_ENDPOINT, context.signal);
-    updateCatalogStore(catalog.modelEnums, catalog.models.map((m) => m.id));
-
-    const dynamicModels = buildDynamicPublicModels(catalog);
-
-    // Publish to Pi models-store.json
-    if (context.publish) {
-      await context.publish({
-        persist: {
-          models: dynamicModels,
-          checkedAt: Date.now(),
-          "pi-provider-antigravity": {
-            modelEnums: catalog.modelEnums,
-            runtimeIds: catalog.models.map((m) => m.id),
-          },
-        },
-      });
-    }
-
-    return dynamicModels;
-  } catch {
-    return context.stored?.models || [];
-  }
-}
-
-export function parseAvailableModels(data: any): AvailableModelsCatalog {
-  const models: AvailableModelItem[] = [];
-  const modelEnums: Record<string, string> = {};
-
-  const modelsObj = data.models || {};
-  for (const [id, info] of Object.entries<any>(modelsObj)) {
-    if (id.startsWith("tab_") || id.startsWith("chat_")) continue; // hide internal completions
-
-    const modelEnum = typeof info.model === "string" ? info.model : undefined;
-    if (modelEnum) {
-      modelEnums[id] = modelEnum;
-    }
-
-    const quotaInfo = info.quotaInfo || {};
-    models.push({
-      id,
-      displayName: info.displayName || info.label || id,
-      modelEnum,
-      remainingFraction: quotaInfo.remainingFraction,
-      resetTime: quotaInfo.resetTime,
-      supportsThinking: Boolean(info.supportsThinking),
-      supportsImages: Boolean(info.supportsImages),
-      maxTokens: typeof info.maxTokens === "number" ? info.maxTokens : undefined,
-      maxOutputTokens: typeof info.maxOutputTokens === "number" ? info.maxOutputTokens : undefined,
-    });
-  }
-
-  const agentModelSorts: string[] = [];
-  if (Array.isArray(data.agentModelSorts)) {
-    for (const sortGroup of data.agentModelSorts) {
-      if (Array.isArray(sortGroup.groups)) {
-        for (const group of sortGroup.groups) {
-          if (Array.isArray(group.modelIds)) {
-            agentModelSorts.push(...group.modelIds);
-          }
-        }
-      }
-    }
-  }
-
-  models.sort((a, b) => a.id.localeCompare(b.id));
-
-  return {
-    models,
-    modelEnums,
-    ...(agentModelSorts.length > 0 ? { agentModelSorts } : {}),
-  };
-}
-
-export async function fetchAvailableModelsCatalog(
-  token: string,
-  projectId = "aicode-consumers",
-  endpoint = DEFAULT_ENDPOINT,
-  signal?: AbortSignal
-): Promise<AvailableModelsCatalog> {
-  const res = await fetch(`${endpoint}/v1internal:fetchAvailableModels`, {
-    method: "POST",
-    headers: buildAntigravityHeaders(token),
-    body: JSON.stringify({ project: projectId }),
-    signal,
-  });
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Failed to fetch models (${res.status}): ${errText}`);
-  }
-  const json = await res.json();
-  return parseAvailableModels(json);
-}
-
-function formatTokenCount(n?: number): string {
-  if (typeof n !== "number") return "n/a";
-  if (n % 1048576 === 0) return `${n / 1048576}M`;
-  if (n % 1024 === 0) return `${n / 1024}k`;
-  if (n % 1000 === 0) return `${n / 1000}k`;
-  // ponytail: odd values (e.g. 65535) round to nearest KiB instead of a noisy decimal
-  return `${Math.round(n / 1024)}k`;
-}
-
-export function formatModelsList(catalog: AvailableModelsCatalog): string {
-  const sorts = catalog.agentModelSorts;
-  const recommendedOnly = Array.isArray(sorts) && sorts.length > 0;
-  const rank = new Map((sorts || []).map((id, i) => [id, i]));
-
-  const models = (recommendedOnly ? catalog.models.filter((m) => rank.has(m.id)) : catalog.models.slice()).sort(
-    (a, b) => (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER) ||
-      a.id.localeCompare(b.id)
-  );
-
-  const rows = models.map((m) => {
-    const flags: string[] = [];
-    if (m.supportsThinking) flags.push("thinking");
-    if (m.supportsImages) flags.push("images");
-    return {
-      id: m.id,
-      name: formatModelDisplayName(m.id, m.displayName || m.id),
-      ctx: `${formatTokenCount(m.maxTokens)}/${formatTokenCount(m.maxOutputTokens)}`,
-      feat: flags.length > 0 ? flags.join(", ") : "-",
-      rem: typeof m.remainingFraction === "number" ? `${Math.round(m.remainingFraction * 100)}%` : "N/A",
-    };
-  });
-
-  const headers = { id: "Model", name: "Name", ctx: "Context", feat: "Features", rem: "Rem" };
-  const w = {
-    id: Math.max(headers.id.length, ...rows.map((r) => r.id.length)),
-    name: Math.max(headers.name.length, ...rows.map((r) => r.name.length)),
-    ctx: Math.max(headers.ctx.length, ...rows.map((r) => r.ctx.length)),
-    feat: Math.max(headers.feat.length, ...rows.map((r) => r.feat.length)),
-  };
-
-  const lines: string[] = [
-    `Available Antigravity Models (${models.length}${recommendedOnly ? " recommended" : ""}):`,
-    `  ${headers.id.padEnd(w.id)}  ${headers.name.padEnd(w.name)}  ${headers.ctx.padEnd(w.ctx)}  ${headers.feat.padEnd(w.feat)}  ${headers.rem}`,
-  ];
-  for (const r of rows) {
-    lines.push(
-      `  ${r.id.padEnd(w.id)}  ${r.name.padEnd(w.name)}  ${r.ctx.padEnd(w.ctx)}  ${r.feat.padEnd(w.feat)}  ${r.rem.padStart(4)}`
-    );
-  }
-
-  return lines.join("\n");
 }

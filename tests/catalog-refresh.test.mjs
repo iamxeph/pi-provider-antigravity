@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import {
   refreshCatalog,
-  getCatalogSnapshot,
-} from "../src/catalog.ts";
-import { parseAvailableModels } from "../src/catalog.ts";
+  parseAvailableModels,
+} from "../src/catalog-refresh.ts";
+import { getCatalogSnapshot } from "../src/model-catalog.ts";
 
 const modelsJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.1.26/models.resp.json", "utf-8"));
 
