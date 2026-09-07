@@ -1,4 +1,4 @@
-import { DEFAULT_ENDPOINT, buildAntigravityHeaders } from "./protocol.ts";
+import { postAntigravity } from "./protocol.ts";
 import { parseStoredCredentials } from "./auth.ts";
 import type { AvailableModelItem, AvailableModelsCatalog } from "./model-catalog.ts";
 import { buildDynamicPublicModels, buildThinkingMap, getCatalogSnapshot, updateCatalogStore } from "./model-catalog.ts";
@@ -34,7 +34,7 @@ export async function refreshCatalog(context: any): Promise<Array<Model<any>>> {
     }
 
     const { token, projectId } = parseStoredCredentials(apiKey);
-    const catalog = await fetchAvailableModelsCatalog(token, projectId, DEFAULT_ENDPOINT, context.signal);
+    const catalog = await fetchAvailableModelsCatalog(token, projectId, context.signal);
     const thinking = buildThinkingMap(catalog.models);
     const deprecated = catalog.deprecated || {};
     updateCatalogStore(catalog.modelEnums, catalog.models.map((m) => m.id), thinking, deprecated);
@@ -128,14 +128,13 @@ export function parseAvailableModels(data: any): AvailableModelsCatalog {
 
 export async function fetchAvailableModelsCatalog(
   token: string,
-  projectId = "aicode-consumers",
-  endpoint = DEFAULT_ENDPOINT,
+  projectId: string,
   signal?: AbortSignal
 ): Promise<AvailableModelsCatalog> {
-  const res = await fetch(`${endpoint}/v1internal:fetchAvailableModels`, {
-    method: "POST",
-    headers: buildAntigravityHeaders(token),
-    body: JSON.stringify({ project: projectId }),
+  const res = await postAntigravity({
+    token,
+    path: "v1internal:fetchAvailableModels",
+    body: { project: projectId },
     signal,
   });
   if (!res.ok) {

@@ -11,7 +11,7 @@ import {
 import { parseStoredCredentials } from "./auth.ts";
 import { createSseFeed, type SseBlockEvent } from "./parser.ts";
 import { buildAntigravityRequestBody } from "./builder.ts";
-import { buildAntigravityHeaders, DEFAULT_ENDPOINT } from "./protocol.ts";
+import { postAntigravity } from "./protocol.ts";
 import { resolveModelPlan, getCatalogSnapshot } from "./model-catalog.ts";
 
 export function streamAntigravity(
@@ -70,10 +70,10 @@ export function streamAntigravity(
         toolChoice: options?.toolChoice,
       });
 
-      const res = await fetch(`${DEFAULT_ENDPOINT}/v1internal:streamGenerateContent?alt=sse`, {
-        method: "POST",
-        headers: buildAntigravityHeaders(token),
-        body: JSON.stringify(requestBody),
+      const res = await postAntigravity({
+        token,
+        path: "v1internal:streamGenerateContent?alt=sse",
+        body: requestBody,
         signal: options?.signal,
       });
 

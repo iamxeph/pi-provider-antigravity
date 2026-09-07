@@ -1,11 +1,12 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { OAuthCredentials, OAuthLoginCallbacks } from "@earendil-works/pi-ai";
-import { buildAntigravityHeaders, DEFAULT_ENDPOINT } from "./protocol.ts";
+import { postAntigravity } from "./protocol.ts";
 
 export const REDIRECT_URI = "https://antigravity.google/oauth-callback";
 export const AUTH_URL = "https://accounts.google.com/o/oauth2/auth";
 export const TOKEN_URL = "https://oauth2.googleapis.com/token";
 export const OAUTH_CALLBACK_TIMEOUT_MS = 5 * 60 * 1000;
+export const FALLBACK_PROJECT_ID = "aicode-consumers";
 
 export const SCOPES = [
   "https://www.googleapis.com/auth/cloud-platform",
@@ -62,16 +63,12 @@ function generatePKCE(): { verifier: string; challenge: string } {
   return { verifier, challenge };
 }
 
-export async function fetchProjectId(
-  token: string,
-  endpoint = DEFAULT_ENDPOINT,
-  signal?: AbortSignal
-): Promise<string> {
+export async function fetchProjectId(token: string, signal?: AbortSignal): Promise<string> {
   try {
-    const res = await fetch(`${endpoint}/v1internal:loadCodeAssist`, {
-      method: "POST",
-      headers: buildAntigravityHeaders(token),
-      body: JSON.stringify({ metadata: { ideType: "ANTIGRAVITY" } }),
+    const res = await postAntigravity({
+      token,
+      path: "v1internal:loadCodeAssist",
+      body: { metadata: { ideType: "ANTIGRAVITY" } },
       signal,
     });
     if (res.ok) {
@@ -83,7 +80,7 @@ export async function fetchProjectId(
   } catch {
     // Fall back to standard project
   }
-  return "aicode-consumers";
+  return FALLBACK_PROJECT_ID;
 }
 
 export async function loginAntigravity(callbacks: OAuthLoginCallbacks): Promise<OAuthCredentials> {
@@ -183,7 +180,7 @@ export async function refreshAntigravityToken(
     expires_in?: number;
   };
 
-  let existingProjectId = "aicode-consumers";
+  let existingProjectId = FALLBACK_PROJECT_ID;
   try {
     const parsed = JSON.parse(credentials.access);
     if (parsed.projectId) existingProjectId = parsed.projectId;
@@ -194,8 +191,8 @@ export async function refreshAntigravityToken(
   // Re-resolve: a login-time lookup failure pins the "aicode-consumers"
   // default forever unless refresh retries it. A failed lookup yields that
   // same default, which must never clobber a known value.
-  const freshProjectId = await fetchProjectId(tokens.access_token, DEFAULT_ENDPOINT, signal);
-  const projectId = freshProjectId !== "aicode-consumers" ? freshProjectId : existingProjectId;
+  const freshProjectId = await fetchProjectId(tokens.access_token, signal);
+  const projectId = freshProjectId !== FALLBACK_PROJECT_ID ? freshProjectId : existingProjectId;
 
   return {
     refresh: tokens.refresh_token || credentials.refresh,
@@ -212,10 +209,10 @@ export function parseStoredCredentials(rawApiKey: string): { token: string; proj
   try {
     const parsed = JSON.parse(rawApiKey);
     if (parsed.token) {
-      return { token: parsed.token, projectId: parsed.projectId || "aicode-consumers" };
+      return { token: parsed.token, projectId: parsed.projectId || FALLBACK_PROJECT_ID };
     }
   } catch {
     // If plain token
   }
-  return { token: rawApiKey, projectId: "aicode-consumers" };
+  return { token: rawApiKey, projectId: FALLBACK_PROJECT_ID };
 }

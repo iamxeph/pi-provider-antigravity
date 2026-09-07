@@ -1,4 +1,4 @@
-import { buildAntigravityHeaders, DEFAULT_ENDPOINT } from "./protocol.ts";
+import { postAntigravity } from "./protocol.ts";
 
 export interface QuotaBucket {
   bucketId: string;
@@ -116,14 +116,13 @@ export function formatQuotaSummary(summary: QuotaSummary): string {
 
 export async function fetchQuotaSummary(
   token: string,
-  projectId = "aicode-consumers",
-  endpoint = DEFAULT_ENDPOINT,
+  projectId: string,
   signal?: AbortSignal
 ): Promise<QuotaSummary> {
-  const res = await fetch(`${endpoint}/v1internal:retrieveUserQuotaSummary`, {
-    method: "POST",
-    headers: buildAntigravityHeaders(token),
-    body: JSON.stringify({ project: projectId }),
+  const res = await postAntigravity({
+    token,
+    path: "v1internal:retrieveUserQuotaSummary",
+    body: { project: projectId },
     signal,
   });
   if (!res.ok) {
