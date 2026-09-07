@@ -2,7 +2,12 @@ export interface ParsedBlock {
   type: "text" | "thinking" | "toolCall";
   text?: string;
   thinking?: string;
+  /** Wire spelling. In close() content only toolCall blocks carry it. */
   thoughtSignature?: string;
+  /** SDK spelling. In close() content only thinking blocks carry it. */
+  thinkingSignature?: string;
+  /** SDK spelling. In close() content only text blocks carry it. */
+  textSignature?: string;
   id?: string;
   name?: string;
   arguments?: Record<string, any>;
@@ -21,7 +26,7 @@ export interface ParsedStreamResult {
 
 export type SseBlockEvent =
   | { kind: "text_start" | "thinking_start"; index: number }
-  | { kind: "text_delta" | "thinking_delta"; index: number; delta: string; thoughtSignature?: string }
+  | { kind: "text_delta" | "thinking_delta"; index: number; delta: string; thinkingSignature?: string }
   | { kind: "text_end" | "thinking_end"; index: number; content: string }
   | { kind: "toolCall"; index: number; block: ParsedBlock & { id: string } };
 
@@ -29,8 +34,11 @@ export interface SseFeedOutput {
   events: SseBlockEvent[];
   usage: ParsedStreamResult["usage"];
   stopReason: ParsedStreamResult["stopReason"];
-  thoughtSignature?: string;
-  /** Final assembled blocks (signatures attached). Only present on close(). */
+  /**
+   * Final assembled blocks with placement-complete SDK-spelled signatures
+   * (thinkingSignature / textSignature / thoughtSignature). Only present on
+   * close(). Callers copy it verbatim; no respelling downstream.
+   */
   content?: ParsedBlock[];
 }
 
@@ -62,22 +70,21 @@ export function createSseFeed(): {
     events,
     usage: { ...usage },
     stopReason,
-    ...(lastThoughtSignature ? { thoughtSignature: lastThoughtSignature } : {}),
   });
 
   // Lone-signature turn: a Thought Signature that arrived detached from any
-  // thinking part rides the first thinking block, else the last text block.
-  // Runs once at close, so the final content carries the placement policy
-  // instead of every caller re-deriving it.
+  // thinking part rides the first thinking block (SDK spelling), else the
+  // last text block. Runs once at close, so the final content carries the
+  // placement policy instead of every caller re-deriving it.
   const attachLoneSignature = (): void => {
     if (!lastThoughtSignature) return;
     const thinking = content.find((b) => b.type === "thinking");
-    if (thinking && !thinking.thoughtSignature) {
-      thinking.thoughtSignature = lastThoughtSignature;
+    if (thinking && !thinking.thinkingSignature) {
+      thinking.thinkingSignature = lastThoughtSignature;
     } else if (!thinking) {
       for (let i = content.length - 1; i >= 0; i--) {
-        if (content[i].type === "text" && !content[i].thoughtSignature) {
-          content[i].thoughtSignature = lastThoughtSignature;
+        if (content[i].type === "text" && !content[i].textSignature) {
+          content[i].textSignature = lastThoughtSignature;
           break;
         }
       }
@@ -156,13 +163,13 @@ export function createSseFeed(): {
         const delta = part.text || "";
         block.thinking = (block.thinking || "") + delta;
         if (part.thoughtSignature) {
-          block.thoughtSignature = part.thoughtSignature;
+          block.thinkingSignature = part.thoughtSignature;
         }
         events.push({
           kind: "thinking_delta",
           index: content.length - 1,
           delta,
-          ...(part.thoughtSignature ? { thoughtSignature: part.thoughtSignature } : {}),
+          ...(part.thoughtSignature ? { thinkingSignature: part.thoughtSignature } : {}),
         });
       } else if (part.functionCall) {
         closeOpenBlock(events);

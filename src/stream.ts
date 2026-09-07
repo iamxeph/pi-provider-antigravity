@@ -9,9 +9,9 @@ import {
   createAssistantMessageEventStream,
 } from "@earendil-works/pi-ai";
 import { parseStoredCredentials } from "./auth.ts";
-import { createSseFeed, type SseBlockEvent } from "./parser.ts";
+import { createSseFeed, type SseBlockEvent, type SseFeedOutput } from "./parser.ts";
 import { buildAntigravityRequestBody } from "./builder.ts";
-import { buildAntigravityHeaders, DEFAULT_ENDPOINT } from "./protocol.ts";
+import { postAntigravity } from "./protocol.ts";
 import { resolveModelPlan, getCatalogSnapshot } from "./model-catalog.ts";
 
 export function streamAntigravity(
@@ -70,10 +70,10 @@ export function streamAntigravity(
         toolChoice: options?.toolChoice,
       });
 
-      const res = await fetch(`${DEFAULT_ENDPOINT}/v1internal:streamGenerateContent?alt=sse`, {
-        method: "POST",
-        headers: buildAntigravityHeaders(token),
-        body: JSON.stringify(requestBody),
+      const res = await postAntigravity({
+        token,
+        path: "v1internal:streamGenerateContent?alt=sse",
+        body: requestBody,
         signal: options?.signal,
       });
 
@@ -130,7 +130,7 @@ export function streamAntigravity(
               stream.push({ type: "text_delta", contentIndex: ev.index, delta: ev.delta, partial: output });
             } else if (ev.kind === "thinking_delta" && block?.type === "thinking") {
               block.thinking += ev.delta;
-              if (ev.thoughtSignature) block.thinkingSignature = ev.thoughtSignature;
+              if (ev.thinkingSignature !== undefined) block.thinkingSignature = ev.thinkingSignature;
               stream.push({ type: "thinking_delta", contentIndex: ev.index, delta: ev.delta, partial: output });
             }
           } else if (ev.kind === "text_end" || ev.kind === "thinking_end") {
@@ -167,33 +167,36 @@ export function streamAntigravity(
         }
       };
 
+      // Single driver for one feed output: usage, stopReason, event
+      // translation, and (at close only) Thought Signature placement all
+      // flow through here, so the positional alignment between the feed's
+      // content and the assembled message is owned in one place.
+      const applyFeedOutput = (fed: SseFeedOutput, isFinal = false) => {
+        applyUsage(fed.usage);
+        output.stopReason = fed.stopReason;
+        translate(fed.events);
+        if (!isFinal || !fed.content) return;
+        // Signature placement is complete in the feed's final content
+        // (SDK-spelled by the parser): copy verbatim, no respelling here.
+        fed.content.forEach((block, index) => {
+          const target = output.content[index];
+          if (!target) return;
+          if (block.type === "thinking" && target.type === "thinking") {
+            if (block.thinkingSignature !== undefined) target.thinkingSignature = block.thinkingSignature;
+          } else if (block.type === "text" && target.type === "text") {
+            if (block.textSignature !== undefined) target.textSignature = block.textSignature;
+          }
+        });
+      };
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const fed = feed.feed(decoder.decode(value, { stream: true }));
-        applyUsage(fed.usage);
-        output.stopReason = fed.stopReason;
-        translate(fed.events);
+        applyFeedOutput(feed.feed(decoder.decode(value, { stream: true })));
       }
 
-      const closing = feed.close();
-      applyUsage(closing.usage);
-      output.stopReason = closing.stopReason;
-      translate(closing.events);
-
-      // Signature placement comes from the feed's final content: thinking
-      // blocks take thinkingSignature, text blocks take textSignature.
-      closing.content.forEach((block, index) => {
-        const sig = block.thoughtSignature;
-        if (!sig) return;
-        const target = output.content[index];
-        if (target?.type === "thinking" && !target.thinkingSignature) {
-          target.thinkingSignature = sig;
-        } else if (target?.type === "text" && !target.textSignature) {
-          target.textSignature = sig;
-        }
-      });
+      applyFeedOutput(feed.close(), true);
 
       const doneReason: "stop" | "toolUse" | "length" =
         output.stopReason === "toolUse" || output.stopReason === "length"

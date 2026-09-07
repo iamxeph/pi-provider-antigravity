@@ -1,6 +1,6 @@
 import type { ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { parseStoredCredentials } from "./auth.ts";
-import { DEFAULT_ENDPOINT, PROVIDER_ID } from "./protocol.ts";
+import { PROVIDER_ID } from "./protocol.ts";
 import {
   fetchQuotaSummary,
   formatQuotaSummary,
@@ -26,13 +26,13 @@ const FETCH_SUBCOMMANDS: Record<string, FetchSubcommand> = {
     progress: "Fetching quota summary…",
     errLabel: "usage",
     run: (token, projectId, signal) =>
-      fetchQuotaSummary(token, projectId, DEFAULT_ENDPOINT, signal).then(formatQuotaSummary),
+      fetchQuotaSummary(token, projectId, signal).then(formatQuotaSummary),
   },
   models: {
     progress: "Fetching available models…",
     errLabel: "models",
     run: (token, projectId, signal) =>
-      fetchAvailableModelsCatalog(token, projectId, DEFAULT_ENDPOINT, signal).then(formatModelsList),
+      fetchAvailableModelsCatalog(token, projectId, signal).then(formatModelsList),
   },
 };
 

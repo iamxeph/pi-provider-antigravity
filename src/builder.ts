@@ -237,6 +237,20 @@ function translateTurnTrace(
       } else if (Array.isArray(msg.content)) {
         for (const item of msg.content) {
           if (item.type === "text") {
+            if (typeof item.text !== "string" || item.text === "") {
+              // Vacuous text block (e.g. a leading empty part the live feed
+              // opened): drop the part but keep a valid signature pending
+              // for the next part carrying one, mirroring the precedence
+              // below. The Claude backend rejects {"text": ""} with 400
+              // (text.text: Field required, observed live on multi-turn
+              // replay); Gemini accepts the same payload (probed 200), but
+              // an empty part carries nothing either way, and agy never
+              // emits one, so this stays regardless of model family.
+              pendingThinkingSig =
+                resolveThoughtSignature(isSameProviderAndModel, item.textSignature) ||
+                pendingThinkingSig;
+              continue;
+            }
             const part: any = { text: item.text };
             const sig =
               resolveThoughtSignature(
