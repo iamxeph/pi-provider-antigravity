@@ -34,7 +34,6 @@ export interface SseFeedOutput {
   events: SseBlockEvent[];
   usage: ParsedStreamResult["usage"];
   stopReason: ParsedStreamResult["stopReason"];
-  thoughtSignature?: string;
   /**
    * Final assembled blocks with placement-complete SDK-spelled signatures
    * (thinkingSignature / textSignature / thoughtSignature). Only present on
@@ -71,7 +70,6 @@ export function createSseFeed(): {
     events,
     usage: { ...usage },
     stopReason,
-    ...(lastThoughtSignature ? { thoughtSignature: lastThoughtSignature } : {}),
   });
 
   // Lone-signature turn: a Thought Signature that arrived detached from any

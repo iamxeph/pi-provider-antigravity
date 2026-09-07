@@ -9,7 +9,7 @@ import {
   createAssistantMessageEventStream,
 } from "@earendil-works/pi-ai";
 import { parseStoredCredentials } from "./auth.ts";
-import { createSseFeed, type SseBlockEvent } from "./parser.ts";
+import { createSseFeed, type SseBlockEvent, type SseFeedOutput } from "./parser.ts";
 import { buildAntigravityRequestBody } from "./builder.ts";
 import { postAntigravity } from "./protocol.ts";
 import { resolveModelPlan, getCatalogSnapshot } from "./model-catalog.ts";
@@ -167,32 +167,36 @@ export function streamAntigravity(
         }
       };
 
+      // Single driver for one feed output: usage, stopReason, event
+      // translation, and (at close only) Thought Signature placement all
+      // flow through here, so the positional alignment between the feed's
+      // content and the assembled message is owned in one place.
+      const applyFeedOutput = (fed: SseFeedOutput, isFinal = false) => {
+        applyUsage(fed.usage);
+        output.stopReason = fed.stopReason;
+        translate(fed.events);
+        if (!isFinal || !fed.content) return;
+        // Signature placement is complete in the feed's final content
+        // (SDK-spelled by the parser): copy verbatim, no respelling here.
+        fed.content.forEach((block, index) => {
+          const target = output.content[index];
+          if (!target) return;
+          if (block.type === "thinking" && target.type === "thinking") {
+            if (block.thinkingSignature !== undefined) target.thinkingSignature = block.thinkingSignature;
+          } else if (block.type === "text" && target.type === "text") {
+            if (block.textSignature !== undefined) target.textSignature = block.textSignature;
+          }
+        });
+      };
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const fed = feed.feed(decoder.decode(value, { stream: true }));
-        applyUsage(fed.usage);
-        output.stopReason = fed.stopReason;
-        translate(fed.events);
+        applyFeedOutput(feed.feed(decoder.decode(value, { stream: true })));
       }
 
-      const closing = feed.close();
-      applyUsage(closing.usage);
-      output.stopReason = closing.stopReason;
-      translate(closing.events);
-
-      // Signature placement is complete in the feed's final content
-      // (SDK-spelled by the parser): copy verbatim, no respelling here.
-      closing.content.forEach((block, index) => {
-        const target = output.content[index];
-        if (!target) return;
-        if (block.type === "thinking" && target.type === "thinking") {
-          if (block.thinkingSignature !== undefined) target.thinkingSignature = block.thinkingSignature;
-        } else if (block.type === "text" && target.type === "text") {
-          if (block.textSignature !== undefined) target.textSignature = block.textSignature;
-        }
-      });
+      applyFeedOutput(feed.close(), true);
 
       const doneReason: "stop" | "toolUse" | "length" =
         output.stopReason === "toolUse" || output.stopReason === "length"
