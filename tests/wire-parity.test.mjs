@@ -32,12 +32,11 @@ const load = (dir, name) => {
 };
 
 // Production-path whole-input parse: feed() + close(), the same exits
-// streamAntigravity uses. Assert on the returned result().
+// streamAntigravity uses. Assert on the returned close().
 function parseWhole(rawSse) {
   const feed = createSseFeed();
   feed.feed(rawSse);
-  feed.close();
-  return feed.result();
+  return feed.close();
 }
 
 for (const dir of DIRS) {

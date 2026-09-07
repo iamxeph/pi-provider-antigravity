@@ -23,25 +23,28 @@ export type SseBlockEvent =
   | { kind: "text_start" | "thinking_start"; index: number }
   | { kind: "text_delta" | "thinking_delta"; index: number; delta: string; thoughtSignature?: string }
   | { kind: "text_end" | "thinking_end"; index: number; content: string }
-  | { kind: "toolCall"; index: number; block: ParsedBlock };
+  | { kind: "toolCall"; index: number; block: ParsedBlock & { id: string } };
 
 export interface SseFeedOutput {
   events: SseBlockEvent[];
   usage: ParsedStreamResult["usage"];
   stopReason: ParsedStreamResult["stopReason"];
   thoughtSignature?: string;
+  /** Final assembled blocks (signatures attached). Only present on close(). */
+  content?: ParsedBlock[];
 }
 
 /**
  * Stateful incremental SSE reader: the single module that understands the
  * Antigravity Wire Fingerprint on the wire. Feed raw response chunks as they
- * arrive; line buffering, block accumulation, usage, and stopReason all live
- * here. Callers only translate BlockEvents (thin adapters).
+ * arrive; line buffering, block accumulation, usage, stopReason, and lone
+ * Thought Signature attachment all live here. Callers only translate
+ * BlockEvents (thin adapters). close() is the single final surface: terminal
+ * events plus the fully assembled content.
  */
 export function createSseFeed(): {
   feed(chunk: string): SseFeedOutput;
-  close(): SseFeedOutput;
-  result(): ParsedStreamResult;
+  close(): SseFeedOutput & { content: ParsedBlock[] };
 } {
   const content: ParsedBlock[] = [];
   const usage = {
@@ -61,6 +64,25 @@ export function createSseFeed(): {
     stopReason,
     ...(lastThoughtSignature ? { thoughtSignature: lastThoughtSignature } : {}),
   });
+
+  // Lone-signature turn: a Thought Signature that arrived detached from any
+  // thinking part rides the first thinking block, else the last text block.
+  // Runs once at close, so the final content carries the placement policy
+  // instead of every caller re-deriving it.
+  const attachLoneSignature = (): void => {
+    if (!lastThoughtSignature) return;
+    const thinking = content.find((b) => b.type === "thinking");
+    if (thinking && !thinking.thoughtSignature) {
+      thinking.thoughtSignature = lastThoughtSignature;
+    } else if (!thinking) {
+      for (let i = content.length - 1; i >= 0; i--) {
+        if (content[i].type === "text" && !content[i].thoughtSignature) {
+          content[i].thoughtSignature = lastThoughtSignature;
+          break;
+        }
+      }
+    }
+  };
 
   const closeOpenBlock = (events: SseBlockEvent[]): void => {
     if (openType === null) return;
@@ -145,7 +167,7 @@ export function createSseFeed(): {
       } else if (part.functionCall) {
         closeOpenBlock(events);
         stopReason = "toolUse";
-        const block: ParsedBlock = {
+        const block: ParsedBlock & { id: string } = {
           type: "toolCall",
           id: part.functionCall.id || `call_${content.length}`,
           name: part.functionCall.name,
@@ -177,19 +199,13 @@ export function createSseFeed(): {
       for (const rawLine of lines) processLine(rawLine, events);
       return snapshot(events);
     },
-    close(): SseFeedOutput {
+    close(): SseFeedOutput & { content: ParsedBlock[] } {
       const events: SseBlockEvent[] = [];
       if (buffer.trim() !== "") processLine(buffer, events);
       buffer = "";
       closeOpenBlock(events);
-      return snapshot(events);
-    },
-    result(): ParsedStreamResult {
-      return {
-        content,
-        usage: { ...usage },
-        stopReason,
-      };
+      attachLoneSignature();
+      return { ...snapshot(events), content };
     },
   };
 }
