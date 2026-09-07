@@ -21,6 +21,7 @@ const FIXTURE_SNAPSHOT = {
   enums: FIXTURE_CATALOG.modelEnums,
   runtimeIds: FIXTURE_CATALOG.models.map((m) => m.id),
   thinking: buildThinkingMap(FIXTURE_CATALOG.models),
+  deprecated: FIXTURE_CATALOG.deprecated,
   version: 0,
 };
 
@@ -29,7 +30,8 @@ const FIXTURE_SNAPSHOT = {
 updateCatalogStore(
   FIXTURE_SNAPSHOT.enums,
   FIXTURE_SNAPSHOT.runtimeIds,
-  FIXTURE_SNAPSHOT.thinking
+  FIXTURE_SNAPSHOT.thinking,
+  FIXTURE_SNAPSHOT.deprecated || {}
 );
 
 function stubFetchWithSse(rawSse, chunkBytes = 4096) {

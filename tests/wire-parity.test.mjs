@@ -251,6 +251,7 @@ for (const dir of DIRS) {
       enums: fixtureCatalog.modelEnums,
       runtimeIds: fixtureCatalog.models.map((m) => m.id),
       thinking: buildThinkingMap(fixtureCatalog.models),
+      deprecated: fixtureCatalog.deprecated,
       version: 0,
     });
     // 9 assistant turns + trailing user turn, mirroring the Turn 4/5 shape.
@@ -332,6 +333,25 @@ test("Wire parity (agy_cli_1.1.27): thinkingBudget matrix low/medium/high", () =
   assert.equal(budgetOf("agy_cli_1.1.27", "stream_turn7_initial_low"), 1000);
   assert.equal(budgetOf("agy_cli_1.1.27", "stream_turn3_medium"), 4000);
   assert.equal(budgetOf("agy_cli_1.1.27", "stream_turn1_initial"), -1);
+});
+
+test("Wire parity (agy_cli_1.1.27): pro request follows the deprecated rename", () => {
+  const turn = load("agy_cli_1.1.27", "stream_turn10_pro_high");
+  const catalog = parseAvailableModels(
+    JSON.parse(fs.readFileSync("captures/agy_cli_1.1.27/models.resp.json", "utf-8"))
+  );
+  // User-facing selection is gemini-3.1-pro + high; the wire must carry the
+  // renamed runtime ID, its enum, and its budget — exactly what agy sent.
+  const plan = resolveModelPlan("gemini-3.1-pro", "high", {
+    enums: catalog.modelEnums,
+    runtimeIds: catalog.models.map((m) => m.id),
+    thinking: buildThinkingMap(catalog.models),
+    deprecated: catalog.deprecated,
+    version: 0,
+  });
+  assert.equal(plan.runtimeModelId, turn.body.model);
+  assert.equal(plan.modelEnum, turn.body.request.labels.model_enum);
+  assert.deepEqual(plan.thinkingConfig, turn.body.request.generationConfig.thinkingConfig);
 });
 
 test("Wire parity (agy_cli_1.1.27): catalog delta vs 1.1.26", () => {

@@ -248,6 +248,7 @@ test("Seam 3: resolveModelPlan prefers snapshot wire values over heuristics", ()
     enums: catalog.modelEnums,
     runtimeIds: catalog.models.map((m) => m.id),
     thinking: buildThinkingMap(catalog.models),
+    deprecated: catalog.deprecated,
     version: 1,
   };
 
@@ -313,4 +314,44 @@ test("Seam 3: buildAntigravityRequestBody uses the plan model_enum", () => {
   });
 
   assert.equal(body.request.labels.model_enum, "MODEL_PLACEHOLDER_M999");
+});
+
+test("Seam 3: parseAvailableModels extracts server-directed renames", () => {
+  const catalog = parseAvailableModels(modelsJson);
+  assert.deepEqual(catalog.deprecated, {
+    "gemini-3.1-pro-high": "gemini-pro-agent",
+  });
+});
+
+test("Seam 3: resolveModelPlan follows server-directed renames", () => {
+  const catalog = parseAvailableModels(modelsJson);
+  const snapshot = {
+    enums: catalog.modelEnums,
+    runtimeIds: catalog.models.map((m) => m.id),
+    thinking: buildThinkingMap(catalog.models),
+    deprecated: catalog.deprecated,
+    version: 1,
+  };
+  // Redirect applies uniformly, whether the old ID was derived or passed directly.
+  assert.equal(resolveModelPlan("gemini-3.1-pro", "high", snapshot).runtimeModelId, "gemini-pro-agent");
+  assert.equal(resolveModelPlan("gemini-3.1-pro-high", undefined, snapshot).runtimeModelId, "gemini-pro-agent");
+  assert.equal(
+    resolveModelPlan("gemini-3.1-pro-high", undefined, snapshot).modelEnum,
+    modelsJson.models["gemini-pro-agent"].model
+  );
+});
+
+test("Seam 3: unlisted 3.5 tiers fail fast instead of guessing", () => {
+  const catalog = parseAvailableModels(modelsJson);
+  const snapshot = {
+    enums: catalog.modelEnums,
+    runtimeIds: catalog.models.map((m) => m.id),
+    thinking: buildThinkingMap(catalog.models),
+    deprecated: catalog.deprecated,
+    version: 1,
+  };
+  // gemini-3.5-flash-low exists on the wire so low resolves; -medium/-high
+  // were never listed (3.5 sits outside Recommended sorts) → throw, don't guess.
+  assert.equal(resolveModelPlan("gemini-3.5-flash", "low", snapshot).runtimeModelId, "gemini-3.5-flash-low");
+  assert.throws(() => resolveModelPlan("gemini-3.5-flash", "medium", snapshot), /Unknown model/);
 });

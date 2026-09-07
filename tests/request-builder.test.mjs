@@ -18,6 +18,7 @@ const FIXTURE_SNAPSHOT = {
   enums: FIXTURE_CATALOG.modelEnums,
   runtimeIds: FIXTURE_CATALOG.models.map((m) => m.id),
   thinking: buildThinkingMap(FIXTURE_CATALOG.models),
+  deprecated: FIXTURE_CATALOG.deprecated,
   version: 0,
 };
 const staticPlan = (runtimeModelId) =>

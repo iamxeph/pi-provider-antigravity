@@ -18,8 +18,9 @@ export async function refreshCatalog(context: any): Promise<Array<Model<any>>> {
   const storedEnums = context.stored?.["pi-provider-antigravity"]?.modelEnums;
   const storedRuntimeIds = context.stored?.["pi-provider-antigravity"]?.runtimeIds;
   const storedThinking = context.stored?.["pi-provider-antigravity"]?.thinking;
-  if ((storedEnums || storedRuntimeIds || storedThinking) && getCatalogSnapshot().version === 0) {
-    updateCatalogStore(storedEnums || {}, storedRuntimeIds || [], storedThinking || {});
+  const storedDeprecated = context.stored?.["pi-provider-antigravity"]?.deprecated;
+  if ((storedEnums || storedRuntimeIds || storedThinking || storedDeprecated) && getCatalogSnapshot().version === 0) {
+    updateCatalogStore(storedEnums || {}, storedRuntimeIds || [], storedThinking || {}, storedDeprecated || {});
   }
 
   if (!context.allowNetwork) {
@@ -35,7 +36,8 @@ export async function refreshCatalog(context: any): Promise<Array<Model<any>>> {
     const { token, projectId } = parseStoredCredentials(apiKey);
     const catalog = await fetchAvailableModelsCatalog(token, projectId, DEFAULT_ENDPOINT, context.signal);
     const thinking = buildThinkingMap(catalog.models);
-    updateCatalogStore(catalog.modelEnums, catalog.models.map((m) => m.id), thinking);
+    const deprecated = catalog.deprecated || {};
+    updateCatalogStore(catalog.modelEnums, catalog.models.map((m) => m.id), thinking, deprecated);
 
     const dynamicModels = buildDynamicPublicModels(catalog);
 
@@ -49,6 +51,7 @@ export async function refreshCatalog(context: any): Promise<Array<Model<any>>> {
             modelEnums: catalog.modelEnums,
             runtimeIds: catalog.models.map((m) => m.id),
             thinking,
+            deprecated,
           },
         },
       });
@@ -104,10 +107,22 @@ export function parseAvailableModels(data: any): AvailableModelsCatalog {
 
   models.sort((a, b) => a.id.localeCompare(b.id));
 
+  // Server-directed renames (old Runtime Model ID → current one).
+  const deprecated: Record<string, string> = {};
+  const rawDeprecated = (data as any).deprecatedModelIds;
+  if (rawDeprecated && typeof rawDeprecated === "object") {
+    for (const [oldId, info] of Object.entries<any>(rawDeprecated)) {
+      if (info && typeof info.newModelId === "string") {
+        deprecated[oldId] = info.newModelId;
+      }
+    }
+  }
+
   return {
     models,
     modelEnums,
     ...(agentModelSorts.length > 0 ? { agentModelSorts } : {}),
+    ...(Object.keys(deprecated).length > 0 ? { deprecated } : {}),
   };
 }
 

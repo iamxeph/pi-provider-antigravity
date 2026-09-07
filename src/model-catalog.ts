@@ -103,6 +103,7 @@ export interface AvailableModelsCatalog {
   models: AvailableModelItem[];
   modelEnums: Record<string, string>;
   agentModelSorts?: string[];
+  deprecated?: Record<string, string>;
 }
 
 // Active catalog state: single versioned snapshot. refreshCatalog owns writes;
@@ -117,6 +118,7 @@ export interface CatalogSnapshot {
   enums: Record<string, string>;
   runtimeIds: string[];
   thinking?: Record<string, CatalogThinking>;
+  deprecated?: Record<string, string>;
   version: number;
 }
 
@@ -141,6 +143,7 @@ let activeStore: CatalogSnapshot = {
   enums: {},
   runtimeIds: [],
   thinking: {},
+  deprecated: {},
   version: 0,
 };
 
@@ -151,6 +154,7 @@ export function getCatalogSnapshot(): CatalogSnapshot {
     thinking: Object.fromEntries(
       Object.entries(activeStore.thinking ?? {}).map(([id, info]) => [id, { ...info }]),
     ),
+    deprecated: { ...(activeStore.deprecated ?? {}) },
     version: activeStore.version,
   };
 }
@@ -163,7 +167,8 @@ export function getCatalogSnapshot(): CatalogSnapshot {
 export function updateCatalogStore(
   enums: Record<string, string>,
   runtimeIds: string[],
-  thinking: Record<string, CatalogThinking> = {}
+  thinking: Record<string, CatalogThinking> = {},
+  deprecated: Record<string, string> = {}
 ): void {
   // A fresh generation is complete: replace instead of merging, so enums for
   // server-removed models are evicted instead of pinned forever.
@@ -171,6 +176,7 @@ export function updateCatalogStore(
     enums: { ...enums },
     runtimeIds: [...new Set(runtimeIds)],
     thinking: { ...thinking },
+    deprecated: { ...deprecated },
     version: activeStore.version + 1,
   };
 }
@@ -196,49 +202,9 @@ function resolveRuntimeModelId(
   const isLow = isOff || effort === "low" || effort === "minimal";
   const isMedium = effort === "medium";
 
-  // Known specific models with legacy parity mappings
-  if (modelId === "gemini-3.8-flash") {
-    if (isLow) return "gemini-3.8-flash-low";
-    if (isMedium) return "gemini-3.8-flash-medium";
-    return "gemini-3.8-flash-high";
-  }
-
-  if (modelId === "gemini-3.7-flash") {
-    if (isLow) return "gemini-3.7-flash-low";
-    if (isMedium) return "gemini-3.7-flash-medium";
-    return "gemini-3.7-flash-high";
-  }
-
-  if (modelId === "gemini-3.6-flash") {
-    if (isLow) return "gemini-3.6-flash-low";
-    if (isMedium) return "gemini-3.6-flash-medium";
-    return "gemini-3.6-flash-high";
-  }
-
-  if (modelId === "gemini-3.5-flash") {
-    if (isLow) return "gemini-3.5-flash-extra-low";
-    if (isMedium) return "gemini-3.5-flash-low";
-    return "gemini-3-flash-agent";
-  }
-
-  if (modelId === "gemini-3.1-pro") {
-    if (effort === "high" || effort === "xhigh") return "gemini-pro-agent";
-    return "gemini-3.1-pro-low";
-  }
-
-  if (modelId === "claude-opus-4-6") {
-    return "claude-opus-4-6-thinking";
-  }
-
-  if (modelId === "claude-sonnet-4-6") {
-    return "claude-sonnet-4-6";
-  }
-
-  if (modelId === "gpt-oss-120b") {
-    return "gpt-oss-120b-medium";
-  }
-
-  // Dynamic tier resolution for newly introduced models (e.g. gemini-3.9-flash, claude-opus-4-7, etc.)
+  // Tier resolution against the live snapshot: effort picks suffix candidates
+  // in preference order, the first one the server lists wins — so newly
+  // released models (e.g. gemini-3.9-flash) resolve with no code change.
   if (Array.isArray(availableRuntimeIds) && availableRuntimeIds.length > 0) {
     const candidates: string[] = [];
     if (isLow) {
@@ -299,7 +265,10 @@ export function resolveModelPlan(
   effort?: string,
   snapshot: CatalogSnapshot = getCatalogSnapshot()
 ): ModelPlan {
-  const runtimeModelId = resolveRuntimeModelId(publicModelId, effort, snapshot.runtimeIds);
+  const runtimeModelId = followRenames(
+    resolveRuntimeModelId(publicModelId, effort, snapshot.runtimeIds),
+    snapshot
+  );
   const modelEnum = snapshot.enums[runtimeModelId];
   if (!modelEnum) {
     // Fail fast: a retired or mistyped ID must surface here with guidance,
@@ -316,6 +285,24 @@ export function resolveModelPlan(
     isNonGemini: !runtimeModelId.startsWith("gemini-"),
     isClaude: runtimeModelId.startsWith("claude-"),
   };
+}
+
+/**
+ * Follows server-directed renames (deprecatedModelIds), e.g.
+ * gemini-3.1-pro-high → gemini-pro-agent. Applied uniformly to derived and
+ * explicitly passed IDs: the server lists the old ID as deprecated, so new
+ * code must not keep sending it. Cycles terminate via the visited set.
+ */
+function followRenames(runtimeModelId: string, snapshot: CatalogSnapshot): string {
+  const renamed = snapshot.deprecated;
+  if (!renamed) return runtimeModelId;
+  let current = runtimeModelId;
+  const seen = new Set<string>([current]);
+  while (renamed[current] && !seen.has(renamed[current])) {
+    current = renamed[current];
+    seen.add(current);
+  }
+  return current;
 }
 
 /**

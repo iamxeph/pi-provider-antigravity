@@ -50,6 +50,7 @@ test("Catalog refresh: stored enums and runtime IDs restore active state", async
         modelEnums: { "x-high": "ENUM_X" },
         runtimeIds: ["x-high"],
         thinking: { "x-high": { budget: 4000, supportsThinking: true } },
+        deprecated: { "old-high": "x-high" },
       },
     },
   });
@@ -58,6 +59,7 @@ test("Catalog refresh: stored enums and runtime IDs restore active state", async
   assert.ok(snap.runtimeIds.includes("x-high"));
   assert.equal(snap.enums["x-high"], "ENUM_X");
   assert.deepEqual(snap.thinking?.["x-high"], { budget: 4000, supportsThinking: true });
+  assert.deepEqual(snap.deprecated, { "old-high": "x-high" });
 });
 
 test("Catalog refresh: fresh fetch builds dynamic models and publishes", async () => {
@@ -87,6 +89,7 @@ test("Catalog refresh: fresh fetch builds dynamic models and publishes", async (
     assert.equal(typeof persist.checkedAt, "number");
     assert.deepEqual(persist["pi-provider-antigravity"].modelEnums, expected.modelEnums);
     assert.equal(persist["pi-provider-antigravity"].thinking["gemini-3.7-flash-medium"].budget, 4000);
+    assert.deepEqual(persist["pi-provider-antigravity"].deprecated, expected.deprecated);
   } finally {
     globalThis.fetch = realFetch;
   }
