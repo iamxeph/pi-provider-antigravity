@@ -12,7 +12,7 @@ import { parseStoredCredentials } from "./auth.ts";
 import { createSseFeed, type SseBlockEvent } from "./parser.ts";
 import { buildAntigravityRequestBody } from "./builder.ts";
 import { buildAntigravityHeaders, DEFAULT_ENDPOINT } from "./protocol.ts";
-import { resolveModelPlan, getCatalogSnapshot } from "./catalog.ts";
+import { resolveModelPlan, getCatalogSnapshot } from "./model-catalog.ts";
 
 export function streamAntigravity(
   model: Model<any>,

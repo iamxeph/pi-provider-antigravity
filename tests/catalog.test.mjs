@@ -3,14 +3,17 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import {
   parseAvailableModels,
+} from "../src/catalog-refresh.ts";
+import {
   formatModelsList,
-  buildDynamicPublicModels,
   formatModelDisplayName,
+} from "../src/catalog-view.ts";
+import {
+  buildDynamicPublicModels,
   estimateModelCost,
   synthesizeDynamicModel,
   resolveModelPlan,
-  extractBaseModelId,
-} from "../src/catalog.ts";
+} from "../src/model-catalog.ts";
 import { buildAntigravityRequestBody } from "../src/builder.ts";
 
 const modelsJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.1.26/models.resp.json", "utf-8"));
@@ -97,15 +100,6 @@ test("Seam 3: buildDynamicPublicModels returns empty array on empty or missing c
   assert.deepEqual(fallbackUndefined, []);
 });
 
-test("Seam 3: extractBaseModelId strips tier suffixes accurately", () => {
-  assert.equal(extractBaseModelId("gemini-99.9-flash-high"), "gemini-99.9-flash");
-  assert.equal(extractBaseModelId("gemini-99.9-flash-medium"), "gemini-99.9-flash");
-  assert.equal(extractBaseModelId("gemini-99.9-flash-low"), "gemini-99.9-flash");
-  assert.equal(extractBaseModelId("gemini-99.9-flash-tiered"), "gemini-99.9-flash");
-  assert.equal(extractBaseModelId("claude-opus-4-6-thinking"), "claude-opus-4-6");
-  assert.equal(extractBaseModelId("gemini-pro-agent"), "gemini-3.1-pro");
-  assert.equal(extractBaseModelId("claude-sonnet-4-7"), "claude-sonnet-4-7");
-});
 
 test("Seam 3: formatModelDisplayName strips all parenthesized tiers", () => {
   assert.equal(

@@ -4,13 +4,13 @@ import fs from "node:fs";
 import {
   buildAntigravityRequestBody,
 } from "../src/builder.ts";
+import { refreshCatalog } from "../src/catalog-refresh.ts";
 import {
   resolveModelPlan,
   getCatalogSnapshot,
-  refreshCatalog,
   getThinkingConfig,
   STATIC_MODEL_ENUMS,
-} from "../src/catalog.ts";
+} from "../src/model-catalog.ts";
 
 const STATIC_SNAPSHOT = { enums: STATIC_MODEL_ENUMS, runtimeIds: [], version: 0 };
 const staticPlan = (runtimeModelId) =>

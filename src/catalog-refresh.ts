@@ -1,0 +1,129 @@
+import { DEFAULT_ENDPOINT, buildAntigravityHeaders } from "./protocol.ts";
+import { parseStoredCredentials } from "./auth.ts";
+import type { AvailableModelItem, AvailableModelsCatalog } from "./model-catalog.ts";
+import { buildDynamicPublicModels, getCatalogSnapshot, updateCatalogStore } from "./model-catalog.ts";
+import type { Model } from "@earendil-works/pi-ai";
+
+/**
+ * Model Catalog refresh (wire, ports & adapters): fetchAvailableModels fetch,
+ * Capture Fixture-shaped parse, and Catalog Persistence publish.
+ * Produces AvailableModelsCatalog values and records generations via
+ * updateCatalogStore; all pure mapping lives in model-catalog.ts and all
+ * presentation (formatModelsList) lives in catalog-view.ts.
+ */
+export async function refreshCatalog(context: any): Promise<Array<Model<any>>> {
+  // Restore from context.stored first for offline restart support,
+  // but only into a pristine store: a failed refresh must not clobber a
+  // fresher in-memory snapshot with older persisted data.
+  const storedEnums = context.stored?.["pi-provider-antigravity"]?.modelEnums;
+  const storedRuntimeIds = context.stored?.["pi-provider-antigravity"]?.runtimeIds;
+  if ((storedEnums || storedRuntimeIds) && getCatalogSnapshot().version === 0) {
+    updateCatalogStore(storedEnums || {}, storedRuntimeIds || []);
+  }
+
+  if (!context.allowNetwork) {
+    return context.stored?.models || [];
+  }
+
+  try {
+    const apiKey = context.credential?.access;
+    if (!apiKey) {
+      return context.stored?.models || [];
+    }
+
+    const { token, projectId } = parseStoredCredentials(apiKey);
+    const catalog = await fetchAvailableModelsCatalog(token, projectId, DEFAULT_ENDPOINT, context.signal);
+    updateCatalogStore(catalog.modelEnums, catalog.models.map((m) => m.id));
+
+    const dynamicModels = buildDynamicPublicModels(catalog);
+
+    // Publish to Pi models-store.json
+    if (context.publish) {
+      await context.publish({
+        persist: {
+          models: dynamicModels,
+          checkedAt: Date.now(),
+          "pi-provider-antigravity": {
+            modelEnums: catalog.modelEnums,
+            runtimeIds: catalog.models.map((m) => m.id),
+          },
+        },
+      });
+    }
+
+    return dynamicModels;
+  } catch {
+    return context.stored?.models || [];
+  }
+}
+
+export function parseAvailableModels(data: any): AvailableModelsCatalog {
+  const models: AvailableModelItem[] = [];
+  const modelEnums: Record<string, string> = {};
+
+  const modelsObj = data.models || {};
+  for (const [id, info] of Object.entries<any>(modelsObj)) {
+    if (id.startsWith("tab_") || id.startsWith("chat_")) continue; // hide internal completions
+
+    const modelEnum = typeof info.model === "string" ? info.model : undefined;
+    if (modelEnum) {
+      modelEnums[id] = modelEnum;
+    }
+
+    const quotaInfo = info.quotaInfo || {};
+    models.push({
+      id,
+      displayName: info.displayName || info.label || id,
+      modelEnum,
+      remainingFraction: quotaInfo.remainingFraction,
+      resetTime: quotaInfo.resetTime,
+      supportsThinking: Boolean(info.supportsThinking),
+      supportsImages: Boolean(info.supportsImages),
+      maxTokens: typeof info.maxTokens === "number" ? info.maxTokens : undefined,
+      maxOutputTokens: typeof info.maxOutputTokens === "number" ? info.maxOutputTokens : undefined,
+    });
+  }
+
+  const agentModelSorts: string[] = [];
+  if (Array.isArray(data.agentModelSorts)) {
+    for (const sortGroup of data.agentModelSorts) {
+      if (Array.isArray(sortGroup.groups)) {
+        for (const group of sortGroup.groups) {
+          if (Array.isArray(group.modelIds)) {
+            agentModelSorts.push(...group.modelIds);
+          }
+        }
+      }
+    }
+  }
+
+  models.sort((a, b) => a.id.localeCompare(b.id));
+
+  return {
+    models,
+    modelEnums,
+    ...(agentModelSorts.length > 0 ? { agentModelSorts } : {}),
+  };
+}
+
+export async function fetchAvailableModelsCatalog(
+  token: string,
+  projectId = "aicode-consumers",
+  endpoint = DEFAULT_ENDPOINT,
+  signal?: AbortSignal
+): Promise<AvailableModelsCatalog> {
+  const res = await fetch(`${endpoint}/v1internal:fetchAvailableModels`, {
+    method: "POST",
+    headers: buildAntigravityHeaders(token),
+    body: JSON.stringify({ project: projectId }),
+    signal,
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Failed to fetch models (${res.status}): ${errText}`);
+  }
+  const json = await res.json();
+  return parseAvailableModels(json);
+}
+
+

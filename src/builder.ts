@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
-import type { ModelPlan } from "./catalog.ts";
-import { extractBaseModelId } from "./catalog.ts";
+import type { ModelPlan } from "./model-catalog.ts";
+import { extractBaseModelId } from "./model-catalog.ts";
 import { PROVIDER_ID } from "./protocol.ts";
 
 export interface BuildRequestBodyParams {

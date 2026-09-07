@@ -2,11 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { DEFAULT_USER_AGENT } from "../src/protocol.ts";
+import { parseAvailableModels } from "../src/catalog-refresh.ts";
 import {
-  parseAvailableModels,
   resolveModelPlan,
   STATIC_MODEL_ENUMS,
-} from "../src/catalog.ts";
+} from "../src/model-catalog.ts";
 import { buildAntigravityRequestBody } from "../src/builder.ts";
 import { createSseFeed } from "../src/parser.ts";
 
