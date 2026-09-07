@@ -1489,3 +1489,44 @@ test("Seam 1 (#15): thinking-only turn falls back to the last part (uncovered ed
   assert.equal(turn.parts[0].thought, true);
   assert.equal(turn.parts[0].thoughtSignature, sig);
 });
+
+test("Seam 1: replay drops vacuous text parts (live Claude 400)", () => {
+  // Live shape: the feed opened a leading empty text block, and the backend
+  // rejects {"text": ""} on replay with `text.text: Field required`.
+  const context = {
+    messages: [
+      { role: "user", content: "q" },
+      {
+        role: "assistant",
+        provider: "antigravity",
+        model: "claude-sonnet-4-6",
+        content: [
+          { type: "text", text: "" },
+          {
+            type: "thinking",
+            thinking: "brief thought",
+            thinkingSignature: "EtUOCtIOARFNMg8lE2aQ3yiigw==",
+          },
+          { type: "text", text: "391" },
+        ],
+      },
+      { role: "user", content: "next" },
+    ],
+  };
+
+  const body = buildAntigravityRequestBody({
+    projectId: "aicode-consumers",
+    plan: staticPlan("claude-sonnet-4-6"),
+    context,
+  });
+
+  const turn = body.request.contents[1];
+  assert.ok(
+    turn.parts.every((p) => p.text === undefined || p.text !== ""),
+    "no vacuous text part may replay"
+  );
+  assert.deepEqual(
+    turn.parts.map((p) => (p.thought === true ? "thought" : p.text)),
+    ["thought", "391"]
+  );
+});
