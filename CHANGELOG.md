@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.2.1...v0.3.0) (2026-09-07)
+
+
+### Features
+
+* **catalog:** resolve tiers and thinking budgets from the live snapshot ([#37](https://github.com/iamxeph/pi-provider-antigravity/issues/37)) ([bf5a469](https://github.com/iamxeph/pi-provider-antigravity/commit/bf5a469e7be1d26165ef27db4a21f05f9a7fbbef))
+
 ## [0.2.1](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.2.0...v0.2.1) (2026-09-06)
 
 
