@@ -5,7 +5,7 @@ import { DEFAULT_USER_AGENT } from "../src/protocol.ts";
 import { parseAvailableModels } from "../src/catalog-refresh.ts";
 import {
   resolveModelPlan,
-  STATIC_MODEL_ENUMS,
+  buildThinkingMap,
 } from "../src/model-catalog.ts";
 import { buildAntigravityRequestBody } from "../src/builder.ts";
 import { createSseFeed } from "../src/parser.ts";
@@ -244,9 +244,13 @@ for (const dir of DIRS) {
 
   test(`Wire parity (${dir}): builder reproduces the captured envelope`, () => {
     const turn1 = load(dir, "stream_turn1_initial");
+    const fixtureCatalog = parseAvailableModels(
+      JSON.parse(fs.readFileSync(`captures/${dir}/models.resp.json`, "utf-8"))
+    );
     const plan = resolveModelPlan(turn1.body.model, undefined, {
-      enums: STATIC_MODEL_ENUMS,
-      runtimeIds: [],
+      enums: fixtureCatalog.modelEnums,
+      runtimeIds: fixtureCatalog.models.map((m) => m.id),
+      thinking: buildThinkingMap(fixtureCatalog.models),
       version: 0,
     });
     // 9 assistant turns + trailing user turn, mirroring the Turn 4/5 shape.
