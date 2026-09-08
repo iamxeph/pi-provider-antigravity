@@ -65,3 +65,28 @@ test("Seam 2: close() flushes an unterminated trailing line", () => {
   assert.ok(closing.content.length >= 1, "flushed line must produce a block");
 });
 
+test("Seam 2: every feed() output carries the live content ref its indices are valid into", () => {
+  for (const raw of [sseTurn1, sseTurn5]) {
+    const feed = createSseFeed();
+    const decoder = new TextDecoder();
+    const bytes = new TextEncoder().encode(raw);
+    let first = null;
+    for (let i = 0; i < bytes.length; i += 997) {
+      const out = feed.feed(decoder.decode(bytes.slice(i, i + 997), { stream: true }));
+      if (first === null) first = out.content;
+      assert.equal(out.content, first, "content is the single store, not a copy");
+      for (const e of out.events) {
+        assert.ok(e.index < out.content.length, `event index ${e.index} valid into live content`);
+        if (e.kind === "text_start" || e.kind === "text_delta" || e.kind === "text_end") {
+          assert.equal(out.content[e.index].type, "text");
+        } else if (e.kind === "thinking_start" || e.kind === "thinking_delta" || e.kind === "thinking_end") {
+          assert.equal(out.content[e.index].type, "thinking");
+        } else {
+          assert.equal(out.content[e.index].type, "toolCall");
+        }
+      }
+    }
+    feed.close();
+  }
+});
+

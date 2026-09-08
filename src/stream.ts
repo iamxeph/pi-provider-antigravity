@@ -111,28 +111,24 @@ export function streamAntigravity(
         }
       };
 
+      // translate is a pure event forwarder: blocks live in the feed's
+      // single store (output.content re-points at the live ref below), so
+      // event indices never skew and no parallel array exists to maintain.
       const translate = (events: SseBlockEvent[]) => {
         for (const ev of events) {
           if (ev.kind === "text_start" || ev.kind === "thinking_start") {
             const isThinking = ev.kind === "thinking_start";
-            output.content.push(
-              isThinking ? { type: "thinking", thinking: "" } : { type: "text", text: "" }
-            );
             stream.push(
               isThinking
                 ? { type: "thinking_start", contentIndex: ev.index, partial: output }
                 : { type: "text_start", contentIndex: ev.index, partial: output }
             );
           } else if (ev.kind === "text_delta" || ev.kind === "thinking_delta") {
-            const block = output.content[ev.index];
-            if (ev.kind === "text_delta" && block?.type === "text") {
-              block.text += ev.delta;
-              stream.push({ type: "text_delta", contentIndex: ev.index, delta: ev.delta, partial: output });
-            } else if (ev.kind === "thinking_delta" && block?.type === "thinking") {
-              block.thinking += ev.delta;
-              if (ev.thinkingSignature !== undefined) block.thinkingSignature = ev.thinkingSignature;
-              stream.push({ type: "thinking_delta", contentIndex: ev.index, delta: ev.delta, partial: output });
-            }
+            stream.push(
+              ev.kind === "text_delta"
+                ? { type: "text_delta", contentIndex: ev.index, delta: ev.delta, partial: output }
+                : { type: "thinking_delta", contentIndex: ev.index, delta: ev.delta, partial: output }
+            );
           } else if (ev.kind === "text_end" || ev.kind === "thinking_end") {
             stream.push(
               ev.kind === "text_end"
@@ -143,13 +139,10 @@ export function streamAntigravity(
             const toolCall = {
               type: "toolCall" as const,
               id: ev.block.id,
-              name: ev.block.name as string,
+              name: ev.block.name,
               arguments: ev.block.arguments || {},
               thoughtSignature: ev.block.thoughtSignature,
             };
-
-            output.content.push(toolCall);
-
             stream.push({ type: "toolcall_start", contentIndex: ev.index, partial: output });
             stream.push({
               type: "toolcall_delta",
@@ -167,26 +160,15 @@ export function streamAntigravity(
         }
       };
 
-      // Single driver for one feed output: usage, stopReason, event
-      // translation, and (at close only) Thought Signature placement all
-      // flow through here, so the positional alignment between the feed's
-      // content and the assembled message is owned in one place.
-      const applyFeedOutput = (fed: SseFeedOutput, isFinal = false) => {
+      // Single driver for one feed output: usage, stopReason, and event
+      // translation flow through here. Content lives in the feed's store —
+      // every output re-points at the live ref, so close() hands over the
+      // final blocks with Thought Signatures already placed (no copy here).
+      const applyFeedOutput = (fed: SseFeedOutput) => {
+        output.content = fed.content;
         applyUsage(fed.usage);
         output.stopReason = fed.stopReason;
         translate(fed.events);
-        if (!isFinal || !fed.content) return;
-        // Signature placement is complete in the feed's final content
-        // (SDK-spelled by the parser): copy verbatim, no respelling here.
-        fed.content.forEach((block, index) => {
-          const target = output.content[index];
-          if (!target) return;
-          if (block.type === "thinking" && target.type === "thinking") {
-            if (block.thinkingSignature !== undefined) target.thinkingSignature = block.thinkingSignature;
-          } else if (block.type === "text" && target.type === "text") {
-            if (block.textSignature !== undefined) target.textSignature = block.textSignature;
-          }
-        });
       };
 
       while (true) {
@@ -196,7 +178,7 @@ export function streamAntigravity(
         applyFeedOutput(feed.feed(decoder.decode(value, { stream: true })));
       }
 
-      applyFeedOutput(feed.close(), true);
+      applyFeedOutput(feed.close());
 
       const doneReason: "stop" | "toolUse" | "length" =
         output.stopReason === "toolUse" || output.stopReason === "length"
