@@ -2,7 +2,7 @@ import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-c
 import { loginAntigravity, refreshAntigravityToken, getApiKey } from "./auth.ts";
 import { DEFAULT_ENDPOINT, PROVIDER_ID } from "./protocol.ts";
 import { refreshCatalog } from "./catalog-refresh.ts";
-import { QuotaStatusCoordinator } from "./usage-status.ts";
+import { QuotaStatusCoordinator } from "./quota-status.ts";
 import { fileQuotaStatusStore } from "./settings.ts";
 import { streamAntigravity } from "./stream.ts";
 import { runAntigravitySubcommand } from "./commands.ts";

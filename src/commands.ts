@@ -2,9 +2,10 @@ import type { ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { parseStoredCredentials } from "./auth.ts";
 import { PROVIDER_ID } from "./protocol.ts";
 import {
-  fetchQuotaSummary,
   formatQuotaSummary,
-} from "./quota.ts";
+  paintQuotaStatus,
+  type QuotaStatusCoordinator,
+} from "./quota-status.ts";
 import {
   fetchAvailableModelsCatalog,
 } from "./catalog-refresh.ts";
@@ -13,10 +14,6 @@ import {
 } from "./model-catalog.ts";
 
 import { emitOutput, openSettings } from "./settings.ts";
-import {
-  paintQuotaStatus,
-  type QuotaStatusCoordinator,
-} from "./usage-status.ts";
 
 const USAGE_TEXT =
   "Usage: /antigravity <command>\n\nCommands:\n  usage    Show 5h and weekly quota pool limits\n  models   List recommended models with context window and remaining quota (alias: model)\n  refresh  Force refresh model catalog\n  settings Pick provider settings: Enter cycles values (alias: setting)\n  login    Run /login antigravity";
@@ -73,20 +70,25 @@ async function runUsageSubcommand(
   ctx: ExtensionCommandContext,
   quotaStatus?: QuotaStatusCoordinator,
 ): Promise<void> {
-  const creds = await resolveToken(ctx);
-  if (!creds) {
+  if ((await resolveToken(ctx)) === null) {
     emitOutput(ctx, "Not logged in. Run /login antigravity first.", "warning");
+    return;
+  }
+  if (!quotaStatus) {
+    emitOutput(ctx, "Quota status is unavailable.", "error");
     return;
   }
   try {
     if (ctx.hasUI) ctx.ui.notify("Fetching quota summary…", "info");
-    const summary = await fetchQuotaSummary(creds.token, creds.projectId, ctx.signal);
-    // Feed the shared cache so the footer, calibration, and disk state see
-    // this fresh observation too — no redundant fetch, no stale footer.
-    if (quotaStatus) {
-      quotaStatus.ingest(summary);
-      paintQuotaStatus(quotaStatus, ctx);
+    // Explicit look at quota: bypass the mode and model gates, but share the
+    // fetch, calibration, and persistence with the footer — no redundant
+    // fetch, no stale footer.
+    const summary = await quotaStatus.refresh(ctx, { force: true, ignoreMode: true, signal: ctx.signal });
+    if (!summary) {
+      emitOutput(ctx, "Failed to fetch usage.", "error");
+      return;
     }
+    paintQuotaStatus(quotaStatus, ctx);
     emitOutput(ctx, formatQuotaSummary(summary));
   } catch (err: any) {
     emitOutput(ctx, `Failed to fetch usage: ${err.message}`, "error");

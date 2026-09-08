@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { runAntigravitySubcommand } from "../src/commands.ts";
 import initExtension from "../src/index.ts";
-import { QuotaStatusCoordinator } from "../src/usage-status.ts";
+import { QuotaStatusCoordinator } from "../src/quota-status.ts";
 import { fileQuotaStatusStore } from "../src/settings.ts";
 
 const quotaJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.1.26/quota.resp.json", "utf-8"));
@@ -17,6 +17,14 @@ function stubFetchRouter() {
     if (u.includes("retrieveUserQuotaSummary")) return { ok: true, json: async () => quotaJson };
     if (u.includes("fetchAvailableModels")) return { ok: true, json: async () => modelsJson };
     throw new Error(`unexpected fetch: ${u}`);
+  };
+}
+
+function memStore(mode = "single") {
+  return {
+    loadMode: () => mode,
+    loadQuotaState: () => undefined,
+    saveQuotaState: () => true,
   };
 }
 
@@ -44,7 +52,7 @@ test("Subcommand: usage prints Quota Pool groups", async () => {
   globalThis.fetch = stubFetchRouter();
   try {
     const outputs = [];
-    await runAntigravitySubcommand("usage", makeCtx(outputs));
+    await runAntigravitySubcommand("usage", makeCtx(outputs), new QuotaStatusCoordinator(memStore()));
     const all = outputs.join("\n");
     assert.match(all, /Fetching quota summary/);
     assert.match(all, /Gemini Models/);

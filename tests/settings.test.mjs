@@ -3,9 +3,10 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { applySettingValue, buildSettingsItems, defaultConfigFile, fileQuotaStatusStore, loadProviderConfig, normalizeFooterMode, previewQuotaFooterText, resolveFooterMode, SETTINGS_FIELDS } from "../src/settings.ts";
+import { applySettingValue, buildSettingsItems, defaultConfigFile, loadProviderConfig, normalizeFooterMode, previewQuotaFooterText, resolveFooterMode, SETTINGS_FIELDS } from "../src/settings.ts";
 import { runAntigravitySubcommand } from "../src/commands.ts";
-import { QuotaStatusCoordinator } from "../src/usage-status.ts";
+import { QuotaStatusCoordinator } from "../src/quota-status.ts";
+import { fileQuotaStatusStore } from "../src/settings.ts";
 
 function makeConf(settings) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agy-set-"));
@@ -69,6 +70,34 @@ test("File config: default path mirrors Pi, garbage is unconfigured", () => {
   assert.equal(loadProviderConfig(file), undefined);
   fs.writeFileSync(file, "[1,2]");
   assert.equal(loadProviderConfig(file), undefined);
+});
+
+test("fileQuotaStatusStore: state merges without clobbering", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agy-store-"));
+  const file = path.join(dir, "pi-provider-antigravity.json");
+  fs.writeFileSync(file, JSON.stringify({ settings: { quotaFooter: "both" }, states: { other: { x: 1 } } }));
+  const store = fileQuotaStatusStore(file);
+
+  assert.equal(store.loadMode(), "both");
+  assert.equal(store.loadQuotaState(), undefined);
+  assert.equal(store.saveQuotaState({ weeklyTo5hRatio: 4, previousObservation: {}, updatedAt: 1 }), true);
+
+  const saved = JSON.parse(fs.readFileSync(file, "utf-8"));
+  assert.equal(saved.settings.quotaFooter, "both"); // settings preserved
+  assert.deepEqual(saved.states.other, { x: 1 }); // sibling entries preserved
+  assert.equal(saved.states.quota.weeklyTo5hRatio, 4);
+});
+
+test("fileQuotaStatusStore: garbage file is never clobbered", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agy-store-"));
+  const file = path.join(dir, "pi-provider-antigravity.json");
+  fs.writeFileSync(file, "{oops");
+  const store = fileQuotaStatusStore(file);
+
+  assert.equal(store.loadMode(), "off");
+  assert.equal(store.loadQuotaState(), undefined);
+  assert.equal(store.saveQuotaState({ weeklyTo5hRatio: 4, previousObservation: {}, updatedAt: 1 }), false);
+  assert.equal(fs.readFileSync(file, "utf-8"), "{oops"); // untouched
 });
 
 test("Settings items carry current values and options", () => {

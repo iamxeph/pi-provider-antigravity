@@ -3,12 +3,13 @@ import * as os from "node:os";
 import * as path from "node:path";
 import type { ExtensionCommandContext, Theme } from "@earendil-works/pi-coding-agent";
 import { SettingsList, type SettingItem, type SettingsListTheme } from "@earendil-works/pi-tui";
-import { colorizeQuotaFooter, colorizeQuotaFooterBoth } from "./quota.ts";
 import {
+  colorizeQuotaFooter,
+  colorizeQuotaFooterBoth,
   paintQuotaStatus,
   type QuotaStatusCoordinator,
   type QuotaStatusStore,
-} from "./usage-status.ts";
+} from "./quota-status.ts";
 
 export const PROVIDER_CONFIG_FILE = "pi-provider-antigravity.json";
 
