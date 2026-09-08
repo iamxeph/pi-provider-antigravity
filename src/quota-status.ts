@@ -1,5 +1,6 @@
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { parseStoredCredentials } from "./auth.ts";
+import { classifyModelFamily } from "./model-catalog.ts";
 import { postAntigravity, PROVIDER_ID } from "./protocol.ts";
 import type { QuotaFooterMode } from "./settings.ts";
 
@@ -135,8 +136,8 @@ export function isGeminiQuotaGroup(group: QuotaGroup): boolean {
 
 export function selectQuotaGroup(groups: QuotaGroup[], modelId?: string): QuotaGroup | undefined {
   if (groups.length === 0) return undefined;
-  const lower = (modelId || "").toLowerCase();
-  if (lower.includes("claude") || lower.includes("gpt") || lower.includes("3p")) {
+  const family = classifyModelFamily(modelId);
+  if (family === "claude" || family === "gpt") {
     const found = groups.find((g) => !isGeminiQuotaGroup(g));
     if (found) return found;
   }
