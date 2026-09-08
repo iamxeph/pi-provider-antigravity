@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.3.0...v0.4.0) (2026-09-08)
+
+
+### Features
+
+* **quota:** live footer slot and provider settings subcommand ([eb3cc2c](https://github.com/iamxeph/pi-provider-antigravity/commit/eb3cc2c47f142b922c16d3cea2a1e0808ef49f22))
+
 ## [0.3.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.2.1...v0.3.0) (2026-09-07)
 
 
