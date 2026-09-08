@@ -11,6 +11,7 @@ await esbuild.build({
   external: [
     "@earendil-works/pi-ai",
     "@earendil-works/pi-coding-agent",
+    "@earendil-works/pi-tui",
     "node:*",
   ],
 });

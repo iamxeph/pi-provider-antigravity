@@ -58,6 +58,10 @@ _Avoid_: Model group, vendor prefix
 Google 계정의 티어에 따라 모델 그룹(Gemini 풀, Claude/GPT-OSS 풀 등)이 5시간 및 주간 단위로 공유하는 사용량 한도.
 _Avoid_: Rate limit, token bucket, credit
 
+**Quota Status**:
+Footer slot에 표시되는 Quota Pool 잔량 요약과 그 뒤의 갱신·보정 책임.
+_Avoid_: Quota widget
+
 ### Interface
 
 **Subcommand**:

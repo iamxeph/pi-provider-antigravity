@@ -91,6 +91,7 @@ test("Seam Auth: /antigravity login sets editor text in UI mode", async () => {
   let commandHandler;
   const mockPi = {
     registerProvider: () => {},
+    on: () => {},
     registerCommand: (name, def) => {
       if (name === "antigravity") {
         commandHandler = def.handler;
@@ -123,6 +124,7 @@ test("Seam Auth: /antigravity login falls back to console in non-UI mode", async
   let commandHandler;
   const mockPi = {
     registerProvider: () => {},
+    on: () => {},
     registerCommand: (name, def) => {
       if (name === "antigravity") {
         commandHandler = def.handler;
@@ -149,6 +151,7 @@ test("Seam Auth: /antigravity model is an alias of models", async () => {
   let commandHandler;
   const mockPi = {
     registerProvider: () => {},
+    on: () => {},
     registerCommand: (name, def) => {
       if (name === "antigravity") {
         commandHandler = def.handler;

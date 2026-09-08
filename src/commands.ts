@@ -2,9 +2,10 @@ import type { ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { parseStoredCredentials } from "./auth.ts";
 import { PROVIDER_ID } from "./protocol.ts";
 import {
-  fetchQuotaSummary,
   formatQuotaSummary,
-} from "./quota.ts";
+  paintQuotaStatus,
+  type QuotaStatusCoordinator,
+} from "./quota-status.ts";
 import {
   fetchAvailableModelsCatalog,
 } from "./catalog-refresh.ts";
@@ -12,8 +13,10 @@ import {
   formatModelsList,
 } from "./model-catalog.ts";
 
+import { emitOutput, openSettings } from "./settings.ts";
+
 const USAGE_TEXT =
-  "Usage: /antigravity <command>\n\nCommands:\n  usage    Show 5h and weekly quota pool limits\n  models   List recommended models with context window and remaining quota (alias: model)\n  refresh  Force refresh model catalog\n  login    Run /login antigravity";
+  "Usage: /antigravity <command>\n\nCommands:\n  usage    Show 5h and weekly quota pool limits\n  models   List recommended models with context window and remaining quota (alias: model)\n  refresh  Force refresh model catalog\n  settings Pick provider settings: Enter cycles values (alias: setting)\n  login    Run /login antigravity";
 
 interface FetchSubcommand {
   progress: string;
@@ -22,12 +25,6 @@ interface FetchSubcommand {
 }
 
 const FETCH_SUBCOMMANDS: Record<string, FetchSubcommand> = {
-  usage: {
-    progress: "Fetching quota summary…",
-    errLabel: "usage",
-    run: (token, projectId, signal) =>
-      fetchQuotaSummary(token, projectId, signal).then(formatQuotaSummary),
-  },
   models: {
     progress: "Fetching available models…",
     errLabel: "models",
@@ -35,15 +32,6 @@ const FETCH_SUBCOMMANDS: Record<string, FetchSubcommand> = {
       fetchAvailableModelsCatalog(token, projectId, signal).then(formatModelsList),
   },
 };
-
-function emitOutput(ctx: ExtensionCommandContext, text: string, type: "info" | "warning" | "error" = "info"): void {
-  if (ctx.hasUI) {
-    ctx.ui.notify(text, type);
-  } else {
-    if (type === "error" || type === "warning") console.error(text);
-    else console.log(text);
-  }
-}
 
 export async function resolveToken(
   ctx: ExtensionCommandContext
@@ -72,16 +60,62 @@ async function runWithToken(
 
 export function parseAntigravitySubcommand(args: string): string {
   const sub = (args || "").trim().toLowerCase();
-  // "model" is an alias of "models"
-  return sub === "model" ? "models" : sub;
+  // Aliases: "model" → "models", "setting" → "settings"
+  if (sub === "model") return "models";
+  if (sub === "setting") return "settings";
+  return sub;
 }
 
-export async function runAntigravitySubcommand(args: string, ctx: ExtensionCommandContext): Promise<void> {
-  const sub = parseAntigravitySubcommand(args);
+async function runUsageSubcommand(
+  ctx: ExtensionCommandContext,
+  quotaStatus?: QuotaStatusCoordinator,
+): Promise<void> {
+  if ((await resolveToken(ctx)) === null) {
+    emitOutput(ctx, "Not logged in. Run /login antigravity first.", "warning");
+    return;
+  }
+  if (!quotaStatus) {
+    emitOutput(ctx, "Quota status is unavailable.", "error");
+    return;
+  }
+  try {
+    if (ctx.hasUI) ctx.ui.notify("Fetching quota summary…", "info");
+    // Explicit look at quota: bypass the mode and model gates, but share the
+    // fetch, calibration, and persistence with the footer — no redundant
+    // fetch, no stale footer.
+    const summary = await quotaStatus.refresh(ctx, { force: true, ignoreMode: true, signal: ctx.signal });
+    if (!summary) {
+      emitOutput(ctx, "Failed to fetch usage.", "error");
+      return;
+    }
+    paintQuotaStatus(quotaStatus, ctx);
+    emitOutput(ctx, formatQuotaSummary(summary));
+  } catch (err: any) {
+    emitOutput(ctx, `Failed to fetch usage: ${err.message}`, "error");
+  }
+}
+
+export async function runAntigravitySubcommand(
+  args: string,
+  ctx: ExtensionCommandContext,
+  quotaStatus?: QuotaStatusCoordinator,
+): Promise<void> {
+  const parts = (args || "").trim().split(/\s+/).filter(Boolean);
+  const sub = parseAntigravitySubcommand(parts[0] || "");
+
+  if (sub === "usage") {
+    await runUsageSubcommand(ctx, quotaStatus);
+    return;
+  }
 
   const fetchCmd = FETCH_SUBCOMMANDS[sub];
   if (fetchCmd) {
     await runWithToken(ctx, fetchCmd);
+    return;
+  }
+
+  if (sub === "settings") {
+    await openSettings(ctx, quotaStatus);
     return;
   }
 

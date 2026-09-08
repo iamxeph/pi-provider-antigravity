@@ -1,17 +1,12 @@
-export interface ParsedBlock {
-  type: "text" | "thinking" | "toolCall";
-  text?: string;
-  thinking?: string;
-  /** Wire spelling. In close() content only toolCall blocks carry it. */
-  thoughtSignature?: string;
-  /** SDK spelling. In close() content only thinking blocks carry it. */
-  thinkingSignature?: string;
-  /** SDK spelling. In close() content only text blocks carry it. */
-  textSignature?: string;
-  id?: string;
-  name?: string;
-  arguments?: Record<string, any>;
-}
+import type { TextContent, ThinkingContent, ToolCall } from "@earendil-works/pi-ai";
+
+/**
+ * One assembled content block, Pi-spelled (TextContent | ThinkingContent |
+ * ToolCall): thinking blocks carry thinkingSignature, text blocks carry
+ * textSignature, toolCalls carry the wire-spelled thoughtSignature.
+ * The import is type-only — the module stays dependency-free at runtime.
+ */
+export type ParsedBlock = TextContent | ThinkingContent | ToolCall;
 
 export interface ParsedStreamResult {
   content: ParsedBlock[];
@@ -28,31 +23,33 @@ export type SseBlockEvent =
   | { kind: "text_start" | "thinking_start"; index: number }
   | { kind: "text_delta" | "thinking_delta"; index: number; delta: string; thinkingSignature?: string }
   | { kind: "text_end" | "thinking_end"; index: number; content: string }
-  | { kind: "toolCall"; index: number; block: ParsedBlock & { id: string } };
+  | { kind: "toolCall"; index: number; block: ToolCall };
 
 export interface SseFeedOutput {
   events: SseBlockEvent[];
   usage: ParsedStreamResult["usage"];
   stopReason: ParsedStreamResult["stopReason"];
   /**
-   * Final assembled blocks with placement-complete SDK-spelled signatures
-   * (thinkingSignature / textSignature / thoughtSignature). Only present on
-   * close(). Callers copy it verbatim; no respelling downstream.
+   * Live ref to the single assembled-block store owned by this feed.
+   * Every event index is valid into it at the time the output is returned.
+   * Read-only for callers: the feed is the sole writer. Signatures are
+   * placement-complete only on close() (SDK spelling); no respelling downstream.
    */
-  content?: ParsedBlock[];
+  content: ParsedBlock[];
 }
 
 /**
  * Stateful incremental SSE reader: the single module that understands the
  * Antigravity Wire Fingerprint on the wire. Feed raw response chunks as they
- * arrive; line buffering, block accumulation, usage, stopReason, and lone
- * Thought Signature attachment all live here. Callers only translate
- * BlockEvents (thin adapters). close() is the single final surface: terminal
- * events plus the fully assembled content.
+ * arrive; line buffering, block accumulation, usage, stopReason, lone
+ * Thought Signature attachment, and the single assembled-block store all live
+ * here. Callers translate BlockEvents into their own event vocabulary and read
+ * blocks through the live content ref — never a parallel array. close() is
+ * the single final surface: terminal events plus the fully assembled content.
  */
 export function createSseFeed(): {
   feed(chunk: string): SseFeedOutput;
-  close(): SseFeedOutput & { content: ParsedBlock[] };
+  close(): SseFeedOutput;
 } {
   const content: ParsedBlock[] = [];
   const usage = {
@@ -70,6 +67,7 @@ export function createSseFeed(): {
     events,
     usage: { ...usage },
     stopReason,
+    content,
   });
 
   // Lone-signature turn: a Thought Signature that arrived detached from any
@@ -78,13 +76,14 @@ export function createSseFeed(): {
   // placement policy instead of every caller re-deriving it.
   const attachLoneSignature = (): void => {
     if (!lastThoughtSignature) return;
-    const thinking = content.find((b) => b.type === "thinking");
+    const thinking = content.find((b): b is ThinkingContent => b.type === "thinking");
     if (thinking && !thinking.thinkingSignature) {
       thinking.thinkingSignature = lastThoughtSignature;
     } else if (!thinking) {
       for (let i = content.length - 1; i >= 0; i--) {
-        if (content[i].type === "text" && !content[i].textSignature) {
-          content[i].textSignature = lastThoughtSignature;
+        const block = content[i];
+        if (block?.type === "text" && !block.textSignature) {
+          block.textSignature = lastThoughtSignature;
           break;
         }
       }
@@ -95,10 +94,10 @@ export function createSseFeed(): {
     if (openType === null) return;
     const index = content.length - 1;
     const block = content[index];
-    if (openType === "thinking") {
-      events.push({ kind: "thinking_end", index, content: block.thinking || "" });
-    } else {
-      events.push({ kind: "text_end", index, content: block.text || "" });
+    if (block?.type === "thinking") {
+      events.push({ kind: "thinking_end", index, content: block.thinking });
+    } else if (block?.type === "text") {
+      events.push({ kind: "text_end", index, content: block.text });
     }
     openType = null;
   };
@@ -160,8 +159,9 @@ export function createSseFeed(): {
           openType = "thinking";
         }
         const block = content[content.length - 1];
+        if (block?.type !== "thinking") continue;
         const delta = part.text || "";
-        block.thinking = (block.thinking || "") + delta;
+        block.thinking += delta;
         if (part.thoughtSignature) {
           block.thinkingSignature = part.thoughtSignature;
         }
@@ -174,10 +174,10 @@ export function createSseFeed(): {
       } else if (part.functionCall) {
         closeOpenBlock(events);
         stopReason = "toolUse";
-        const block: ParsedBlock & { id: string } = {
+        const block: ToolCall = {
           type: "toolCall",
           id: part.functionCall.id || `call_${content.length}`,
-          name: part.functionCall.name,
+          name: part.functionCall.name || "",
           arguments: part.functionCall.args || {},
           thoughtSignature: part.thoughtSignature || lastThoughtSignature,
         };
@@ -191,7 +191,8 @@ export function createSseFeed(): {
           openType = "text";
         }
         const block = content[content.length - 1];
-        block.text = (block.text || "") + part.text;
+        if (block?.type !== "text") continue;
+        block.text += part.text;
         events.push({ kind: "text_delta", index: content.length - 1, delta: part.text });
       }
     }
@@ -206,13 +207,13 @@ export function createSseFeed(): {
       for (const rawLine of lines) processLine(rawLine, events);
       return snapshot(events);
     },
-    close(): SseFeedOutput & { content: ParsedBlock[] } {
+    close(): SseFeedOutput {
       const events: SseBlockEvent[] = [];
       if (buffer.trim() !== "") processLine(buffer, events);
       buffer = "";
       closeOpenBlock(events);
       attachLoneSignature();
-      return { ...snapshot(events), content };
+      return snapshot(events);
     },
   };
 }

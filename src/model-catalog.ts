@@ -24,21 +24,30 @@ export function extractBaseModelId(runtimeId: string): string {
  *   like Gemini (1.1.27 stream_turn8/9 counter-capture).
  * - Non-Gemini models (Claude, GPT-OSS) do NOT share signatures with Gemini models.
  */
+export type ModelFamily = "gemini" | "claude" | "gpt" | "unknown";
+
+/**
+ * The single model-identity predicate (see CONTEXT.md Model Family): which
+ * family a model ID belongs to. Accepts any ID space — Public or Runtime
+ * Model ID, with or without a `provider/` prefix — by stripping the prefix
+ * before the prefix match, so every caller classifies identically. Unknown
+ * (including missing) IDs report "unknown"; mapping that onto a Quota Pool
+ * or plan flags stays with the consumer, preserving each caller's default.
+ */
+export function classifyModelFamily(modelId?: string): ModelFamily {
+  const bare = ((modelId || "").split("/").pop() || "").toLowerCase();
+  if (bare.startsWith("gemini-")) return "gemini";
+  if (bare.startsWith("claude-")) return "claude";
+  if (bare.startsWith("gpt-")) return "gpt";
+  return "unknown";
+}
+
 export function isCompatibleFamily(msgModel?: string, targetModelId?: string): boolean {
   if (!msgModel || !targetModelId) return true;
   if (msgModel === targetModelId) return true;
 
-  const isMsgGemini = msgModel.startsWith("gemini-");
-  const isTargetGemini = targetModelId.startsWith("gemini-");
-  if (isMsgGemini && isTargetGemini) return true;
-
-  const isMsgClaude = msgModel.startsWith("claude-");
-  const isTargetClaude = targetModelId.startsWith("claude-");
-  if (isMsgClaude && isTargetClaude) return true;
-
-  const isMsgGpt = msgModel.startsWith("gpt-");
-  const isTargetGpt = targetModelId.startsWith("gpt-");
-  if (isMsgGpt && isTargetGpt) return true;
+  const msgFamily = classifyModelFamily(msgModel);
+  if (msgFamily !== "unknown" && msgFamily === classifyModelFamily(targetModelId)) return true;
 
   return extractBaseModelId(msgModel) === extractBaseModelId(targetModelId);
 }
@@ -277,12 +286,13 @@ export function resolveModelPlan(
         `Run /antigravity refresh and pick a current model.`
     );
   }
+  const family = classifyModelFamily(runtimeModelId);
   return {
     runtimeModelId,
     modelEnum,
     thinkingConfig: resolveThinkingConfig(runtimeModelId, effort, snapshot),
-    isNonGemini: !runtimeModelId.startsWith("gemini-"),
-    isClaude: runtimeModelId.startsWith("claude-"),
+    isNonGemini: family !== "gemini",
+    isClaude: family === "claude",
   };
 }
 

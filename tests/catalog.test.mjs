@@ -12,6 +12,7 @@ import {
   formatModelsList,
   synthesizeDynamicModel,
   resolveModelPlan,
+  classifyModelFamily,
   isCompatibleFamily,
 } from "../src/model-catalog.ts";
 import { buildAntigravityRequestBody } from "../src/builder.ts";
@@ -138,6 +139,19 @@ test("Seam 3: isCompatibleFamily groups Runtime Model IDs by Model Family", () =
   assert.equal(isCompatibleFamily("gpt-oss-120b", "gemini-3.8-flash-high"), false);
   // missing history model defaults to replay (first turn)
   assert.equal(isCompatibleFamily(undefined, "gemini-3.8-flash-high"), true);
+});
+
+test("Seam 3: classifyModelFamily unifies identity across ID spaces", () => {
+  assert.equal(classifyModelFamily("gemini-3.8-flash-high"), "gemini");
+  assert.equal(classifyModelFamily("gemini-3.8-flash"), "gemini");
+  assert.equal(classifyModelFamily("gemini-pro-agent"), "gemini");
+  assert.equal(classifyModelFamily("antigravity/gemini-3-flash"), "gemini");
+  assert.equal(classifyModelFamily("claude-sonnet-4-6"), "claude");
+  assert.equal(classifyModelFamily("antigravity/claude-sonnet-4-6"), "claude");
+  assert.equal(classifyModelFamily("gpt-oss-120b-medium"), "gpt");
+  assert.equal(classifyModelFamily("nova-1"), "unknown");
+  assert.equal(classifyModelFamily(undefined), "unknown");
+  assert.equal(classifyModelFamily(""), "unknown");
 });
 
 test("Seam 3: formatModelDisplayName strips all parenthesized tiers", () => {
