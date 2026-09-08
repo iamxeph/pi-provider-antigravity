@@ -1,15 +1,106 @@
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 import type { ExtensionCommandContext, Theme } from "@earendil-works/pi-coding-agent";
 import { SettingsList, type SettingItem, type SettingsListTheme } from "@earendil-works/pi-tui";
 import { colorizeQuotaFooter, colorizeQuotaFooterBoth } from "./quota.ts";
 import {
-  defaultConfigFile,
-  loadProviderConfig,
   paintQuotaStatus,
-  resolveFooterMode,
-  saveProviderConfig,
-  type ProviderFileConfig,
   type QuotaStatusCoordinator,
+  type QuotaStatusStore,
 } from "./usage-status.ts";
+
+export const PROVIDER_CONFIG_FILE = "pi-provider-antigravity.json";
+
+export interface ProviderFileConfig {
+  settings?: { quotaFooter?: unknown; [key: string]: unknown };
+  // Runtime state namespaced per subsystem (e.g. states.quota); unknown
+  // entries pass through untouched.
+  states?: { [name: string]: { [key: string]: unknown } | undefined };
+}
+
+export type QuotaFooterMode = "off" | "single" | "both";
+
+// Single opt-in file next to Pi's settings.json (NOT settings.json itself —
+// Pi manages that file and may drop unknown keys). Pi resolves its dir via
+// PI_CODING_AGENT_DIR else ~/.pi/agent; mirror that:
+//   { "settings": { "quotaFooter": "single" } }   // off (default) | single | both
+// A "states" section holds runtime data namespaced per subsystem
+// (e.g. states.quota); unknown keys and sections pass through untouched. Read per call: tiny file, and edits apply
+// on the next refresh without a restart.
+export function defaultConfigFile(env: NodeJS.ProcessEnv = process.env): string {
+  // Mirrors Pi's canonical getAgentDir() (PI_CODING_AGENT_DIR else ~/.pi/agent)
+  // — the same source pi-subagents imports from @earendil-works/pi-coding-agent.
+  // Hand-rolled because a root value-import breaks plain-node tests: the
+  // package index pulls @earendil-works/pi-server, which isn't installable here.
+  const dir = (env.PI_CODING_AGENT_DIR || "").trim() || path.join(os.homedir(), ".pi", "agent");
+  return path.join(dir, PROVIDER_CONFIG_FILE);
+}
+
+export function loadProviderConfig(file = defaultConfigFile()): ProviderFileConfig | undefined {
+  try {
+    const raw = JSON.parse(fs.readFileSync(file, "utf-8"));
+    if (raw && typeof raw === "object" && !Array.isArray(raw)) return raw as ProviderFileConfig;
+  } catch {
+    // Missing/unreadable/invalid file means "not configured".
+  }
+  return undefined;
+}
+
+export function saveProviderConfig(file: string, data: ProviderFileConfig): boolean {
+  try {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, JSON.stringify(data, null, 2) + "\n", "utf-8");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function normalizeFooterMode(value: unknown): QuotaFooterMode | undefined {
+  const v = typeof value === "string" ? value.trim().toLowerCase() : "";
+  return v === "off" || v === "single" || v === "both" ? v : undefined;
+}
+
+export function resolveFooterMode(config?: ProviderFileConfig): QuotaFooterMode {
+  return normalizeFooterMode(config?.settings?.quotaFooter) ?? "off";
+}
+
+// Production QuotaStatusStore backed by the provider file. Reads per call:
+// tiny file, and edits apply on the next refresh without a restart.
+export function fileQuotaStatusStore(file = defaultConfigFile()): QuotaStatusStore {
+  return {
+    loadMode: () => resolveFooterMode(loadProviderConfig(file)),
+    loadQuotaState: () => {
+      const quota = loadProviderConfig(file)?.states?.quota;
+      return quota && typeof quota === "object" && !Array.isArray(quota) ? quota : undefined;
+    },
+    // Merges state into the existing file, preserving settings and unknown
+    // keys. Never clobbers a file we couldn't parse.
+    saveQuotaState: (state) => {
+      try {
+        let data: ProviderFileConfig = {};
+        try {
+          const raw = JSON.parse(fs.readFileSync(file, "utf-8"));
+          if (!raw || typeof raw !== "object" || Array.isArray(raw)) return false;
+          data = raw as ProviderFileConfig;
+        } catch (err: any) {
+          if (err?.code !== "ENOENT") return false;
+        }
+        const states =
+          data.states && typeof data.states === "object" && !Array.isArray(data.states) ? data.states : {};
+        const quota =
+          states.quota && typeof states.quota === "object" && !Array.isArray(states.quota) ? states.quota : {};
+        states.quota = { ...quota, ...state };
+        data.states = states;
+        return saveProviderConfig(file, data);
+      } catch {
+        // Cache is best-effort; a stale ratio is still usable.
+        return false;
+      }
+    },
+  };
+}
 
 export interface SettingsFieldDef {
   key: string;

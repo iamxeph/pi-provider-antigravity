@@ -6,6 +6,7 @@ import path from "node:path";
 import { runAntigravitySubcommand } from "../src/commands.ts";
 import initExtension from "../src/index.ts";
 import { QuotaStatusCoordinator } from "../src/usage-status.ts";
+import { fileQuotaStatusStore } from "../src/settings.ts";
 
 const quotaJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.1.26/quota.resp.json", "utf-8"));
 const modelsJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.1.26/models.resp.json", "utf-8"));
@@ -96,7 +97,7 @@ test("Subcommand: settings picks mode in a dialog and applies it", async () => {
         seen.push([title, options]);
         return "single";
       };
-      const coord = new QuotaStatusCoordinator(file);
+      const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(file));
       const outputs = [];
       await runAntigravitySubcommand("settings", makeCtx(outputs, { selectImpl }), coord);
       assert.deepEqual(seen, [["Quota footer (current: off)", ["off", "single", "both"]]]);
@@ -116,7 +117,7 @@ test("Subcommand: settings dismiss changes nothing", async () => {
   await withAgentDir(async (dir) => {
     const file = path.join(dir, "pi-provider-antigravity.json");
     const outputs = [];
-    await runAntigravitySubcommand("settings", makeCtx(outputs), new QuotaStatusCoordinator(file));
+    await runAntigravitySubcommand("settings", makeCtx(outputs), new QuotaStatusCoordinator(fileQuotaStatusStore(file)));
     assert.equal(outputs.length, 0);
     assert.equal(fs.existsSync(file), false);
   });
@@ -156,7 +157,7 @@ test("Subcommand: settings opens the cycling dialog in TUI mode", async () => {
       let factory;
       const outputs = [];
       const ctx = makeCtx(outputs, { mode: "tui", customImpl: async (f) => { factory = f; } });
-      await runAntigravitySubcommand("settings", ctx, new QuotaStatusCoordinator(file));
+      await runAntigravitySubcommand("settings", ctx, new QuotaStatusCoordinator(fileQuotaStatusStore(file)));
       assert.ok(factory);
       let closed = 0;
       const comp = await factory({ requestRender() {} }, { fg: (c, s) => s, bold: (s) => s }, {}, () => { closed++; });
@@ -218,7 +219,7 @@ test("Subcommand: usage feeds the shared cache and footer", async () => {
     try {
       const file = path.join(dir, "pi-provider-antigravity.json");
       fs.writeFileSync(file, JSON.stringify({ settings: { quotaFooter: "single" } }));
-      const coord = new QuotaStatusCoordinator(file);
+      const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(file));
       const outputs = [];
       await runAntigravitySubcommand("usage", makeCtx(outputs), coord);
       const all = outputs.join("\n");
@@ -259,7 +260,7 @@ test("Subcommand: settings picks the value via select fallback", async () => {
       await runAntigravitySubcommand(
         "settings",
         makeCtx(outputs, { selectImpl }),
-        new QuotaStatusCoordinator(file),
+        new QuotaStatusCoordinator(fileQuotaStatusStore(file)),
       );
       assert.deepEqual(calls, [["Quota footer (current: off)", ["off", "single", "both"]]]);
       const saved = JSON.parse(fs.readFileSync(file, "utf-8"));

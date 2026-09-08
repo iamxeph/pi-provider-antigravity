@@ -3,6 +3,7 @@ import { loginAntigravity, refreshAntigravityToken, getApiKey } from "./auth.ts"
 import { DEFAULT_ENDPOINT, PROVIDER_ID } from "./protocol.ts";
 import { refreshCatalog } from "./catalog-refresh.ts";
 import { QuotaStatusCoordinator } from "./usage-status.ts";
+import { fileQuotaStatusStore } from "./settings.ts";
 import { streamAntigravity } from "./stream.ts";
 import { runAntigravitySubcommand } from "./commands.ts";
 
@@ -18,7 +19,7 @@ const SUBCOMMANDS = [
 ];
 
 export default function (pi: ExtensionAPI): void {
-  const quotaStatus = new QuotaStatusCoordinator();
+  const quotaStatus = new QuotaStatusCoordinator(fileQuotaStatusStore());
 
   pi.registerProvider(PROVIDER_ID, {
     name: PROVIDER_NAME,

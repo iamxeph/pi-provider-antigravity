@@ -1,9 +1,7 @@
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
-import * as fs from "node:fs";
-import * as os from "node:os";
-import * as path from "node:path";
 import { parseStoredCredentials } from "./auth.ts";
 import { PROVIDER_ID } from "./protocol.ts";
+import type { QuotaFooterMode } from "./settings.ts";
 import {
   buildQuotaFooter,
   buildQuotaFooterBoth,
@@ -21,61 +19,29 @@ import {
 // coexist without overwriting each other's footer slot.
 export const QUOTA_STATUS_KEY = "antigravity_quota";
 export const QUOTA_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
-export const PROVIDER_CONFIG_FILE = "pi-provider-antigravity.json";
 // Baselines older than this may straddle a quota reset (negative or
 // meaningless deltas), so cross-session calibration ignores them. An hour
 // caps the straddle risk at ~1/5 of the 5h window while an hour of active
 // use still dwarfs the noise guards below thousands-fold.
 export const MAX_OBSERVATION_AGE_MS = 60 * 60 * 1000;
 
-export interface ProviderFileConfig {
-  settings?: { quotaFooter?: unknown; [key: string]: unknown };
-  // Runtime state namespaced per subsystem (e.g. states.quota); unknown
-  // entries pass through untouched.
-  states?: { [name: string]: { [key: string]: unknown } | undefined };
+// Persisted Quota Pool calibration state (states.quota in the provider file).
+// The file shape is owned by the settings module; the coordinator only sees
+// this narrow view through its store.
+export interface QuotaState {
+  [key: string]: unknown;
 }
 
-export type QuotaFooterMode = "off" | "single" | "both";
-
-// Single opt-in file next to Pi's settings.json (NOT settings.json itself —
-// Pi manages that file and may drop unknown keys). Pi resolves its dir via
-// PI_CODING_AGENT_DIR else ~/.pi/agent; mirror that:
-//   { "settings": { "quotaFooter": "single" } }   // off (default) | single | both
-// A "states" section holds runtime data namespaced per subsystem
-// (e.g. states.quota); unknown keys and sections pass through untouched. Read per call: tiny file, and edits apply
-// on the next refresh without a restart.
-export function defaultConfigFile(env: NodeJS.ProcessEnv = process.env): string {
-  // Mirrors Pi's canonical getAgentDir() (PI_CODING_AGENT_DIR else ~/.pi/agent)
-  // — the same source pi-subagents imports from @earendil-works/pi-coding-agent.
-  // Hand-rolled because a root value-import breaks plain-node tests: the
-  // package index pulls @earendil-works/pi-server, which isn't installable here.
-  const dir = (env.PI_CODING_AGENT_DIR || "").trim() || path.join(os.homedir(), ".pi", "agent");
-  return path.join(dir, PROVIDER_CONFIG_FILE);
-}
-
-export function loadProviderConfig(file = defaultConfigFile()): ProviderFileConfig | undefined {
-  try {
-    const raw = JSON.parse(fs.readFileSync(file, "utf-8"));
-    if (raw && typeof raw === "object" && !Array.isArray(raw)) return raw as ProviderFileConfig;
-  } catch {
-    // Missing/unreadable/invalid file means "not configured".
-  }
-  return undefined;
-}
-
-export function saveProviderConfig(file: string, data: ProviderFileConfig): boolean {
-  try {
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, JSON.stringify(data, null, 2) + "\n", "utf-8");
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export function normalizeFooterMode(value: unknown): QuotaFooterMode | undefined {
-  const v = typeof value === "string" ? value.trim().toLowerCase() : "";
-  return v === "off" || v === "single" || v === "both" ? v : undefined;
+// The seam behind the coordinator: production uses the file-backed store
+// from the settings module, tests use an in-memory adapter.
+export interface QuotaStatusStore {
+  loadMode: () => QuotaFooterMode;
+  loadQuotaState: () => QuotaState | undefined;
+  saveQuotaState: (state: {
+    weeklyTo5hRatio: number;
+    previousObservation: Record<string, WindowFractionPair>;
+    updatedAt: number;
+  }) => boolean;
 }
 
 function isFiniteNumber(value: unknown): value is number {
@@ -93,10 +59,6 @@ function validPairs(raw: unknown): Record<string, WindowFractionPair> | undefine
     if (isFiniteNumber(fiveHour) && isFiniteNumber(weekly)) pairs[key] = { "5h": fiveHour, weekly };
   }
   return Object.keys(pairs).length > 0 ? pairs : undefined;
-}
-
-export function resolveFooterMode(config?: ProviderFileConfig): QuotaFooterMode {
-  return normalizeFooterMode(config?.settings?.quotaFooter) ?? "off";
 }
 
 export type QuotaStatusCtx = Pick<ExtensionContext, "ui" | "modelRegistry" | "model">;
@@ -131,10 +93,10 @@ export class QuotaStatusCoordinator {
   private inflight: Promise<QuotaSummary | undefined> | null = null;
   private weeklyTo5hRatio: number;
   private lastPairs: Record<string, WindowFractionPair> | undefined;
-  private readonly configFile: string;
+  private readonly store: QuotaStatusStore;
 
-  constructor(configFile = defaultConfigFile()) {
-    this.configFile = configFile;
+  constructor(store: QuotaStatusStore) {
+    this.store = store;
     this.weeklyTo5hRatio = DEFAULT_WEEKLY_TO_5H_RATIO;
     this.loadPersisted();
   }
@@ -143,9 +105,9 @@ export class QuotaStatusCoordinator {
     return this.weeklyTo5hRatio;
   }
 
-  // Single source of truth for the mode: the coordinator's own file.
+  // Single source of truth for the mode: the injected store.
   mode(): QuotaFooterMode {
-    return resolveFooterMode(loadProviderConfig(this.configFile));
+    return this.store.loadMode();
   }
 
   footerFor(modelId?: string, mode: QuotaFooterMode = "single"): string | undefined {
@@ -217,10 +179,7 @@ export class QuotaStatusCoordinator {
   }
 
   private loadPersisted(): void {
-    const quota = loadProviderConfig(this.configFile)?.states?.quota;
-    const entry = quota && typeof quota === "object" && !Array.isArray(quota)
-      ? (quota as { weeklyTo5hRatio?: unknown; previousObservation?: unknown; updatedAt?: unknown })
-      : undefined;
+    const entry = this.store.loadQuotaState();
     const ratio = entry?.weeklyTo5hRatio;
     if (typeof ratio === "number" && Number.isFinite(ratio) && ratio > 0) {
       this.weeklyTo5hRatio = ratio;
@@ -231,30 +190,15 @@ export class QuotaStatusCoordinator {
       : undefined;
   }
 
-  // Merges state into the existing file, preserving settings and unknown
-  // keys. Never clobbers a file we couldn't parse.
+  // Persists calibration state through the injected store. Best-effort: a
+  // stale ratio is still usable.
   private saveState(): void {
     try {
-      let data: ProviderFileConfig = {};
-      try {
-        const raw = JSON.parse(fs.readFileSync(this.configFile, "utf-8"));
-        if (!raw || typeof raw !== "object" || Array.isArray(raw)) return;
-        data = raw as ProviderFileConfig;
-      } catch (err: any) {
-        if (err?.code !== "ENOENT") return;
-      }
-      const states =
-        data.states && typeof data.states === "object" && !Array.isArray(data.states) ? data.states : {};
-      const quota =
-        states.quota && typeof states.quota === "object" && !Array.isArray(states.quota) ? states.quota : {};
-      states.quota = {
-        ...quota,
+      this.store.saveQuotaState({
         weeklyTo5hRatio: this.weeklyTo5hRatio,
         previousObservation: this.lastPairs ?? {},
         updatedAt: Date.now(),
-      };
-      data.states = states;
-      if (!saveProviderConfig(this.configFile, data)) return;
+      });
     } catch {
       // Cache is best-effort; a stale ratio is still usable.
     }

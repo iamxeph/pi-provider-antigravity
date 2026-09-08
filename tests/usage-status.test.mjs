@@ -18,13 +18,10 @@ import {
 import {
   QUOTA_STATUS_KEY,
   QuotaStatusCoordinator,
-  defaultConfigFile,
   isAntigravityModel,
-  loadProviderConfig,
-  normalizeFooterMode,
   paintQuotaStatus,
-  resolveFooterMode,
 } from "../src/usage-status.ts";
+import { fileQuotaStatusStore } from "../src/settings.ts";
 
 const quotaJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.1.26/quota.resp.json", "utf-8"));
 
@@ -51,32 +48,6 @@ function group(displayName, buckets) {
 }
 
 const in25m = new Date(Date.now() + 25 * 60 * 1000).toISOString();
-
-test("Footer mode: settings.quotaFooter or off", () => {
-  assert.equal(resolveFooterMode(undefined), "off");
-  assert.equal(resolveFooterMode({}), "off");
-  assert.equal(resolveFooterMode({ settings: { quotaFooter: " BOTH " } }), "both");
-  assert.equal(resolveFooterMode({ settings: { quotaFooter: "single" } }), "single");
-  assert.equal(resolveFooterMode({ settings: { quotaFooter: "everything" } }), "off");
-  assert.equal(resolveFooterMode({ settings: {} }), "off");
-  assert.equal(normalizeFooterMode(42), undefined);
-});
-
-test("File config: default path mirrors Pi, garbage is unconfigured", () => {
-  assert.match(defaultConfigFile({ PI_CODING_AGENT_DIR: "/tmp/x" }), /\/tmp\/x\/pi-provider-antigravity\.json$/);
-  assert.match(defaultConfigFile({}), /\.pi\/agent\/pi-provider-antigravity\.json$/);
-
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agy-conf-"));
-  const file = path.join(dir, "pi-provider-antigravity.json");
-  assert.equal(loadProviderConfig(file), undefined); // missing
-  fs.writeFileSync(file, JSON.stringify({ settings: { quotaFooter: "both" }, other: 1 }));
-  assert.deepEqual(loadProviderConfig(file), { settings: { quotaFooter: "both" }, other: 1 });
-  assert.equal(resolveFooterMode(loadProviderConfig(file)), "both");
-  fs.writeFileSync(file, "{oops");
-  assert.equal(loadProviderConfig(file), undefined);
-  fs.writeFileSync(file, "[1,2]");
-  assert.equal(loadProviderConfig(file), undefined);
-});
 
 test("quota windows classify from wire fields, not display prose", () => {
   // No displayName at all: window + bucketId alone decide.
@@ -244,7 +215,7 @@ test("Coordinator: refresh paints footer and throttles refetch", async () => {
   const counter = { calls: 0 };
   globalThis.fetch = stubQuotaFetch(quotaJson, counter);
   try {
-    const coord = new QuotaStatusCoordinator(makeConf({ quotaFooter: "single" }));
+    const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(makeConf({ quotaFooter: "single" })));
     const statuses = [];
     const ctx = makeCtx(statuses);
 
@@ -278,7 +249,7 @@ test("Coordinator: foreign model fetches nothing and clears the slot", async () 
   const counter = { calls: 0 };
   globalThis.fetch = stubQuotaFetch(quotaJson, counter);
   try {
-    const coord = new QuotaStatusCoordinator(makeConf({ quotaFooter: "single" }));
+    const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(makeConf({ quotaFooter: "single" })));
     const statuses = [];
     const ctx = {
       ...makeCtx(statuses),
@@ -306,7 +277,7 @@ test("Coordinator: off mode fetches nothing and clears the slot", async () => {
   const counter = { calls: 0 };
   globalThis.fetch = stubQuotaFetch(quotaJson, counter);
   try {
-    const coord = new QuotaStatusCoordinator(makeConf()); // no settings → off
+    const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(makeConf())); // no settings → off
     const statuses = [];
     const ctx = makeCtx(statuses);
 
@@ -328,7 +299,7 @@ test("Coordinator: both mode paints both windows", async () => {
   ] }] };
   globalThis.fetch = stubQuotaFetch(payload, counter);
   try {
-    const coord = new QuotaStatusCoordinator(makeConf({ quotaFooter: "both" }));
+    const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(makeConf({ quotaFooter: "both" })));
     const statuses = [];
     const ctx = makeCtx(statuses);
 
@@ -346,7 +317,7 @@ test("ensurePreview fetches even when the slot is off", async () => {
   const counter = { calls: 0 };
   globalThis.fetch = stubQuotaFetch(quotaJson, counter);
   try {
-    const coord = new QuotaStatusCoordinator(makeConf()); // no settings file → off
+    const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(makeConf())); // no settings file → off
     const ctx = makeCtx([]);
     const summary = await coord.ensurePreview(ctx);
     assert.ok(summary);
@@ -363,7 +334,7 @@ test("ensurePreview stays silent for foreign models", async () => {
   const counter = { calls: 0 };
   globalThis.fetch = stubQuotaFetch(quotaJson, counter);
   try {
-    const coord = new QuotaStatusCoordinator(makeConf());
+    const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(makeConf()));
     const ctx = { ...makeCtx([]), model: { id: "zen", provider: "opencode-go" } };
     assert.equal(await coord.ensurePreview(ctx), undefined);
     assert.equal(counter.calls, 0);
@@ -373,7 +344,7 @@ test("ensurePreview stays silent for foreign models", async () => {
 });
 
 test("Coordinator: unauthenticated refresh stays silent", async () => {
-  const coord = new QuotaStatusCoordinator(makeConf({ quotaFooter: "single" }));
+  const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(makeConf({ quotaFooter: "single" })));
   const statuses = [];
   const ctx = makeCtx(statuses, { authed: false });
 
@@ -401,7 +372,7 @@ test("Coordinator: two fetches calibrate the ratio and persist it", async () => 
     const seed = JSON.parse(fs.readFileSync(confFile, "utf-8"));
     seed.states = { other: { x: 1 } };
     fs.writeFileSync(confFile, JSON.stringify(seed));
-    const coord = new QuotaStatusCoordinator(confFile);
+    const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(confFile));
     const ctx = makeCtx([]);
 
     assert.equal(coord.ratio, DEFAULT_WEEKLY_TO_5H_RATIO);
@@ -416,7 +387,7 @@ test("Coordinator: two fetches calibrate the ratio and persist it", async () => 
     assert.deepEqual(saved.states.other, { x: 1 }); // sibling entries preserved
 
     // A fresh coordinator restores the calibrated ratio without fetching
-    const restored = new QuotaStatusCoordinator(confFile);
+    const restored = new QuotaStatusCoordinator(fileQuotaStatusStore(confFile));
     assert.equal(restored.ratio, 4);
   } finally {
     globalThis.fetch = realFetch;
@@ -428,7 +399,7 @@ test("Coordinator: fetch failure keeps stale footer", async () => {
   const counter = { calls: 0 };
   globalThis.fetch = stubQuotaFetch(quotaJson, counter);
   try {
-    const coord = new QuotaStatusCoordinator(makeConf({ quotaFooter: "single" }));
+    const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(makeConf({ quotaFooter: "single" })));
     const ctx = makeCtx([]);
     await coord.refresh(ctx);
     const stale = coord.footerFor(ctx.model.id);
@@ -447,7 +418,7 @@ test("Coordinator: first fetch persists its observation", async () => {
   globalThis.fetch = stubQuotaFetch(quotaJson, { calls: 0 });
   try {
     const confFile = makeConf({ quotaFooter: "single" });
-    const coord = new QuotaStatusCoordinator(confFile);
+    const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(confFile));
     await coord.refresh(makeCtx([]));
     const saved = JSON.parse(fs.readFileSync(confFile, "utf-8"));
     assert.equal(saved.states.quota.weeklyTo5hRatio, DEFAULT_WEEKLY_TO_5H_RATIO);
@@ -474,9 +445,9 @@ test("Coordinator: calibration works across processes via persisted pairs", asyn
   globalThis.fetch = stubQuotaFetch((call) => payloads[Math.min(call, 2) - 1], counter);
   try {
     const confFile = makeConf({ quotaFooter: "single" });
-    await new QuotaStatusCoordinator(confFile).refresh(makeCtx([]));
+    await new QuotaStatusCoordinator(fileQuotaStatusStore(confFile)).refresh(makeCtx([]));
     // Fresh process, same file: previous observation comes from disk.
-    const coord2 = new QuotaStatusCoordinator(confFile);
+    const coord2 = new QuotaStatusCoordinator(fileQuotaStatusStore(confFile));
     assert.equal(coord2.ratio, DEFAULT_WEEKLY_TO_5H_RATIO);
     await coord2.refresh(makeCtx([]), true);
     assert.equal(coord2.ratio, 4);
@@ -501,7 +472,7 @@ test("Coordinator: stale persisted pairs are ignored", async () => {
       },
     };
     fs.writeFileSync(confFile, JSON.stringify(seed));
-    const coord = new QuotaStatusCoordinator(confFile);
+    const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(confFile));
     assert.equal(coord.ratio, 9); // ratio itself survives
     await coord.refresh(makeCtx([]), true);
     assert.equal(coord.ratio, 9); // stale baseline calibrates nothing
@@ -531,7 +502,7 @@ test("Coordinator: hour-old baseline still calibrates", async () => {
         },
       },
     }));
-    const coord = new QuotaStatusCoordinator(confFile);
+    const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(confFile));
     await coord.refresh(makeCtx([]), true);
     // dFiveHour=0.12, dWeekly=0.03 → R=4
     assert.equal(coord.ratio, 4);
@@ -548,7 +519,7 @@ test("Coordinator: refreshAndPaint paints, refreshes when stale, repaints", asyn
   const counter = { calls: 0 };
   globalThis.fetch = stubQuotaFetch(quotaJson, counter);
   try {
-    const coord = new QuotaStatusCoordinator(makeConf({ quotaFooter: "single" }));
+    const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(makeConf({ quotaFooter: "single" })));
     const statuses = [];
     const ctx = makeCtx(statuses);
     await coord.refreshAndPaint(ctx);

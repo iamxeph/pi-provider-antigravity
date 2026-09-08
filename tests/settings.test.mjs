@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { applySettingValue, buildSettingsItems, previewQuotaFooterText, SETTINGS_FIELDS } from "../src/settings.ts";
+import { applySettingValue, buildSettingsItems, defaultConfigFile, fileQuotaStatusStore, loadProviderConfig, normalizeFooterMode, previewQuotaFooterText, resolveFooterMode, SETTINGS_FIELDS } from "../src/settings.ts";
 import { runAntigravitySubcommand } from "../src/commands.ts";
 import { QuotaStatusCoordinator } from "../src/usage-status.ts";
 
@@ -45,6 +45,32 @@ function makeCtx(outputs, { authed = true } = {}) {
 const factories = [];
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
+test("Footer mode: settings.quotaFooter or off", () => {
+  assert.equal(resolveFooterMode(undefined), "off");
+  assert.equal(resolveFooterMode({}), "off");
+  assert.equal(resolveFooterMode({ settings: { quotaFooter: " BOTH " } }), "both");
+  assert.equal(resolveFooterMode({ settings: { quotaFooter: "single" } }), "single");
+  assert.equal(resolveFooterMode({ settings: { quotaFooter: "everything" } }), "off");
+  assert.equal(resolveFooterMode({ settings: {} }), "off");
+  assert.equal(normalizeFooterMode(42), undefined);
+});
+
+test("File config: default path mirrors Pi, garbage is unconfigured", () => {
+  assert.match(defaultConfigFile({ PI_CODING_AGENT_DIR: "/tmp/x" }), /\/tmp\/x\/pi-provider-antigravity\.json$/);
+  assert.match(defaultConfigFile({}), /\.pi\/agent\/pi-provider-antigravity\.json$/);
+
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agy-conf-"));
+  const file = path.join(dir, "pi-provider-antigravity.json");
+  assert.equal(loadProviderConfig(file), undefined); // missing
+  fs.writeFileSync(file, JSON.stringify({ settings: { quotaFooter: "both" }, other: 1 }));
+  assert.deepEqual(loadProviderConfig(file), { settings: { quotaFooter: "both" }, other: 1 });
+  assert.equal(resolveFooterMode(loadProviderConfig(file)), "both");
+  fs.writeFileSync(file, "{oops");
+  assert.equal(loadProviderConfig(file), undefined);
+  fs.writeFileSync(file, "[1,2]");
+  assert.equal(loadProviderConfig(file), undefined);
+});
+
 test("Settings items carry current values and options", () => {
   const items = buildSettingsItems({ settings: { quotaFooter: "both" } });
   assert.deepEqual(items, [
@@ -57,14 +83,14 @@ test("Preview renders the footer sample per mode", async () => {
   const realFetch = globalThis.fetch;
   globalThis.fetch = stubFetchRouter(quotaJson);
   try {
-    const coord = new QuotaStatusCoordinator(makeConf({ quotaFooter: "single" }));
+    const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(makeConf({ quotaFooter: "single" })));
     await coord.ensurePreview(makeCtx([]));
     assert.match(previewQuotaFooterText(coord, "gemini-3-flash", "single"), /5h 22%/);
     assert.match(previewQuotaFooterText(coord, "gemini-3-flash", "both"), /Wk 87%/);
     assert.match(previewQuotaFooterText(coord, "claude-sonnet-4-6", "single"), /5h 84%/);
     assert.equal(previewQuotaFooterText(coord, "gemini-3-flash", "off"), undefined);
     assert.equal(previewQuotaFooterText(undefined, "gemini-3-flash", "single"), undefined);
-    const fresh = new QuotaStatusCoordinator(makeConf({ quotaFooter: "single" }));
+    const fresh = new QuotaStatusCoordinator(fileQuotaStatusStore(makeConf({ quotaFooter: "single" })));
     assert.equal(previewQuotaFooterText(fresh, "gemini-3-flash", "single"), undefined);
   } finally {
     globalThis.fetch = realFetch;
@@ -80,7 +106,7 @@ test("TUI dialog cycles the value with the real SettingsList", async () => {
     process.env.PI_CODING_AGENT_DIR = dir;
     try {
       const file = path.join(dir, "pi-provider-antigravity.json");
-      const coord = new QuotaStatusCoordinator(file);
+      const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(file));
       const outputs = [];
       factories.length = 0;
       await runAntigravitySubcommand("settings", makeCtx(outputs), coord);
@@ -144,7 +170,7 @@ test("TUI dialog frames the list with border lines like /settings", async () => 
       const file = path.join(dir, "pi-provider-antigravity.json");
       const outputs = [];
       factories.length = 0;
-      await runAntigravitySubcommand("settings", makeCtx(outputs), new QuotaStatusCoordinator(file));
+      await runAntigravitySubcommand("settings", makeCtx(outputs), new QuotaStatusCoordinator(fileQuotaStatusStore(file)));
       const comp = await factories[0]({ requestRender() {} }, { fg: (c, s) => `<${c}>${s}</>`, bold: (s) => `*${s}*` }, {}, () => {});
       const lines = comp.render(80);
       assert.match(lines[0], /<border>─+<\/>/); // top border, pi /settings parity
