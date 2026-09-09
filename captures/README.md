@@ -87,6 +87,12 @@ request per run — agy's internal title summarizer, not your scenario.
 System-injected `SYSTEM_MESSAGE` user contents (e.g. server-restart notices) are genuine
 wire behavior — keep them in the fixture, don't scrub.
 
+`-c` does NOT inherit `--model`: a bare `-c` follow-up silently resets to the
+default model, so repeat `--model <m>` on every `-c` when the chain must stay
+on a non-default model (observed 1.1.28: a Claude session continued without
+`--model` came back as `gemini-3.7-flash-high`). Always verify the follow-up's
+`.body.model` before freezing the fixture.
+
 ## 3. Extract fixtures
 
 Request envelopes nest under `.body` (`{project, requestId, request:{...}, model, ...}`),
