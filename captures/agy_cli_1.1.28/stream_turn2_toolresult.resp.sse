@@ -1,0 +1,9 @@
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": "Created"}]}}],"usageMetadata": {"promptTokenCount": 15493,"candidatesTokenCount": 1,"totalTokenCount": 15494},"modelVersion": "gemini-3.7-flash","responseId": "IUChasGLA9jKrfcP_Z-RuQI"},"traceId": "c52a6057b9440f96","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": " [/tmp/agy-capture-probe-128.txt](file:///"}]}}],"usageMetadata": {"promptTokenCount": 15493,"candidatesTokenCount": 18,"totalTokenCount": 15511},"modelVersion": "gemini-3.7-flash","responseId": "IUChasGLA9jKrfcP_Z-RuQI"},"traceId": "c52a6057b9440f96","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": "tmp/agy-capture-probe-128.txt) with the content `ok`."}]}}],"usageMetadata": {"promptTokenCount": 15493,"candidatesTokenCount": 38,"totalTokenCount": 15531},"modelVersion": "gemini-3.7-flash","responseId": "IUChasGLA9jKrfcP_Z-RuQI"},"traceId": "c52a6057b9440f96","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thoughtSignature": "EmcKZQERTTIPGynBlGkENVGlBxtVKcyF74LLtJUn0OH0mO3maStN1188btf90wFAOG/wc28JCkayyzs/UnapDKKQCtmMpwlAg5MRhEkXL70enngvl0Aub/c0hpdIonrBTeAjBZTLMFxg","text": ""}]},"finishReason": "STOP"}],"usageMetadata": {"promptTokenCount": 15683,"candidatesTokenCount": 38,"totalTokenCount": 15721},"modelVersion": "gemini-3.7-flash","responseId": "IUChasGLA9jKrfcP_Z-RuQI"},"traceId": "c52a6057b9440f96","metadata": {}}
+
+

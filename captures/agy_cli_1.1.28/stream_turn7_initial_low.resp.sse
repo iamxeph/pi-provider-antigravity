@@ -1,0 +1,5 @@
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": "ok"}]}}],"usageMetadata": {"promptTokenCount": 15293,"candidatesTokenCount": 1,"totalTokenCount": 15294},"modelVersion": "gemini-3.7-flash","responseId": "CECharWeFu_dvr0PlvPKoQo"},"traceId": "754ed34034ec7ee1","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thoughtSignature": "EmcKZQERTTIP9YPICFVeFe7NKPFRvM+b9ArQUBsE2ESZMBtFXSYTkseYOO3oBzw/LT84kmN8yupZpGbaDmmWN9CiKdqsMBU8yPFyi1trq6mcg9WEm3otAeJt4d6kpFXpognFf6Ca6qAv","text": ""}]},"finishReason": "STOP"}],"usageMetadata": {"promptTokenCount": 15293,"candidatesTokenCount": 1,"totalTokenCount": 15294},"modelVersion": "gemini-3.7-flash","responseId": "CECharWeFu_dvr0PlvPKoQo"},"traceId": "754ed34034ec7ee1","metadata": {}}
+
+

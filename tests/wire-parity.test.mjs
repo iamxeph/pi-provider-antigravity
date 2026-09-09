@@ -25,6 +25,8 @@ const EXPECTED_UA = {
     "antigravity/cli/1.1.26 (aidev_client; os_type=linux; arch=amd64; cl=976013059; auth_method=consumer)",
   "agy_cli_1.1.27":
     "antigravity/cli/1.1.27 (aidev_client; os_type=linux; arch=amd64; cl=976543523; auth_method=consumer)",
+  "agy_cli_1.1.28":
+    "antigravity/cli/1.1.28 (aidev_client; os_type=linux; arch=amd64; cl=978129418; auth_method=consumer)",
 };
 const load = (dir, name) => {
   const p = `captures/${dir}/${name}.req.json`;
