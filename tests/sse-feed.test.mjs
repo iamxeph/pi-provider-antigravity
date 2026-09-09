@@ -28,20 +28,20 @@ test("Seam 2: start/end events balance and deltas reconstruct blocks", () => {
   const closing = feed.close();
   const events = [...fedEvents, ...closing.events];
 
-  const starts = events.filter((e) => e.kind === "text_start" || e.kind === "thinking_start");
-  const ends = events.filter((e) => e.kind === "text_end" || e.kind === "thinking_end");
+  const starts = events.filter((e) => e.type === "text_start" || e.type === "thinking_start");
+  const ends = events.filter((e) => e.type === "text_end" || e.type === "thinking_end");
   assert.equal(starts.length, ends.length, "every opened block must close");
   assert.ok(starts.length >= 1, "turn5 must open at least one block");
   for (const [s, e] of starts.map((st, i) => [st, ends[i]])) {
-    assert.equal(s.index, e.index, "start/end indices must pair");
+    assert.equal(s.contentIndex, e.contentIndex, "start/end indices must pair");
   }
 
   // Deltas joined per block must equal the accumulated block content.
   const { content } = closing;
   const deltas = new Map();
   for (const e of events) {
-    if (e.kind === "text_delta" || e.kind === "thinking_delta") {
-      deltas.set(e.index, (deltas.get(e.index) || "") + e.delta);
+    if (e.type === "text_delta" || e.type === "thinking_delta") {
+      deltas.set(e.contentIndex, (deltas.get(e.contentIndex) || "") + e.delta);
     }
   }
   for (const [index, joined] of deltas) {
@@ -76,13 +76,13 @@ test("Seam 2: every feed() output carries the live content ref its indices are v
       if (first === null) first = out.content;
       assert.equal(out.content, first, "content is the single store, not a copy");
       for (const e of out.events) {
-        assert.ok(e.index < out.content.length, `event index ${e.index} valid into live content`);
-        if (e.kind === "text_start" || e.kind === "text_delta" || e.kind === "text_end") {
-          assert.equal(out.content[e.index].type, "text");
-        } else if (e.kind === "thinking_start" || e.kind === "thinking_delta" || e.kind === "thinking_end") {
-          assert.equal(out.content[e.index].type, "thinking");
+        assert.ok(e.contentIndex < out.content.length, `event index ${e.contentIndex} valid into live content`);
+        if (e.type === "text_start" || e.type === "text_delta" || e.type === "text_end") {
+          assert.equal(out.content[e.contentIndex].type, "text");
+        } else if (e.type === "thinking_start" || e.type === "thinking_delta" || e.type === "thinking_end") {
+          assert.equal(out.content[e.contentIndex].type, "thinking");
         } else {
-          assert.equal(out.content[e.index].type, "toolCall");
+          assert.equal(out.content[e.contentIndex].type, "toolCall");
         }
       }
     }
