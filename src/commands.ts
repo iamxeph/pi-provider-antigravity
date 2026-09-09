@@ -6,11 +6,8 @@ import {
   paintQuotaStatus,
   type QuotaStatusCoordinator,
 } from "./quota-status.ts";
-import {
-  formatModelsList,
-  getCatalogSnapshot,
-  getStoredCatalog,
-} from "./model-catalog.ts";
+import { formatModelsList } from "./model-catalog.ts";
+import { refreshCatalogGeneration } from "./catalog-refresh.ts";
 
 import { emitOutput, openSettings } from "./settings.ts";
 
@@ -32,23 +29,20 @@ async function runModelsSubcommand(ctx: ExtensionCommandContext): Promise<void> 
   }
   try {
     if (ctx.hasUI) ctx.ui.notify("Fetching available models…", "info");
-    // Single Model Catalog path: the refresh owns fetch→snapshot→publish and
-    // the table formats the generation it ingested. refreshCatalog swallows
-    // fetch errors internally, so a snapshot version bump is the only proof
-    // a fresh generation landed — no bump means the fetch failed, and the
-    // failure is reported instead of showing the retained stale generation.
-    const before = getCatalogSnapshot().version;
-    await ctx.modelRegistry?.refresh?.({ force: true, providers: [PROVIDER_ID], signal: ctx.signal });
-    const catalog = getStoredCatalog();
-    if (!catalog || getCatalogSnapshot().version === before) {
-      // Refresh failed: say so, but still show the retained generation when
-      // one exists — a stale list beats no list, as long as it is labeled.
-      if (catalog) {
-        emitOutput(ctx, "Failed to refresh models, showing last known list.", "warning");
-        emitOutput(ctx, formatModelsList(catalog));
-        return;
-      }
+    // Single Model Catalog path: freshness lives behind the catalog seam —
+    // this module only branches on the verdict and prints.
+    const { status, catalog } = await refreshCatalogGeneration(() =>
+      ctx.modelRegistry?.refresh?.({ force: true, providers: [PROVIDER_ID], signal: ctx.signal }),
+    );
+    if (status === "failed" || !catalog) {
       throw new Error("no new generation received");
+    }
+    if (status === "stale") {
+      // Refresh failed: say so, but still show the retained generation —
+      // a stale list beats no list, as long as it is labeled.
+      emitOutput(ctx, "Failed to refresh models, showing last known list.", "warning");
+      emitOutput(ctx, formatModelsList(catalog));
+      return;
     }
     emitOutput(ctx, formatModelsList(catalog));
   } catch (err: any) {
@@ -119,8 +113,16 @@ export async function runAntigravitySubcommand(
   if (sub === "refresh") {
     try {
       if (ctx.hasUI) ctx.ui.notify("Refreshing models…", "info");
-      await ctx.modelRegistry?.refresh?.({ force: true, providers: [PROVIDER_ID], signal: ctx.signal });
-      emitOutput(ctx, "Antigravity models refreshed successfully.");
+      const { status } = await refreshCatalogGeneration(() =>
+        ctx.modelRegistry?.refresh?.({ force: true, providers: [PROVIDER_ID], signal: ctx.signal }),
+      );
+      if (status === "fresh") {
+        emitOutput(ctx, "Antigravity models refreshed successfully.");
+      } else if (status === "stale") {
+        emitOutput(ctx, "Failed to refresh models, keeping last known list.", "warning");
+      } else {
+        emitOutput(ctx, "Failed to refresh models: no new generation received.", "error");
+      }
     } catch (err: any) {
       emitOutput(ctx, `Failed to refresh: ${err.message}`, "error");
     }

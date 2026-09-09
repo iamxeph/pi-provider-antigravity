@@ -1,7 +1,7 @@
 import { postAntigravity } from "./protocol.ts";
 import { parseStoredCredentials } from "./auth.ts";
 import type { AvailableModelItem, AvailableModelsCatalog } from "./model-catalog.ts";
-import { buildDynamicPublicModels, getCatalogSnapshot, ingestCatalog, updateCatalogStore } from "./model-catalog.ts";
+import { buildDynamicPublicModels, getCatalogSnapshot, getStoredCatalog, ingestCatalog, updateCatalogStore } from "./model-catalog.ts";
 import type { Model } from "@earendil-works/pi-ai";
 
 /**
@@ -60,6 +60,36 @@ export async function refreshCatalog(context: any): Promise<Array<Model<any>>> {
   } catch {
     return context.stored?.models || [];
   }
+}
+
+/**
+ * Freshness outcome behind the single catalog seam: whether a refresh
+ * landed a new Catalog Generation. `commands.ts` reads only this —
+ * the snapshot version never crosses the seam.
+ * fresh = a new generation landed (a bump also lands when the content is
+ * identical: the version is a fetch-success signal, not a change signal).
+ * stale = the fetch failed but a retained generation exists.
+ * failed = the fetch failed and nothing is retained.
+ */
+export interface CatalogRefreshOutcome {
+  status: "fresh" | "stale" | "failed";
+  catalog?: AvailableModelsCatalog;
+}
+
+/**
+ * Runs one refresh through the given Pi refresh hook and reports which
+ * Catalog Generation the callers must show. The hook keeps its own
+ * contract (swallow-and-fallback); only the freshness verdict moves here.
+ */
+export async function refreshCatalogGeneration(
+  doRefresh: () => unknown,
+): Promise<CatalogRefreshOutcome> {
+  const before = getCatalogSnapshot().version;
+  await doRefresh();
+  const catalog = getStoredCatalog();
+  if (!catalog) return { status: "failed" };
+  if (getCatalogSnapshot().version === before) return { status: "stale", catalog };
+  return { status: "fresh", catalog };
 }
 
 export function parseAvailableModels(data: any): AvailableModelsCatalog {

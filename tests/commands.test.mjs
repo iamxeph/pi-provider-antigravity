@@ -138,17 +138,52 @@ test("Subcommand: fetch twins share the auth guard", async () => {
 });
 
 test("Subcommand: refresh delegates to the model registry", async () => {
-  const calls = [];
-  const outputs = [];
-  const ctx = makeCtx(outputs, {
-    refresh: async (opts) => {
-      calls.push(opts);
-    },
-  });
-  await runAntigravitySubcommand("refresh", ctx);
-  assert.equal(calls.length, 1);
-  assert.deepEqual(calls[0].providers, ["antigravity"]);
-  assert.match(outputs.join("\n"), /refreshed successfully/);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = stubFetchRouter();
+  try {
+    const calls = [];
+    const outputs = [];
+    const ctx = makeCtx(outputs, {
+      refresh: async (opts) => {
+        calls.push(opts);
+        await refreshCatalog({
+          allowNetwork: true,
+          credential: { access: JSON.stringify({ token: "t", projectId: "p" }) },
+          stored: {},
+        });
+      },
+    });
+    await runAntigravitySubcommand("refresh", ctx);
+    assert.equal(calls.length, 1);
+    assert.deepEqual(calls[0].providers, ["antigravity"]);
+    assert.match(outputs.join("\n"), /refreshed successfully/);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Subcommand: refresh warns but keeps the retained list when refresh fails", async () => {
+  const realFetch = globalThis.fetch;
+  const credential = { access: JSON.stringify({ token: "t", projectId: "p" }) };
+  try {
+    // Prime one generation through the real refresh path first.
+    globalThis.fetch = stubFetchRouter();
+    await refreshCatalog({ allowNetwork: true, credential, stored: {} });
+    globalThis.fetch = async () => ({ ok: false, status: 500, text: async () => "boom" });
+    const calls = [];
+    const outputs = [];
+    const ctx = makeCtx(outputs, {
+      refresh: async (opts) => {
+        calls.push(opts);
+        await refreshCatalog({ allowNetwork: true, credential, stored: {} });
+      },
+    });
+    await runAntigravitySubcommand("refresh", ctx);
+    assert.equal(calls.length, 1);
+    assert.match(outputs.join("\n"), /keeping last known list/);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
 });
 
 test("Subcommand: settings picks mode in a dialog and applies it", async () => {
