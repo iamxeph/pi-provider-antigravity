@@ -44,6 +44,10 @@ _Avoid_: Model registry, model list, model table
 Pi 코어가 `~/.config/pi/models-store.json`을 통해 제공하는 원격 모델 카탈로그의 표준 로컬 캐시 및 오프라인 복원 메커니즘.
 _Avoid_: Model cache, local storage, custom catalog file
 
+**Catalog Generation**:
+한 번의 성공한 refresh가 남긴 `Model Catalog` 묶음 (스냅샷 + 전체 항목). fresh는 새 generation이 landed한 상태, stale은 가져오기 실패 후 보관된 generation을 라벨 붙여 보여주는 상태, failed는 보관된 것도 없는 상태다.
+_Avoid_: Catalog version, snapshot number
+
 **Model Plan**:
 하나의 `Public Model ID`와 thinking effort 조합에 대해 `Model Catalog`가 한 번에 해결하는 묶음 (`Runtime Model ID`, 모델 enum, thinking budget, non-Gemini 여부, Claude 여부).
 _Avoid_: Resolved model, model config, runtime bundle
