@@ -7,31 +7,15 @@ import {
   type QuotaStatusCoordinator,
 } from "./quota-status.ts";
 import {
-  fetchAvailableModelsCatalog,
-} from "./catalog-refresh.ts";
-import {
   formatModelsList,
+  getCatalogSnapshot,
+  getStoredCatalog,
 } from "./model-catalog.ts";
 
 import { emitOutput, openSettings } from "./settings.ts";
 
 const USAGE_TEXT =
   "Usage: /antigravity <command>\n\nCommands:\n  usage    Show 5h and weekly quota pool limits\n  models   List recommended models with context window and remaining quota (alias: model)\n  refresh  Force refresh model catalog\n  settings Pick provider settings: Enter cycles values (alias: setting)\n  login    Run /login antigravity";
-
-interface FetchSubcommand {
-  progress: string;
-  errLabel: string;
-  run: (token: string, projectId: string, signal?: AbortSignal) => Promise<string>;
-}
-
-const FETCH_SUBCOMMANDS: Record<string, FetchSubcommand> = {
-  models: {
-    progress: "Fetching available models…",
-    errLabel: "models",
-    run: (token, projectId, signal) =>
-      fetchAvailableModelsCatalog(token, projectId, signal).then(formatModelsList),
-  },
-};
 
 export async function resolveToken(
   ctx: ExtensionCommandContext
@@ -41,20 +25,34 @@ export async function resolveToken(
   return parseStoredCredentials(apiKey);
 }
 
-async function runWithToken(
-  ctx: ExtensionCommandContext,
-  cmd: FetchSubcommand
-): Promise<void> {
-  const creds = await resolveToken(ctx);
-  if (!creds) {
+async function runModelsSubcommand(ctx: ExtensionCommandContext): Promise<void> {
+  if ((await resolveToken(ctx)) === null) {
     emitOutput(ctx, "Not logged in. Run /login antigravity first.", "warning");
     return;
   }
   try {
-    if (ctx.hasUI) ctx.ui.notify(cmd.progress, "info");
-    emitOutput(ctx, await cmd.run(creds.token, creds.projectId, ctx.signal));
+    if (ctx.hasUI) ctx.ui.notify("Fetching available models…", "info");
+    // Single Model Catalog path: the refresh owns fetch→snapshot→publish and
+    // the table formats the generation it ingested. refreshCatalog swallows
+    // fetch errors internally, so a snapshot version bump is the only proof
+    // a fresh generation landed — no bump means the fetch failed, and the
+    // failure is reported instead of showing the retained stale generation.
+    const before = getCatalogSnapshot().version;
+    await ctx.modelRegistry?.refresh?.({ force: true, providers: [PROVIDER_ID], signal: ctx.signal });
+    const catalog = getStoredCatalog();
+    if (!catalog || getCatalogSnapshot().version === before) {
+      // Refresh failed: say so, but still show the retained generation when
+      // one exists — a stale list beats no list, as long as it is labeled.
+      if (catalog) {
+        emitOutput(ctx, "Failed to refresh models, showing last known list.", "warning");
+        emitOutput(ctx, formatModelsList(catalog));
+        return;
+      }
+      throw new Error("no new generation received");
+    }
+    emitOutput(ctx, formatModelsList(catalog));
   } catch (err: any) {
-    emitOutput(ctx, `Failed to fetch ${cmd.errLabel}: ${err.message}`, "error");
+    emitOutput(ctx, `Failed to fetch models: ${err.message}`, "error");
   }
 }
 
@@ -108,9 +106,8 @@ export async function runAntigravitySubcommand(
     return;
   }
 
-  const fetchCmd = FETCH_SUBCOMMANDS[sub];
-  if (fetchCmd) {
-    await runWithToken(ctx, fetchCmd);
+  if (sub === "models") {
+    await runModelsSubcommand(ctx);
     return;
   }
 

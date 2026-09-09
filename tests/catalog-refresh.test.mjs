@@ -5,7 +5,7 @@ import {
   refreshCatalog,
   parseAvailableModels,
 } from "../src/catalog-refresh.ts";
-import { getCatalogSnapshot } from "../src/model-catalog.ts";
+import { getCatalogSnapshot, getStoredCatalog } from "../src/model-catalog.ts";
 
 const modelsJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.1.26/models.resp.json", "utf-8"));
 
@@ -82,6 +82,10 @@ test("Catalog refresh: fresh fetch builds dynamic models and publishes", async (
     const snap = getCatalogSnapshot();
     assert.ok(snap.runtimeIds.length > 0, "active runtime IDs must populate");
     assert.ok(snap.version > 0, "refresh must bump the snapshot version");
+    // The single seam retains the full generation the models table formats.
+    const stored = getStoredCatalog();
+    assert.ok(stored && stored.models.length > 0, "ingest must retain the full catalog");
+    assert.deepEqual(stored.modelEnums, expected.modelEnums);
 
     assert.equal(published.length, 1);
     const persist = published[0].persist;

@@ -4,6 +4,7 @@ import fs from "node:fs";
 import { SCOPES, CLIENT_ID, AUTH_URL, REDIRECT_URI, extractCodeFromInput } from "../src/auth.ts";
 import initExtension from "../src/index.ts";
 import { resolveToken } from "../src/commands.ts";
+import { refreshCatalog } from "../src/catalog-refresh.ts";
 
 const loginFixture = JSON.parse(fs.readFileSync("captures/agy_cli_1.1.26/auth_login_params.json", "utf-8"));
 const refreshFixture = JSON.parse(fs.readFileSync("captures/agy_cli_1.1.26/auth_token_refresh.req.json", "utf-8"));
@@ -168,7 +169,16 @@ test("Seam Auth: /antigravity model is an alias of models", async () => {
     const mockCtx = {
       hasUI: true,
       ui: { notify: (msg) => outputs.push(msg) },
-      modelRegistry: { getApiKeyForProvider: async () => "fake-token" },
+      modelRegistry: {
+        getApiKeyForProvider: async () => "fake-token",
+        // models goes through the single refresh-owned path, like refresh does.
+        refresh: async () =>
+          refreshCatalog({
+            allowNetwork: true,
+            credential: { access: "fake-token" },
+            stored: {},
+          }),
+      },
     };
     await commandHandler("models", mockCtx);
     await commandHandler("model", mockCtx);
