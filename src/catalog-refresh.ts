@@ -1,7 +1,7 @@
 import { postAntigravity } from "./protocol.ts";
 import { parseStoredCredentials } from "./auth.ts";
 import type { AvailableModelItem, AvailableModelsCatalog } from "./model-catalog.ts";
-import { buildDynamicPublicModels, buildThinkingMap, getCatalogSnapshot, updateCatalogStore } from "./model-catalog.ts";
+import { buildDynamicPublicModels, getCatalogSnapshot, ingestCatalog, updateCatalogStore } from "./model-catalog.ts";
 import type { Model } from "@earendil-works/pi-ai";
 
 /**
@@ -34,23 +34,23 @@ export async function refreshCatalog(context: any): Promise<Array<Model<any>>> {
 
     const { token, projectId } = parseStoredCredentials(apiKey);
     const catalog = await fetchAvailableModelsCatalog(token, projectId, context.signal);
-    const thinking = buildThinkingMap(catalog.models);
-    const deprecated = catalog.deprecated || {};
-    updateCatalogStore(catalog.modelEnums, catalog.models.map((m) => m.id), thinking, deprecated);
+    ingestCatalog(catalog);
 
     const dynamicModels = buildDynamicPublicModels(catalog);
 
-    // Publish to Pi models-store.json
+    // Publish to Pi models-store.json from the stored generation (not the
+    // transient parse), so stored and published are always one generation.
     if (context.publish) {
+      const snap = getCatalogSnapshot();
       await context.publish({
         persist: {
           models: dynamicModels,
           checkedAt: Date.now(),
           "pi-provider-antigravity": {
-            modelEnums: catalog.modelEnums,
-            runtimeIds: catalog.models.map((m) => m.id),
-            thinking,
-            deprecated,
+            modelEnums: { ...snap.enums },
+            runtimeIds: [...snap.runtimeIds],
+            thinking: { ...(snap.thinking ?? {}) },
+            deprecated: { ...(snap.deprecated ?? {}) },
           },
         },
       });

@@ -4,6 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { runAntigravitySubcommand } from "../src/commands.ts";
+import { refreshCatalog } from "../src/catalog-refresh.ts";
 import initExtension from "../src/index.ts";
 import { QuotaStatusCoordinator } from "../src/quota-status.ts";
 import { fileQuotaStatusStore } from "../src/settings.ts";
@@ -61,13 +62,70 @@ test("Subcommand: usage prints Quota Pool groups", async () => {
   }
 });
 
+// Order matters: this runs before any ingesting test in this file, so no
+// generation sits behind the catalog seam yet and the failure must surface.
+test("Subcommand: models without a cached generation reports fetch failure", async () => {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({ ok: false, status: 500, text: async () => "boom" });
+  try {
+    const outputs = [];
+    const ctx = makeCtx(outputs, {
+      refresh: async () =>
+        refreshCatalog({
+          allowNetwork: true,
+          credential: { access: JSON.stringify({ token: "t", projectId: "p" }) },
+          stored: {},
+        }),
+    });
+    await runAntigravitySubcommand("models", ctx);
+    assert.match(outputs.join("\n"), /Failed to fetch models/);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
 test("Subcommand: models prints Model Catalog", async () => {
   const realFetch = globalThis.fetch;
   globalThis.fetch = stubFetchRouter();
   try {
     const outputs = [];
-    await runAntigravitySubcommand("models", makeCtx(outputs));
+    const refreshCalls = [];
+    const ctx = makeCtx(outputs, {
+      refresh: async (opts) => {
+        refreshCalls.push(opts);
+        await refreshCatalog({
+          allowNetwork: true,
+          credential: { access: JSON.stringify({ token: "t", projectId: "p" }) },
+          stored: {},
+        });
+      },
+    });
+    await runAntigravitySubcommand("models", ctx);
+    assert.equal(refreshCalls.length, 1);
+    assert.deepEqual(refreshCalls[0].providers, ["antigravity"]);
     assert.match(outputs.join("\n"), /Available Antigravity Models/);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Subcommand: models shows the retained list with a warning when refresh fails", async () => {
+  const realFetch = globalThis.fetch;
+  const credential = { access: JSON.stringify({ token: "t", projectId: "p" }) };
+  try {
+    // Prime one generation through the real refresh path first (self-contained:
+    // does not rely on other tests having ingested anything).
+    globalThis.fetch = stubFetchRouter();
+    await refreshCatalog({ allowNetwork: true, credential, stored: {} });
+    globalThis.fetch = async () => ({ ok: false, status: 500, text: async () => "boom" });
+    const outputs = [];
+    const ctx = makeCtx(outputs, {
+      refresh: async () => refreshCatalog({ allowNetwork: true, credential, stored: {} }),
+    });
+    await runAntigravitySubcommand("models", ctx);
+    const all = outputs.join("\n");
+    assert.match(all, /showing last known list/);
+    assert.match(all, /Available Antigravity Models/);
   } finally {
     globalThis.fetch = realFetch;
   }

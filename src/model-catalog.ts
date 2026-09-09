@@ -7,7 +7,8 @@ import { DEFAULT_ENDPOINT, PROVIDER_ID } from "./protocol.ts";
  * synthesis, and presentation (display names, Subcommand table format).
  * No network, no credentials, no persistence — the wire side
  * (fetch/parse/publish) lives in catalog-refresh.ts and talks to this
- * module only through CatalogSnapshot values and updateCatalogStore.
+ * module only through ingestCatalog (writes) and the snapshot accessors
+ * (reads), so one ingested generation is the single freshness truth.
  */
 export function extractBaseModelId(runtimeId: string): string {
   if (runtimeId === "gemini-pro-agent") return "gemini-3.1-pro";
@@ -187,6 +188,32 @@ export function updateCatalogStore(
     deprecated: { ...deprecated },
     version: activeStore.version + 1,
   };
+}
+
+// Last full Model Catalog generation behind the single catalog seam: the
+// snapshot holds only IDs/enums/thinking, while the models table also needs
+// display names, quota flags, and sort order. Written only by ingestCatalog.
+let lastCatalog: AvailableModelsCatalog | undefined;
+
+/**
+ * Records one complete catalog generation: snapshot store plus the full
+ * items the models table formats. The sole writer is the refresh path;
+ * request paths read via getCatalogSnapshot / getStoredCatalog and never
+ * write, so one generation is always the single freshness truth.
+ */
+export function ingestCatalog(catalog: AvailableModelsCatalog): void {
+  updateCatalogStore(
+    catalog.modelEnums,
+    catalog.models.map((m) => m.id),
+    buildThinkingMap(catalog.models),
+    catalog.deprecated || {},
+  );
+  lastCatalog = catalog;
+}
+
+/** Full catalog behind the seam, if any generation was ingested yet. */
+export function getStoredCatalog(): AvailableModelsCatalog | undefined {
+  return lastCatalog;
 }
 
 function resolveRuntimeModelId(
