@@ -1,0 +1,13 @@
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": ""}]}}],"usageMetadata": {"promptTokenCount": 18226,"candidatesTokenCount": 1,"totalTokenCount": 18227,"cachedContentTokenCount": 17456},"modelVersion": "claude-sonnet-4-6","responseId": "req_vrtx_011CesmoLT2xumxApodb31DP"},"traceId": "e7968ac1a6454352","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"text": "done"}]}}],"usageMetadata": {"promptTokenCount": 18226,"candidatesTokenCount": 1,"totalTokenCount": 18227,"cachedContentTokenCount": 17456},"modelVersion": "claude-sonnet-4-6","responseId": "req_vrtx_011CesmoLT2xumxApodb31DP"},"traceId": "e7968ac1a6454352","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"text": ""}]}}],"usageMetadata": {"promptTokenCount": 18226,"candidatesTokenCount": 1,"totalTokenCount": 18227,"cachedContentTokenCount": 17456},"modelVersion": "claude-sonnet-4-6","responseId": "req_vrtx_011CesmoLT2xumxApodb31DP"},"traceId": "e7968ac1a6454352","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"thoughtSignature": "RXZzQkNwUUJDQkVRQWhnQ0trQ2M3UlVuN2FpdWdVZUpEczVUaEZ3cS91V0JoSkJjbE9kWFdpUFhuVzMycUZoNXY0RTNYNVNMOWFFSnRkL2JHcXZ3Y08walk0VW12a212eVhNdWk4UGJNaEZqYkdGMVpHVXRjMjl1Ym1WMExUUXROamdBUWdoMGFHbHVhMmx1WjFvTU9EZzBNelUwT1RFNU1EVXljaEIweHJxRjRZMktJVURlZ0R2S3Z4Q09pQUVCcUFIeGdJWFZCckFCQWhJTVNML2Nock1HejZ2SHRabnZHZ3lqbjRFMnFrRlhaenJOc05raU1HNjRiR3MrazBGM2hONXFyVE9VMzBEZ0IyaXM0V1RtN3k2ZjdSL2NvT2tWWDZ1YXd2Rm1Oc2NFdWhsMmpCbzE3Q29VOGdQNTZncU5zWTdWSi9qME9rUUUvYW11Q3M4WUFRPT0=","text": ""}]}}],"usageMetadata": {"promptTokenCount": 18226,"candidatesTokenCount": 1,"totalTokenCount": 18227,"cachedContentTokenCount": 17456},"modelVersion": "claude-sonnet-4-6","responseId": "req_vrtx_011CesmoLT2xumxApodb31DP"},"traceId": "e7968ac1a6454352","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": "done"}]}}],"usageMetadata": {"promptTokenCount": 18226,"candidatesTokenCount": 1,"totalTokenCount": 18227,"cachedContentTokenCount": 17456},"modelVersion": "claude-sonnet-4-6","responseId": "req_vrtx_011CesmoLT2xumxApodb31DP"},"traceId": "e7968ac1a6454352","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": ""}]},"finishReason": "STOP"}],"usageMetadata": {"promptTokenCount": 18226,"candidatesTokenCount": 13,"totalTokenCount": 18239,"cachedContentTokenCount": 17456},"modelVersion": "claude-sonnet-4-6","responseId": "req_vrtx_011CesmoLT2xumxApodb31DP"},"traceId": "e7968ac1a6454352","metadata": {}}
+
+
