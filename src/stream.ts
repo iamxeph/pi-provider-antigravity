@@ -9,7 +9,7 @@ import {
   createAssistantMessageEventStream,
 } from "@earendil-works/pi-ai";
 import { parseStoredCredentials } from "./auth.ts";
-import { createSseFeed, type SseBlockEvent, type SseFeedOutput } from "./parser.ts";
+import { createSseFeed, type SseFeedOutput } from "./parser.ts";
 import { buildAntigravityRequestBody } from "./builder.ts";
 import { postAntigravity } from "./protocol.ts";
 import { resolveModelPlan, getCatalogSnapshot } from "./model-catalog.ts";
@@ -90,11 +90,19 @@ export function streamAntigravity(
       const decoder = new TextDecoder();
       const feed = createSseFeed();
 
-      const applyUsage = (u: { input: number; output: number; cacheRead: number; total: number }) => {
-        output.usage.input = u.input;
-        output.usage.cacheRead = u.cacheRead;
-        output.usage.output = u.output;
-        output.usage.totalTokens = u.total;
+      // Single driver for one feed output: the feed owns block events,
+      // usage counts, and stopReason. Content lives in the feed's store —
+      // every output re-points at the live ref, so close() hands over the
+      // final blocks with Thought Signatures already placed (no copy here).
+      // The caller only attaches the `partial` live helper and pushes;
+      // there is no translation seam. Cost math stays here: it needs
+      // model.cost, which the feed never sees.
+      const applyFeedOutput = (fed: SseFeedOutput) => {
+        output.content = fed.content;
+        output.usage.input = fed.usage.input;
+        output.usage.cacheRead = fed.usage.cacheRead;
+        output.usage.output = fed.usage.output;
+        output.usage.totalTokens = fed.usage.total;
 
         if (model.cost) {
           const c = model.cost;
@@ -109,66 +117,11 @@ export function streamAntigravity(
             total: inputCost + outputCost + cacheCost,
           };
         }
-      };
 
-      // translate is a pure event forwarder: blocks live in the feed's
-      // single store (output.content re-points at the live ref below), so
-      // event indices never skew and no parallel array exists to maintain.
-      const translate = (events: SseBlockEvent[]) => {
-        for (const ev of events) {
-          if (ev.kind === "text_start" || ev.kind === "thinking_start") {
-            const isThinking = ev.kind === "thinking_start";
-            stream.push(
-              isThinking
-                ? { type: "thinking_start", contentIndex: ev.index, partial: output }
-                : { type: "text_start", contentIndex: ev.index, partial: output }
-            );
-          } else if (ev.kind === "text_delta" || ev.kind === "thinking_delta") {
-            stream.push(
-              ev.kind === "text_delta"
-                ? { type: "text_delta", contentIndex: ev.index, delta: ev.delta, partial: output }
-                : { type: "thinking_delta", contentIndex: ev.index, delta: ev.delta, partial: output }
-            );
-          } else if (ev.kind === "text_end" || ev.kind === "thinking_end") {
-            stream.push(
-              ev.kind === "text_end"
-                ? { type: "text_end", contentIndex: ev.index, content: ev.content, partial: output }
-                : { type: "thinking_end", contentIndex: ev.index, content: ev.content, partial: output }
-            );
-          } else if (ev.kind === "toolCall") {
-            const toolCall = {
-              type: "toolCall" as const,
-              id: ev.block.id,
-              name: ev.block.name,
-              arguments: ev.block.arguments || {},
-              thoughtSignature: ev.block.thoughtSignature,
-            };
-            stream.push({ type: "toolcall_start", contentIndex: ev.index, partial: output });
-            stream.push({
-              type: "toolcall_delta",
-              contentIndex: ev.index,
-              delta: JSON.stringify(toolCall.arguments),
-              partial: output,
-            });
-            stream.push({
-              type: "toolcall_end",
-              contentIndex: ev.index,
-              toolCall: toolCall,
-              partial: output,
-            });
-          }
-        }
-      };
-
-      // Single driver for one feed output: usage, stopReason, and event
-      // translation flow through here. Content lives in the feed's store —
-      // every output re-points at the live ref, so close() hands over the
-      // final blocks with Thought Signatures already placed (no copy here).
-      const applyFeedOutput = (fed: SseFeedOutput) => {
-        output.content = fed.content;
-        applyUsage(fed.usage);
         output.stopReason = fed.stopReason;
-        translate(fed.events);
+        for (const ev of fed.events) {
+          stream.push({ ...ev, partial: output });
+        }
       };
 
       while (true) {
