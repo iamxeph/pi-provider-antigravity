@@ -53,47 +53,6 @@ export function isCompatibleFamily(msgModel?: string, targetModelId?: string): b
   return extractBaseModelId(msgModel) === extractBaseModelId(targetModelId);
 }
 
-export function getThinkingConfig(modelId: string, effort?: string): { includeThoughts: boolean; thinkingBudget: number } {
-  const isOff = effort === "off" || effort === "none";
-  if (isOff) {
-    return { includeThoughts: false, thinkingBudget: 0 };
-  }
-
-  // Gemini 3.8 / 3.7 / 3.6 Flash
-  if (modelId.includes("flash")) {
-    if (effort === "high" || effort === "xhigh" || modelId.endsWith("-high") || modelId.endsWith("-agent")) {
-      return { includeThoughts: true, thinkingBudget: -1 };
-    }
-    if (effort === "medium" || modelId.endsWith("-medium")) {
-      return { includeThoughts: true, thinkingBudget: 4000 };
-    }
-    if (effort === "low" || effort === "minimal" || modelId.endsWith("-low")) {
-      return { includeThoughts: true, thinkingBudget: 1000 };
-    }
-    return { includeThoughts: true, thinkingBudget: -1 };
-  }
-
-  // Gemini 3.1 Pro
-  if (modelId.includes("pro")) {
-    if (effort === "low" || effort === "minimal" || modelId.endsWith("-low")) {
-      return { includeThoughts: true, thinkingBudget: 1001 };
-    }
-    return { includeThoughts: true, thinkingBudget: 10001 };
-  }
-
-  // Claude models
-  if (modelId.startsWith("claude-")) {
-    return { includeThoughts: true, thinkingBudget: 1024 };
-  }
-
-  // GPT-OSS 120B
-  if (modelId.startsWith("gpt-oss-")) {
-    return { includeThoughts: true, thinkingBudget: 8192 };
-  }
-
-  return { includeThoughts: true, thinkingBudget: -1 };
-}
-
 export interface AvailableModelItem {
   id: string;
   displayName?: string;
@@ -216,6 +175,21 @@ export function getStoredCatalog(): AvailableModelsCatalog | undefined {
   return lastCatalog;
 }
 
+/**
+ * Wire tier spellings per Pi effort, best first. A variant named after the
+ * effort itself (`low` → `-low`) is tried before these, so a tier the wire adds
+ * later needs no edit here; only spellings that differ or are missing are
+ * listed.
+ */
+const TIER_FALLBACKS: Record<string, string[]> = {
+  minimal: ["-low", "-extra-low", ""], // the wire lists no -minimal today
+  low: ["-extra-low", ""],
+  medium: ["", "-high"], // Gemini 3.1 Pro lists no -medium: up to high, never down
+  high: ["-thinking", "-agent", ""], // Claude's high tier is -thinking
+  xhigh: ["-high", "-thinking", "-agent", ""],
+  max: ["-high", "-thinking", "-agent", ""],
+};
+
 function resolveRuntimeModelId(
   modelId: string,
   effort?: string,
@@ -233,51 +207,33 @@ function resolveRuntimeModelId(
     return modelId;
   }
 
-  const isOff = effort === "off" || effort === "none";
-  const isLow = isOff || effort === "low" || effort === "minimal";
-  const isMedium = effort === "medium";
-
-  // Tier resolution against the live snapshot: effort picks suffix candidates
-  // in preference order, the first one the server lists wins — so newly
+  // Tier resolution against the live snapshot: the server's own variant list is
+  // the candidate set, effort only sets the suffix preference order — so newly
   // released models (e.g. gemini-3.9-flash) resolve with no code change.
   if (Array.isArray(availableRuntimeIds) && availableRuntimeIds.length > 0) {
-    const candidates: string[] = [];
-    if (isLow) {
-      candidates.push(`${modelId}-low`, `${modelId}-extra-low`, modelId);
-    } else if (isMedium) {
-      candidates.push(`${modelId}-medium`, modelId);
-    } else {
-      candidates.push(`${modelId}-high`, `${modelId}-thinking`, `${modelId}-agent`, modelId);
-    }
+    const variants = new Set(availableRuntimeIds.filter((id) => extractBaseModelId(id) === modelId));
+    const order = [
+      ...(effort ? [`-${effort}`] : []),
+      ...(TIER_FALLBACKS[effort ?? ""] ?? ["-high", "-thinking", "-agent", ""]),
+    ];
 
-    for (const cand of candidates) {
-      if (availableRuntimeIds.includes(cand)) {
-        return cand;
+    for (const suffix of order) {
+      if (variants.has(`${modelId}${suffix}`)) {
+        return `${modelId}${suffix}`;
       }
     }
+
+    // A model the server lists under exactly one variant (claude-opus-4-6-thinking,
+    // gpt-oss-120b-medium) has no tier to choose from: that one variant serves
+    // every effort.
+    if (variants.size === 1) {
+      return [...variants][0];
+    }
   }
 
-  // Fallback heuristics when runtime ID catalog is not available
-  if (modelId.includes("flash")) {
-    if (isLow) return `${modelId}-low`;
-    if (isMedium) return `${modelId}-medium`;
-    return `${modelId}-high`;
-  }
-
-  if (modelId.includes("pro")) {
-    if (isLow) return `${modelId}-low`;
-    return `${modelId}-high`;
-  }
-
-  if (modelId.startsWith("claude-")) {
-    if (modelId.includes("opus")) return `${modelId}-thinking`;
-    return modelId;
-  }
-
-  if (modelId.startsWith("gpt-")) {
-    return `${modelId}-medium`;
-  }
-
+  // No runtime-ID list to resolve against: leave the ID unchanged. The enum
+  // lookup in resolveModelPlan then fails fast with refresh guidance instead
+  // of guessing a tier the server may not list.
   return modelId;
 }
 
@@ -317,7 +273,7 @@ export function resolveModelPlan(
   return {
     runtimeModelId,
     modelEnum,
-    thinkingConfig: resolveThinkingConfig(runtimeModelId, effort, snapshot),
+    thinkingConfig: resolveThinkingConfig(runtimeModelId, snapshot),
     isNonGemini: family !== "gemini",
     isClaude: family === "claude",
   };
@@ -343,28 +299,24 @@ function followRenames(runtimeModelId: string, snapshot: CatalogSnapshot): strin
 
 /**
  * Resolves the thinking config for one Runtime Model ID from a single snapshot
- * generation. Snapshot wire values win; the hardcoded heuristic below only
- * serves snapshots without per-ID thinking data (pre-budget persists) and
- * models the wire marks as non-thinking resolve to disabled thoughts.
+ * generation. The wire budget wins; a snapshot with no per-ID thinking data (a
+ * pre-budget persist) or no wire budget for the resolved ID degrades to
+ * disabled thoughts rather than a guessed budget, and self-heals on the next
+ * refresh. Models the wire marks as non-thinking land here too: no budget on
+ * the wire means no thoughts.
  */
 function resolveThinkingConfig(
   runtimeModelId: string,
-  effort?: string,
   snapshot: CatalogSnapshot = getCatalogSnapshot()
 ): { includeThoughts: boolean; thinkingBudget: number } {
-  if (effort === "off" || effort === "none") {
-    return { includeThoughts: false, thinkingBudget: 0 };
-  }
-  const info = snapshot.thinking?.[runtimeModelId];
-  if (info) {
-    if (typeof info.budget === "number") {
-      return { includeThoughts: true, thinkingBudget: info.budget };
-    }
-    if (!info.supportsThinking) {
-      return { includeThoughts: false, thinkingBudget: 0 };
-    }
-  }
-  return getThinkingConfig(runtimeModelId, effort);
+  // Pi signals thinking-off by omitting `reasoning` entirely (never by an "off"
+  // string: it is outside SimpleStreamOptions.reasoning's ThinkingLevel type),
+  // so there is deliberately no string branch here. What the wire must carry
+  // for that state is unverified — no capture has includeThoughts:false.
+  const budget = snapshot.thinking?.[runtimeModelId]?.budget;
+  return typeof budget === "number"
+    ? { includeThoughts: true, thinkingBudget: budget }
+    : { includeThoughts: false, thinkingBudget: 0 };
 }
 
 // Antigravity is quota-based with no per-token billing, so every model

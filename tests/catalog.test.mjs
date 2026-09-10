@@ -245,16 +245,15 @@ test("Seam 3: resolveModelPlan dynamically resolves tiers for new models", () =>
   assert.equal(resolveModelPlan("gemini-99.9-flash", "high", snapshot).runtimeModelId, "gemini-99.9-flash-high");
   assert.equal(resolveModelPlan("gemini-99.9-flash", "medium", snapshot).runtimeModelId, "gemini-99.9-flash-medium");
   assert.equal(resolveModelPlan("gemini-99.9-flash", "low", snapshot).runtimeModelId, "gemini-99.9-flash-low");
-  assert.equal(resolveModelPlan("gemini-99.9-flash", "off", snapshot).runtimeModelId, "gemini-99.9-flash-low");
   assert.equal(resolveModelPlan("gemini-99.9-flash", undefined, snapshot).runtimeModelId, "gemini-99.9-flash-high");
-  // No per-ID thinking data in this snapshot: the hardcoded heuristic fills in.
+  // No per-ID thinking data in this snapshot: disabled, never a guessed budget.
   assert.deepEqual(resolveModelPlan("gemini-99.9-flash", "medium", snapshot).thinkingConfig, {
-    includeThoughts: true,
-    thinkingBudget: 4000,
+    includeThoughts: false,
+    thinkingBudget: 0,
   });
 });
 
-test("Seam 3: resolveModelPlan prefers snapshot wire values over heuristics", () => {
+test("Seam 3: resolveModelPlan resolves thinking from snapshot wire values", () => {
   const catalog = parseAvailableModels(modelsJson);
   const snapshot = {
     enums: catalog.modelEnums,
@@ -297,6 +296,50 @@ test("Seam 3: resolveModelPlan disables thoughts for wire-marked non-thinking mo
   // gemini-2.5-flash ships no thinking fields on the wire: absent means off.
   const plan = resolveModelPlan("gemini-2.5-flash", undefined, snapshot);
   assert.deepEqual(plan.thinkingConfig, { includeThoughts: false, thinkingBudget: 0 });
+});
+
+test("Seam 3: resolveModelPlan degrades to disabled thoughts without per-ID thinking data", () => {
+  const enums = { "gemini-3.8-flash-high": "MODEL_PLACEHOLDER_M318" };
+  const runtimeIds = ["gemini-3.8-flash-high"];
+  const disabled = { includeThoughts: false, thinkingBudget: 0 };
+
+  // Legacy pre-budget persist: enums + runtime IDs, empty thinking map.
+  assert.deepEqual(
+    resolveModelPlan("gemini-3.8-flash", "high", { enums, runtimeIds, thinking: {}, version: 0 })
+      .thinkingConfig,
+    disabled
+  );
+  // Hand-built snapshot with no thinking key at all.
+  assert.deepEqual(
+    resolveModelPlan("gemini-3.8-flash", "high", { enums, runtimeIds, version: 0 }).thinkingConfig,
+    disabled
+  );
+  // Entry present but no wire budget (incomplete info): still disabled.
+  assert.deepEqual(
+    resolveModelPlan("gemini-3.8-flash", "high", {
+      enums,
+      runtimeIds,
+      thinking: { "gemini-3.8-flash-high": { supportsThinking: true } },
+      version: 0,
+    }).thinkingConfig,
+    disabled
+  );
+});
+
+test("Seam 3: resolveModelPlan fails fast without runtime IDs instead of guessing a tier", () => {
+  const enums = { "gemini-3.8-flash-high": "MODEL_PLACEHOLDER_M318" };
+  // The suffixed ID exists, but a snapshot with no runtime-ID list cannot map
+  // the bare public ID onto it — fail with refresh guidance, do not guess.
+  assert.throws(
+    () => resolveModelPlan("gemini-3.8-flash", "high", { enums, runtimeIds: [], version: 0 }),
+    /Unknown model "gemini-3.8-flash".*\/antigravity refresh/
+  );
+  // An exact (already-suffixed) ID still resolves from the same snapshot.
+  assert.equal(
+    resolveModelPlan("gemini-3.8-flash-high", undefined, { enums, runtimeIds: [], version: 0 })
+      .modelEnum,
+    "MODEL_PLACEHOLDER_M318"
+  );
 });
 
 test("Seam 3: resolveModelPlan throws for IDs missing from the snapshot", () => {
