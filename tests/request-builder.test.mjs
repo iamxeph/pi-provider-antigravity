@@ -9,7 +9,6 @@ import { refreshCatalog, parseAvailableModels } from "../src/catalog-refresh.ts"
 import {
   resolveModelPlan,
   getCatalogSnapshot,
-  getThinkingConfig,
   buildThinkingMap,
 } from "../src/model-catalog.ts";
 
@@ -259,27 +258,28 @@ test("Seam 1: trailing model turn appends continuation user turn to prevent 400 
 });
 
 test("Seam 1: integer thinkingBudget matches PR #39 / #36 matrix across models", () => {
+  // Values now come from the catalog snapshot (wire thinkingBudget per Runtime
+  // Model ID); the expectations below pin that matrix against the capture.
+  const budget = (id, effort) => resolveModelPlan(id, effort, FIXTURE_SNAPSHOT).thinkingConfig;
   // Flash high -> -1
-  assert.deepEqual(getThinkingConfig("gemini-3.8-flash-high"), { includeThoughts: true, thinkingBudget: -1 });
+  assert.deepEqual(budget("gemini-3.8-flash-high"), { includeThoughts: true, thinkingBudget: -1 });
   // Flash medium -> 4000
-  assert.deepEqual(getThinkingConfig("gemini-3.8-flash", "medium"), { includeThoughts: true, thinkingBudget: 4000 });
+  assert.deepEqual(budget("gemini-3.8-flash", "medium"), { includeThoughts: true, thinkingBudget: 4000 });
   // Flash low -> 1000
-  assert.deepEqual(getThinkingConfig("gemini-3.8-flash", "low"), { includeThoughts: true, thinkingBudget: 1000 });
+  assert.deepEqual(budget("gemini-3.8-flash", "low"), { includeThoughts: true, thinkingBudget: 1000 });
   // Live-captured 2026-09-06 (agy 1.1.26, --model gemini-3.7-flash --effort low|medium|high):
   // variant runtime ID + integer budget, never -tiered / thinkingLevel.
-  assert.deepEqual(getThinkingConfig("gemini-3.7-flash-low"), { includeThoughts: true, thinkingBudget: 1000 });
-  assert.deepEqual(getThinkingConfig("gemini-3.7-flash-medium"), { includeThoughts: true, thinkingBudget: 4000 });
-  assert.deepEqual(getThinkingConfig("gemini-3.7-flash-high"), { includeThoughts: true, thinkingBudget: -1 });
+  assert.deepEqual(budget("gemini-3.7-flash-low"), { includeThoughts: true, thinkingBudget: 1000 });
+  assert.deepEqual(budget("gemini-3.7-flash-medium"), { includeThoughts: true, thinkingBudget: 4000 });
+  assert.deepEqual(budget("gemini-3.7-flash-high"), { includeThoughts: true, thinkingBudget: -1 });
   // Pro high -> 10001
-  assert.deepEqual(getThinkingConfig("gemini-pro-agent", "high"), { includeThoughts: true, thinkingBudget: 10001 });
+  assert.deepEqual(budget("gemini-pro-agent", "high"), { includeThoughts: true, thinkingBudget: 10001 });
   // Pro low -> 1001
-  assert.deepEqual(getThinkingConfig("gemini-3.1-pro-low"), { includeThoughts: true, thinkingBudget: 1001 });
+  assert.deepEqual(budget("gemini-3.1-pro-low"), { includeThoughts: true, thinkingBudget: 1001 });
   // Claude -> 1024
-  assert.deepEqual(getThinkingConfig("claude-sonnet-4-6"), { includeThoughts: true, thinkingBudget: 1024 });
+  assert.deepEqual(budget("claude-sonnet-4-6"), { includeThoughts: true, thinkingBudget: 1024 });
   // GPT-OSS -> 8192
-  assert.deepEqual(getThinkingConfig("gpt-oss-120b-medium"), { includeThoughts: true, thinkingBudget: 8192 });
-  // Off -> 0
-  assert.deepEqual(getThinkingConfig("gemini-3.8-flash", "off"), { includeThoughts: false, thinkingBudget: 0 });
+  assert.deepEqual(budget("gpt-oss-120b-medium"), { includeThoughts: true, thinkingBudget: 8192 });
 });
 
 test("Seam 1: trajectory is a per-conversation v5 UUID and the numeric sessionId is the agy wire constant", () => {
@@ -507,7 +507,6 @@ test("Seam 1: resolveModelPlan maps Public Model IDs to Runtime Model IDs", () =
   assert.equal(resolveModelPlan("gemini-3.8-flash", "high", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-3.8-flash-high");
   assert.equal(resolveModelPlan("gemini-3.8-flash", "medium", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-3.8-flash-medium");
   assert.equal(resolveModelPlan("gemini-3.8-flash", "low", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-3.8-flash-low");
-  assert.equal(resolveModelPlan("gemini-3.8-flash", "off", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-3.8-flash-low");
 
   assert.equal(resolveModelPlan("gemini-3.1-pro", "high", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-pro-agent");
   assert.equal(resolveModelPlan("gemini-3.1-pro", "low", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-3.1-pro-low");
@@ -515,6 +514,16 @@ test("Seam 1: resolveModelPlan maps Public Model IDs to Runtime Model IDs", () =
   assert.equal(resolveModelPlan("claude-opus-4-6", undefined, FIXTURE_SNAPSHOT).runtimeModelId, "claude-opus-4-6-thinking");
   assert.equal(resolveModelPlan("claude-sonnet-4-6", undefined, FIXTURE_SNAPSHOT).runtimeModelId, "claude-sonnet-4-6");
   assert.equal(resolveModelPlan("gpt-oss-120b", undefined, FIXTURE_SNAPSHOT).runtimeModelId, "gpt-oss-120b-medium");
+
+  // Models the snapshot lists under a single variant have no tier to choose
+  // from, so that variant serves every effort (the deleted heuristics did this).
+  for (const effort of ["high", "medium", "low", "minimal", undefined]) {
+    assert.equal(resolveModelPlan("gpt-oss-120b", effort, FIXTURE_SNAPSHOT).runtimeModelId, "gpt-oss-120b-medium");
+    assert.equal(resolveModelPlan("claude-opus-4-6", effort, FIXTURE_SNAPSHOT).runtimeModelId, "claude-opus-4-6-thinking");
+  }
+  // Gemini 3.1 Pro lists no medium tier (captures: -high/-low only); medium
+  // resolves to the high variant, which the server renames to gemini-pro-agent.
+  assert.equal(resolveModelPlan("gemini-3.1-pro", "medium", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-pro-agent");
 
   // Live-captured 2026-09-06 (agy 1.1.26): effort selects the variant runtime ID.
   assert.equal(resolveModelPlan("gemini-3.7-flash", "high", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-3.7-flash-high");
