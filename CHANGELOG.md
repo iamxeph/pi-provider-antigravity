@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.6.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.5.0...v0.6.0) (2026-09-10)
+
+
+### Features
+
+* **settings:** rename quota footer modes to off/smart/all ([#55](https://github.com/iamxeph/pi-provider-antigravity/issues/55)) ([9765987](https://github.com/iamxeph/pi-provider-antigravity/commit/9765987c7344a1ec8d0eba40e0b75ca0042ed14f))
+
+
+### Bug Fixes
+
+* **builder:** inject the thought-signature sentinel for foreign tool calls ([#52](https://github.com/iamxeph/pi-provider-antigravity/issues/52)) ([cd27870](https://github.com/iamxeph/pi-provider-antigravity/commit/cd2787027205c7614b2988ccf7baf98ffcd0b36d))
+* **builder:** match agy's constant request.sessionId ([#57](https://github.com/iamxeph/pi-provider-antigravity/issues/57)) ([a43c996](https://github.com/iamxeph/pi-provider-antigravity/commit/a43c996ff1e5fecc6bf6624c5061a4239c76203e))
+
 ## [0.5.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.4.0...v0.5.0) (2026-09-09)
 
 
