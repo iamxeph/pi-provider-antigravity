@@ -7,7 +7,7 @@ import {
   resolveModelPlan,
   buildThinkingMap,
 } from "../src/model-catalog.ts";
-import { buildAntigravityRequestBody } from "../src/builder.ts";
+import { buildAntigravityRequestBody, SKIP_THOUGHT_SIGNATURE_VALIDATOR } from "../src/builder.ts";
 import { createSseFeed } from "../src/parser.ts";
 
 // Cross-version wire parity: every captures/agy_cli_<version>/ dir must satisfy
@@ -388,5 +388,95 @@ test("Wire parity (#15): thought:true parts never carry thoughtSignature (part-s
         }
       }
     }
+  }
+});
+
+// Live-verification contract (AGENTS.md §2): replaying a conversation across model families
+// only means something if the frozen requests actually exercise every replayable part type.
+// A fixture set that quietly stops covering one of them (thinking turns dropped, tool turns
+// trimmed) would still pass every behavioural suite, so the coverage itself is asserted here.
+const PART_TYPES = ["text", "thought", "functionCall", "functionResponse"];
+
+const capturedRequests = (dir) =>
+  fs
+    .readdirSync(`captures/${dir}`)
+    .filter((f) => f.endsWith(".req.json"))
+    .map((f) => JSON.parse(fs.readFileSync(`captures/${dir}/${f}`, "utf-8")));
+
+const capturedParts = (dir) =>
+  capturedRequests(dir)
+    .flatMap((req) => req.body?.request?.contents ?? [])
+    .flatMap((c) => c.parts ?? []);
+
+test("Wire parity (coverage): every fixture dir replays text, thinking, functionCall and functionResponse", () => {
+  for (const dir of DIRS) {
+    const parts = capturedParts(dir);
+    for (const type of PART_TYPES) {
+      assert.ok(
+        parts.some((p) => type in p),
+        `${dir}: no ${type} part in any captured request — the scenario matrix lost coverage`
+      );
+    }
+  }
+});
+
+// ADR-0007 gate: the sentinel divergence is only justified as long as agy-comparable traffic
+// never needs it, and the A/B probe only proves anything while it stays a single-variable
+// experiment. Both premises are asserted, so a future agy release that replays an unsigned
+// functionCall (or a probe re-capture that changes more than one field) fails loudly.
+test("Wire parity (ADR-0007): agy traffic carries no sentinel and the probe pairs stay single-variable", () => {
+  for (const dir of DIRS) {
+    const raw = fs
+      .readdirSync(`captures/${dir}`)
+      .filter((f) => f.endsWith(".req.json"))
+      .map((f) => fs.readFileSync(`captures/${dir}/${f}`, "utf-8"))
+      .join("\n");
+    assert.equal(
+      raw.includes(SKIP_THOUGHT_SIGNATURE_VALIDATOR),
+      false,
+      `${dir}: agy never sends the sentinel — a capture that does voids ADR-0007's premise`
+    );
+  }
+
+  const probeRequest = (name) => {
+    const req = JSON.parse(
+      fs.readFileSync(`captures/pi_probe_sentinel/${name}.req.json`, "utf-8")
+    );
+    delete req.body.requestId; // per-call timestamp, differs by design
+    delete req.headers["content-length"]; // derived from the body
+    return req;
+  };
+  const withoutSignatures = (req) => {
+    const clone = structuredClone(req);
+    for (const c of clone.body.request.contents ?? []) {
+      for (const p of c.parts ?? []) delete p.thoughtSignature;
+    }
+    return clone;
+  };
+
+  for (const [unsigned, sentinel] of [
+    ["stream_probeA_unsigned", "stream_probeB_sentinel"],
+    ["stream_probeC_claude_unsigned", "stream_probeD_claude_sentinel"],
+  ]) {
+    const a = probeRequest(unsigned);
+    const b = probeRequest(sentinel);
+    assert.deepEqual(
+      withoutSignatures(a),
+      withoutSignatures(b),
+      `${sentinel}: probe pair must differ only in thoughtSignature`
+    );
+    assert.notDeepEqual(a, b, `${sentinel}: sentinel run must actually differ`);
+    assert.equal(
+      a.body.request.contents.flatMap((c) => c.parts).some((p) => "thoughtSignature" in p),
+      false,
+      `${unsigned}: baseline probe must stay unsigned`
+    );
+    assert.equal(
+      b.body.request.contents
+        .flatMap((c) => c.parts)
+        .filter((p) => p.thoughtSignature === SKIP_THOUGHT_SIGNATURE_VALIDATOR).length,
+      1,
+      `${sentinel}: exactly one part may carry the sentinel`
+    );
   }
 });

@@ -1,0 +1,101 @@
+{
+  "method": "POST",
+  "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse",
+  "headers": {
+    "host": "daily-cloudcode-pa.googleapis.com",
+    "connection": "keep-alive",
+    "User-Agent": "antigravity/cli/1.1.28 (aidev_client; os_type=linux; arch=amd64; cl=978129418; auth_method=consumer)",
+    "Content-Type": "application/json",
+    "Authorization": "Bearer <REDACTED_ACCESS_TOKEN>",
+    "accept": "*/*",
+    "accept-language": "*",
+    "sec-fetch-mode": "cors",
+    "accept-encoding": "br, gzip, deflate",
+    "content-length": "1156"
+  },
+  "body": {
+    "project": "aicode-consumers",
+    "requestId": "agent/95550c35-b3d0-4eda-91e4-c34315770532/1789016627782/3eca7d1a-f0cb-5125-8f1d-71865dbd477e/3",
+    "request": {
+      "contents": [
+        {
+          "role": "user",
+          "parts": [
+            {
+              "text": "Reply with exactly one word: ok"
+            }
+          ]
+        },
+        {
+          "role": "model",
+          "parts": [
+            {
+              "functionCall": {
+                "id": "call_probe0001_fc_probe0001",
+                "name": "bash",
+                "args": {
+                  "command": "true"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "role": "model",
+          "parts": [
+            {
+              "functionResponse": {
+                "name": "bash",
+                "response": {
+                  "output": "ok"
+                },
+                "id": "call_probe0001_fc_probe0001"
+              }
+            }
+          ]
+        }
+      ],
+      "tools": [
+        {
+          "functionDeclarations": [
+            {
+              "name": "bash",
+              "description": "Run a shell command",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "command": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "command"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "labels": {
+        "last_step_index": "2",
+        "model_enum": "MODEL_PLACEHOLDER_M320",
+        "request_id": "3eca7d1a-f0cb-5125-8f1d-71865dbd477e-1",
+        "trajectory_id": "3eca7d1a-f0cb-5125-8f1d-71865dbd477e",
+        "used_claude": "false",
+        "used_claude_conservative": "false",
+        "used_non_gemini_model": "false"
+      },
+      "generationConfig": {
+        "maxOutputTokens": 256,
+        "thinkingConfig": {
+          "includeThoughts": true,
+          "thinkingBudget": 1000
+        }
+      },
+      "sessionId": "5539610016189382010"
+    },
+    "model": "gemini-3.8-flash-low",
+    "userAgent": "antigravity",
+    "requestType": "agent"
+  }
+}
