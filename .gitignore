@@ -7,5 +7,6 @@ dist/
 # secrets & local noise (public repo hardening)
 .env
 .env.*
+*.pem
 *.log
 .direnv/

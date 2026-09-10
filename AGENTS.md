@@ -48,3 +48,7 @@ This is an open-source project: everything GitHub-facing must be in English — 
 - Light direct edits by the maintainer may use a plain branch instead.
 - Commit and push only after maintainer confirmation.
 - Stacked PRs: retarget dependents onto `main` (`gh pr edit <n> --base main`) BEFORE merging or deleting the base branch. Deleting a base branch auto-closes every PR stacked on it, and a closed PR whose base is gone can neither be reopened nor retargeted — the only recovery is a replacement PR.
+
+## 7. GitHub Identity
+
+Agents must not act as another person on GitHub. Every PR, comment, review, merge, and commit belongs to the identity you were given: your own account, or the bot identity the maintainer provisioned for automation (`…-release[bot]` and friends). Never post or commit as the maintainer, and never reuse credentials you were not given.
