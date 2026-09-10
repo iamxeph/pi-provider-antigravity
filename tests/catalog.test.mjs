@@ -210,6 +210,8 @@ test("Seam 3: buildDynamicPublicModels dynamically synthesizes unreleased future
     agentModelSorts: [
       ...(catalog.agentModelSorts || []),
       testHighId,
+      testMedId,
+      testLowId,
     ],
   };
 
@@ -225,6 +227,28 @@ test("Seam 3: buildDynamicPublicModels dynamically synthesizes unreleased future
   assert.equal(synthesized.reasoning, true);
   assert.deepEqual(synthesized.input, ["text", "image"]);
   assert.deepEqual(synthesized.cost, { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 });
+  // agy has no off/minimal effort, so Pi must not offer them (ADR-0009).
+  assert.deepEqual(synthesized.thinkingLevelMap, { off: null, minimal: null });
+});
+
+test("Seam 3: synthesized models hide effort levels the snapshot has no variant for", () => {
+  const catalog = parseAvailableModels(modelsJson);
+  const byId = new Map(buildDynamicPublicModels(catalog).map((m) => [m.id, m]));
+  const hiddenLevels = (id) =>
+    Object.entries(byId.get(id).thinkingLevelMap)
+      .filter(([, mapped]) => mapped === null)
+      .map(([level]) => level)
+      .sort();
+
+  // agy has no off/minimal at all (ADR-0009); the tiers below come from the
+  // snapshot's own variant list per model.
+  assert.deepEqual(hiddenLevels("gemini-3.8-flash"), ["minimal", "off"]);
+  // Gemini 3.1 Pro lists no -medium variant (captures: -high/-low only).
+  assert.deepEqual(hiddenLevels("gemini-3.1-pro"), ["medium", "minimal", "off"]);
+  // gpt-oss has only -medium; Claude only -thinking (the default/high tier).
+  assert.deepEqual(hiddenLevels("gpt-oss-120b"), ["high", "low", "minimal", "off"]);
+  assert.deepEqual(hiddenLevels("claude-opus-4-6"), ["low", "medium", "minimal", "off"]);
+  assert.deepEqual(hiddenLevels("claude-sonnet-4-6"), ["low", "medium", "minimal", "off"]);
 });
 
 test("Seam 3: resolveModelPlan dynamically resolves tiers for new models", () => {

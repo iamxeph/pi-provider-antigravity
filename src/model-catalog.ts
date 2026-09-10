@@ -329,6 +329,23 @@ export function estimateModelCost(_baseId: string): Model<any>["cost"] {
 export function synthesizeDynamicModel(baseId: string, items: AvailableModelItem[]): Model<any> {
   const repItem = items.find((it) => it.id === `${baseId}-high` || it.id === baseId) || items[0];
 
+  // Pi must only offer effort levels the snapshot has a variant for — the same
+  // suffix vocabulary the resolver reads, seen from the other side. agy's
+  // vocabulary is low|medium|high (ADR-0009) and a model may list fewer:
+  // Gemini 3.1 Pro has no -medium, gpt-oss only -medium, Claude only -thinking
+  // (the default/high tier). `xhigh`/`max` stay unsupported (no mapping entry).
+  const hasVariant = (suffixes: string[]) =>
+    items.some((it) => suffixes.some((suffix) => it.id.endsWith(suffix)));
+  const thinkingLevelMap = {
+    off: null,
+    minimal: null,
+    ...(hasVariant(["-low", "-extra-low"]) ? {} : { low: null }),
+    ...(hasVariant(["-medium"]) ? {} : { medium: null }),
+    ...(hasVariant(["-high", "-thinking", "-agent"]) || items.some((it) => it.id === baseId)
+      ? {}
+      : { high: null }),
+  };
+
   const isFlash = baseId.includes("flash");
   const isClaude = baseId.startsWith("claude-");
   const isGpt = baseId.startsWith("gpt-");
@@ -346,6 +363,7 @@ export function synthesizeDynamicModel(baseId: string, items: AvailableModelItem
     api: "antigravity-api",
     baseUrl: DEFAULT_ENDPOINT,
     reasoning: repItem?.supportsThinking ?? true,
+    thinkingLevelMap,
     input: repItem?.supportsImages ? ["text", "image"] : ["text"],
     cost: estimateModelCost(baseId),
     contextWindow: repItem?.maxTokens || defaultContext,
