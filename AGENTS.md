@@ -52,3 +52,5 @@ This is an open-source project: everything GitHub-facing must be in English — 
 ## 7. GitHub Identity
 
 Agents must not act as another person on GitHub. Every PR, comment, review, merge, and commit belongs to the identity you were given: your own account, or the bot identity the maintainer provisioned for automation (`…-release[bot]` and friends). Never post or commit as the maintainer, and never reuse credentials you were not given.
+
+Maintainer commits stay the maintainer's; agent commits carry the bot. The switch is per-shell, not per-repo: a session-scoped `GH_TOKEN` plus git author/committer env vars, with `git config user.*` left at its default here and globally. Pinning the bot into git config would apply to every commit in the working copy — the maintainer's own included.
