@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  # Manual re-run of the release flow (e.g. after a transient failure); safe to run any time —
+  # with no unreleased `feat`/`fix` commits release-please has nothing to open a PR for.
+  workflow_dispatch:
 
 permissions:
   contents: write
