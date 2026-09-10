@@ -282,7 +282,7 @@ test("Seam 1: integer thinkingBudget matches PR #39 / #36 matrix across models",
   assert.deepEqual(getThinkingConfig("gemini-3.8-flash", "off"), { includeThoughts: false, thinkingBudget: 0 });
 });
 
-test("Seam 1: session trajectory and numeric sessionId are deterministic v5 UUID and int64", () => {
+test("Seam 1: trajectory is a per-conversation v5 UUID and the numeric sessionId is the agy wire constant", () => {
   const contextA = { messages: [{ role: "user", content: "session-seed-alpha" }] };
   const contextB = { messages: [{ role: "user", content: "session-seed-alpha" }] };
   const contextC = { messages: [{ role: "user", content: "session-seed-beta" }] };
@@ -303,13 +303,22 @@ test("Seam 1: session trajectory and numeric sessionId are deterministic v5 UUID
     context: contextC,
   });
 
-  // Same seed produces identical trajectory and numeric session ID
+  // Same seed -> same trajectory; the numeric session ID is seed-independent
   assert.equal(bodyA.request.labels.trajectory_id, bodyB.request.labels.trajectory_id);
   assert.equal(bodyA.request.sessionId, bodyB.request.sessionId);
 
-  // Different seed produces different trajectory and numeric session ID
+  // Different seed -> different trajectory, but the same constant session ID
   assert.notEqual(bodyA.request.labels.trajectory_id, bodyC.request.labels.trajectory_id);
-  assert.notEqual(bodyA.request.sessionId, bodyC.request.sessionId);
+  assert.equal(bodyC.request.sessionId, "-3750763034362895579");
+
+  // An explicit numeric sessionId (probe captures, stream.ts override) wins verbatim
+  const bodyOverride = buildAntigravityRequestBody({
+    projectId: "aicode-consumers",
+    plan: staticPlan("gemini-3.7-flash-high"),
+    context: contextA,
+    sessionId: "5539610016189382010",
+  });
+  assert.equal(bodyOverride.request.sessionId, "5539610016189382010");
 
   // Trajectory is v5 UUID
   assert.match(
@@ -747,7 +756,7 @@ test("Seam 1: multi-turn conversation maintains fixed trajectoryId/sessionId and
   assert.equal(body3.request.labels.last_step_index, "4");
   assert.match(body3.requestId, new RegExp(`/${trajectoryId1}/5$`));
 
-  // Different conversation prompt MUST produce a different trajectoryId
+  // Different conversation prompt MUST produce a different trajectoryId; session ID stays constant
   const differentContext = {
     messages: [{ role: "user", content: "Write a poem about space" }],
   };
@@ -757,7 +766,7 @@ test("Seam 1: multi-turn conversation maintains fixed trajectoryId/sessionId and
     context: differentContext,
   });
   assert.notEqual(bodyDifferent.request.labels.trajectory_id, trajectoryId1);
-  assert.notEqual(bodyDifferent.request.sessionId, sessionId1);
+  assert.equal(bodyDifferent.request.sessionId, "-3750763034362895579");
 });
 
 test("Seam 1 (Strict Wire Parity): All multi-turn capture fixtures (Turns 1, 2, 4, 5) share invariant session identities and proportional step indices", () => {
