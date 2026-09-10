@@ -114,14 +114,19 @@ function resolveSessionTrajectory(sessionId: string): string {
 }
 
 /**
- * Computes signed 64-bit integer session ID matching official agy CLI Wire Fingerprint.
+ * Signed 64-bit `request.sessionId`. Constant in every captured agy turn (1.1.26-1.2.0) — no
+ * conversation/account input. Re-capture (captures/README.md) if a future agy changes it.
+ */
+const AGY_SESSION_ID = "-3750763034362895579";
+
+/**
+ * Pure-numeric session IDs (probe captures, `stream.ts` override) pass through verbatim.
  */
 function resolveNumericSessionId(sessionId: string): string {
   if (/^-?\d+$/.test(sessionId)) {
     return sessionId;
   }
-  const hash = createHash("sha256").update(`antigravity:session:${sessionId}`).digest();
-  return hash.readBigInt64BE(0).toString();
+  return AGY_SESSION_ID;
 }
 
 /**

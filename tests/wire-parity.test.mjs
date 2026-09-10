@@ -33,6 +33,9 @@ const load = (dir, name) => {
   return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, "utf-8")) : null;
 };
 
+// agy's constant sessionId, frozen here so a drifting capture fails loudly.
+const AGY_SESSION_ID = "-3750763034362895579";
+
 // Production-path whole-input parse: feed() + close(), the same exits
 // streamAntigravity uses. Assert on the returned close().
 function parseWhole(rawSse) {
@@ -183,7 +186,7 @@ for (const dir of DIRS) {
         assert.match(body.request.labels.last_execution_id, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/, `${f}: last_execution_id`);
         continuations++;
       }
-      assert.equal(typeof body.request.sessionId, "string", `${f}: sessionId`);
+      assert.equal(body.request.sessionId, AGY_SESSION_ID, `${f}: sessionId`);
       const tc = body.request.generationConfig?.thinkingConfig;
       assert.equal(typeof tc?.includeThoughts, "boolean", `${f}: includeThoughts`);
       assert.equal(typeof tc?.thinkingBudget, "number", `${f}: thinkingBudget`);
@@ -271,6 +274,7 @@ for (const dir of DIRS) {
     assert.equal(body.request.labels.last_step_index, String(body.request.contents.length - 1));
     assert.equal(body.request.labels.request_id, `${traj}-9`);
     assert.match(body.requestId, new RegExp(`/${traj}/${body.request.contents.length}$`));
+    assert.equal(body.request.sessionId, turn1.body.request.sessionId, "sessionId byte parity");
   });
 }
 
