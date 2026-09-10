@@ -47,3 +47,7 @@ Claude/GPT requests alone (`docs/adr/0007-sentinel-divergence-for-foreign-calls.
 8. Teardown: `setsid nohup mitmdump … &` records the wrapper's PID in `$!`, not the
    proxy's — read the real one from `ps -eo pid,cmd | grep '[m]itmdump'` and kill that,
    then confirm `ss -ltn | grep 18080` is empty.
+9. Re-captured fixtures stay machine-checked: `tests/wire-parity.test.mjs` (ADR-0007 gate)
+   asserts each pair differs only in `thoughtSignature` after the per-call `requestId` and
+   `content-length` are removed, that the baseline carries none, and that exactly one part
+   carries the sentinel — so a re-capture must preserve that single-variable property.

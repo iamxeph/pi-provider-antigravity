@@ -97,6 +97,16 @@ on a non-default model (observed 1.1.28: a Claude session continued without
 `--model` came back as `gemini-3.7-flash-high`). Always verify the follow-up's
 `.body.model` before freezing the fixture.
 
+**Coverage rule**: a scenario only counts as verification when the frozen requests contain
+all three replayable part types — `text`, `thinking`, and `functionCall` with its
+`functionResponse` — and the diff confirms each replays as captured. A scenario that
+exercises one and drops the others is not coverage; `tests/wire-parity.test.mjs` fails if
+any `agy_cli_<version>` directory loses one of them.
+
+**Cross-provider replay** is not reachable from `agy` (it never switches providers
+mid-session), so it has no fixture here: probe it with this extension's own builder —
+`../pi_probe_sentinel/README.md`.
+
 ## 3. Extract fixtures
 
 Request envelopes nest under `.body` (`{project, requestId, request:{...}, model, ...}`),
@@ -144,10 +154,15 @@ npm run lint:captures                                 # must pass; also runs ins
 Then shut down and clean up:
 
 ```bash
-pkill -f 'mitmdump.*18080'
+# `setsid nohup mitmdump … &` records the *wrapper's* PID in `$!`, not the proxy's:
+ps -eo pid,cmd | grep '[m]itmdump'   # read the real PID here
+kill <pid>
 ss -ltn | grep 18080 || echo "port free"   # a forgotten proxy burns quota on later runs
 rm -f /tmp/agy-capture/flows.jsonl        # raw flows hold Bearer tokens — never commit
 ```
+
+Never `pkill -f` with a pattern that also appears in your own command line — it kills the
+shell you are typing in.
 
 ## 5. Pin it in tests
 
