@@ -107,6 +107,20 @@ Switch between display modes at any time using `/antigravity settings`:
 | `smart` | `Wk 6% (2d 14h)` | Shows the window that runs out first, 5h or weekly |
 | `all` | `5h 90% (3h 54m) · Wk 6% (2d 14h)` | Shows every window of the pool backing the current model |
 
+### Footer placement
+
+The extension never calls `setFooter` — it only publishes the slot text under the key `pi-provider-antigravity-footer-usage` via `setStatus`. Where that text renders is up to your footer; Pi's built-in one gives it its own line, below the default two.
+
+To move it elsewhere (the right side of the first line, for example), ask Pi in a session and name the key:
+
+> Move the `pi-provider-antigravity-footer-usage` slot to the right side of the first footer line, keeping the rest of the footer as it is.
+
+Pi edits your own footer extension, creating one if you have none — based on
+Pi's [complete custom-footer
+example](https://github.com/earendil-works/pi-mono/blob/main/packages/coding-agent/examples/extensions/custom-footer.ts),
+which Pi maintains. A custom footer replaces the built-in one, so Pi has to
+redraw whichever lines you want to keep.
+
 ### Under the Hood
 
 - **Model-aware pool routing**: Automatically aligns with your active model. Selecting a Gemini model displays the Gemini quota pool; switching to Claude or GPT switches to the third-party pool. When using a non-Antigravity model or no model at all, the slot cleanly disappears.

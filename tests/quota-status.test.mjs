@@ -583,3 +583,14 @@ test("Coordinator: refreshAndPaint paints, refreshes when stale, repaints", asyn
     globalThis.fetch = realFetch;
   }
 });
+
+// The status key is a documented contract: users hand this key to Pi when they
+// ask it to rearrange their footer (README "Footer placement"). Renaming the
+// constant without updating the README would silently break those prompts.
+test("README documents the footer status key verbatim", () => {
+  const readme = fs.readFileSync("README.md", "utf-8");
+  assert.ok(
+    readme.includes(QUOTA_STATUS_KEY),
+    `README must document the footer slot key "${QUOTA_STATUS_KEY}"`,
+  );
+});

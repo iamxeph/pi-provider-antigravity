@@ -204,7 +204,7 @@ test("Subcommand: settings picks mode in a dialog and applies it", async () => {
       assert.deepEqual(seen, [["Quota footer (current: off)", ["off", "smart", "all"]]]);
       const all = outputs.join("\n");
       assert.match(all, /Quota footer set to smart\./);
-      assert.match(all, /\[antigravity_quota\].*5h 22%/);
+      assert.match(all, /\[pi-provider-antigravity-footer-usage\].*5h 22%/);
       const saved = JSON.parse(fs.readFileSync(file, "utf-8"));
       assert.equal(saved.settings.quotaFooter, "smart");
       assert.equal(saved.states.quota.weeklyTo5hRatio, 4); // state preserved
@@ -325,7 +325,7 @@ test("Subcommand: usage feeds the shared cache and footer", async () => {
       await runAntigravitySubcommand("usage", makeCtx(outputs), coord);
       const all = outputs.join("\n");
       assert.match(all, /Gemini Models/); // full quota text still printed
-      assert.match(all, /\[antigravity_quota\].*5h 22%/); // footer repainted from the same fetch
+      assert.match(all, /\[pi-provider-antigravity-footer-usage\].*5h 22%/); // footer repainted from the same fetch
       const saved = JSON.parse(fs.readFileSync(file, "utf-8"));
       assert.equal(saved.states.quota.previousObservation["gemini"]["5h"], 0.2216828);
     } finally {

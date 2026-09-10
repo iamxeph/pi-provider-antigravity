@@ -279,9 +279,9 @@ export function colorizeQuotaFooterBoth(footer: string | undefined): string | un
     .join(" · ");
 }
 
-// Distinct from personal-config keys (e.g. "quota") so both extensions can
-// coexist without overwriting each other's footer slot.
-export const QUOTA_STATUS_KEY = "antigravity_quota";
+// Namespaced by repo so no other extension (e.g. a personal-config "quota"
+// slot) can overwrite this footer slot, and vice versa.
+export const QUOTA_STATUS_KEY = "pi-provider-antigravity-footer-usage";
 export const QUOTA_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 // Baselines older than this may straddle a quota reset (negative or
 // meaningless deltas), so cross-session calibration ignores them. An hour

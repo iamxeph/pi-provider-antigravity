@@ -188,7 +188,7 @@ test("TUI dialog cycles the value with the real SettingsList", async () => {
       const allLine = ansiList.render(200).find((l) => l.includes("Show remaining quota"));
       assert.match(allLine, /\x1b\[39m · Wk/, "healthy window stays plain like the footer's");
       assert.ok(!/\x1b\[38;5;240m · Wk/.test(allLine), "no description color inside the sample");
-      assert.match(outputs.join("\n"), /\[antigravity_quota\].*5h 22%/);
+      assert.match(outputs.join("\n"), /\[pi-provider-antigravity-footer-usage\].*5h 22%/);
       assert.ok(renders > 0);
 
       list.handleInput("\x1b");
