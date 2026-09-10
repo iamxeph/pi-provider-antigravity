@@ -21,6 +21,13 @@ jobs:
     steps:
       - uses: googleapis/release-please-action@v5
         id: release
+        with:
+          # Author the release PR with a user token. GitHub holds workflow runs on
+          # `github-actions[bot]` PRs in `action_required` until a maintainer approves them,
+          # which left every release PR with unrun/red checks; a user-authored PR runs CI
+          # normally. Falls back to the default token when the secret is unset.
+          # Needs a fine-grained PAT scoped to this repo: Contents RW + Pull requests RW.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
 
   publish:
     name: Publish to npm
