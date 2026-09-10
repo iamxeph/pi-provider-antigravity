@@ -21,7 +21,7 @@ function stubFetchRouter() {
   };
 }
 
-function memStore(mode = "single") {
+function memStore(mode = "smart") {
   return {
     loadMode: () => mode,
     loadQuotaState: () => undefined,
@@ -196,17 +196,17 @@ test("Subcommand: settings picks mode in a dialog and applies it", async () => {
       const seen = [];
       const selectImpl = async (title, options) => {
         seen.push([title, options]);
-        return "single";
+        return "smart";
       };
       const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(file));
       const outputs = [];
       await runAntigravitySubcommand("settings", makeCtx(outputs, { selectImpl }), coord);
-      assert.deepEqual(seen, [["Quota footer (current: off)", ["off", "single", "both"]]]);
+      assert.deepEqual(seen, [["Quota footer (current: off)", ["off", "smart", "all"]]]);
       const all = outputs.join("\n");
-      assert.match(all, /Quota footer set to single\./);
+      assert.match(all, /Quota footer set to smart\./);
       assert.match(all, /\[antigravity_quota\].*5h 22%/);
       const saved = JSON.parse(fs.readFileSync(file, "utf-8"));
-      assert.equal(saved.settings.quotaFooter, "single");
+      assert.equal(saved.settings.quotaFooter, "smart");
       assert.equal(saved.states.quota.weeklyTo5hRatio, 4); // state preserved
     } finally {
       globalThis.fetch = realFetch;
@@ -235,7 +235,7 @@ test("Subcommand: settings without UI prints text", async () => {
         hasUI: false,
         selectImpl: async () => {
           called = true;
-          return "both";
+          return "all";
         },
       });
       await runAntigravitySubcommand("settings", ctx);
@@ -319,7 +319,7 @@ test("Subcommand: usage feeds the shared cache and footer", async () => {
     globalThis.fetch = stubFetchRouter();
     try {
       const file = path.join(dir, "pi-provider-antigravity.json");
-      fs.writeFileSync(file, JSON.stringify({ settings: { quotaFooter: "single" } }));
+      fs.writeFileSync(file, JSON.stringify({ settings: { quotaFooter: "smart" } }));
       const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(file));
       const outputs = [];
       await runAntigravitySubcommand("usage", makeCtx(outputs), coord);
@@ -355,7 +355,7 @@ test("Subcommand: settings picks the value via select fallback", async () => {
       const calls = [];
       const selectImpl = async (title, options) => {
         calls.push([title, options]);
-        return "single";
+        return "smart";
       };
       const outputs = [];
       await runAntigravitySubcommand(
@@ -363,10 +363,10 @@ test("Subcommand: settings picks the value via select fallback", async () => {
         makeCtx(outputs, { selectImpl }),
         new QuotaStatusCoordinator(fileQuotaStatusStore(file)),
       );
-      assert.deepEqual(calls, [["Quota footer (current: off)", ["off", "single", "both"]]]);
+      assert.deepEqual(calls, [["Quota footer (current: off)", ["off", "smart", "all"]]]);
       const saved = JSON.parse(fs.readFileSync(file, "utf-8"));
-      assert.equal(saved.settings.quotaFooter, "single");
-      assert.match(outputs.join("\n"), /Quota footer set to single\./);
+      assert.equal(saved.settings.quotaFooter, "smart");
+      assert.match(outputs.join("\n"), /Quota footer set to smart\./);
     });
   } finally {
     globalThis.fetch = realFetch;

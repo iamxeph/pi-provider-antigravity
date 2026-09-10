@@ -95,7 +95,7 @@ Remaining percentages are automatically colorized to keep depletion visible with
 - **Low** (≤ 30%): Yellow
 - **Critical** (≤ 10%): Red
 
-In `both` mode, each window carries its own color based on its remaining percentage.
+In `all` mode, each window carries its own color based on its remaining percentage.
 
 ### Display Modes
 
@@ -104,13 +104,13 @@ Switch between display modes at any time using `/antigravity settings`:
 | Mode | Example | Behavior |
 |---|---|---|
 | `off` *(default)* | *(hidden)* | Slot stays empty; zero background quota requests |
-| `single` | `Wk 6% (2d 14h)` | Shows only the primary bottleneck window |
-| `both` | `5h 90% (3h 54m) · Wk 6% (2d 14h)` | Shows both 5-hour and weekly windows side-by-side |
+| `smart` | `Wk 6% (2d 14h)` | Shows the window that runs out first, 5h or weekly |
+| `all` | `5h 90% (3h 54m) · Wk 6% (2d 14h)` | Shows every window of the pool backing the current model |
 
 ### Under the Hood
 
 - **Model-aware pool routing**: Automatically aligns with your active model. Selecting a Gemini model displays the Gemini quota pool; switching to Claude or GPT switches to the third-party pool. When using a non-Antigravity model or no model at all, the slot cleanly disappears.
-- **Intelligent bottleneck detection**: In `single` mode, the extension determines urgency using `min(r5h, rWk × R)` rather than a naive percentage comparison, accounting for total volume differences between the 5-hour and weekly pools. The volume multiplier `R` starts at 6.0 and automatically self-calibrates between 1.0 and 20.0 based on real usage deltas, persisting across restarts.
+- **Bottleneck detection**: In `smart` mode, the extension determines urgency using `min(r5h, rWk × R)` rather than a naive percentage comparison, accounting for total volume differences between the 5-hour and weekly pools. The volume multiplier `R` starts at 6.0 and automatically self-calibrates between 1.0 and 20.0 based on real usage deltas, persisting across restarts.
 - **Battery- and network-friendly caching**: Idle sessions perform zero network requests. The slot repaints instantly from memory on turn completion, session launch, and model changes. Upstream quota queries are throttled to at most once every 5 minutes. Running `/antigravity usage` refreshes upstream data immediately.
 
 ## Configuration
@@ -136,7 +136,7 @@ Configuration is stored in `pi-provider-antigravity.json` alongside Pi's `settin
 ```json
 {
   "settings": {
-    "quotaFooter": "single"
+    "quotaFooter": "smart"
   }
 }
 ```
@@ -147,7 +147,7 @@ Configuration is stored in `pi-provider-antigravity.json` alongside Pi's `settin
 
 | Key | Values | Default | Description |
 |---|---|---|---|
-| `quotaFooter` | `off`, `single`, `both` | `off` | Display remaining quota in Pi's status footer. See [Quota footer](#quota-footer). |
+| `quotaFooter` | `off`, `smart`, `all` | `off` | Display remaining quota in Pi's status footer. See [Quota footer](#quota-footer). |
 
 ## Disclaimer
 
