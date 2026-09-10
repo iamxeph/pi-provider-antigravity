@@ -11,6 +11,10 @@ Theory lives in `docs/adr/0001-strict-wire-fingerprint-fixtures.md` and
 - `agy update` changed behavior (check `agy --version` and the `User-Agent` in any new traffic).
 - A protocol change is planned and no fixture covers the case (error tool results,
   image results, new model families, new thinking levels).
+- The case is one `agy` cannot produce at all (e.g. replaying a tool call authored by
+  another provider mid-session): probe it with this extension's own builder and freeze
+  the A/B flows under `captures/pi_probe_sentinel/` — that directory's README documents
+  the procedure and the sanitizing steps.
 - A competitor/derivative claims a different wire shape — settle it with a capture, not opinions.
 
 ## 1. Proxy setup

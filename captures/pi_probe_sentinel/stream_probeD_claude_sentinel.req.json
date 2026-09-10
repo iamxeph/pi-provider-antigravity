@@ -1,0 +1,102 @@
+{
+  "method": "POST",
+  "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse",
+  "headers": {
+    "host": "daily-cloudcode-pa.googleapis.com",
+    "connection": "keep-alive",
+    "User-Agent": "antigravity/cli/1.1.28 (aidev_client; os_type=linux; arch=amd64; cl=978129418; auth_method=consumer)",
+    "Content-Type": "application/json",
+    "Authorization": "Bearer <REDACTED_ACCESS_TOKEN>",
+    "accept": "*/*",
+    "accept-language": "*",
+    "sec-fetch-mode": "cors",
+    "accept-encoding": "br, gzip, deflate",
+    "content-length": "1205"
+  },
+  "body": {
+    "project": "aicode-consumers",
+    "requestId": "agent/95550c35-b3d0-4eda-91e4-c34315770532/1789017239785/3eca7d1a-f0cb-5125-8f1d-71865dbd477e/3",
+    "request": {
+      "contents": [
+        {
+          "role": "user",
+          "parts": [
+            {
+              "text": "Reply with exactly one word: ok"
+            }
+          ]
+        },
+        {
+          "role": "model",
+          "parts": [
+            {
+              "functionCall": {
+                "id": "call_probe0005_fc_probe0005",
+                "name": "bash",
+                "args": {
+                  "command": "true"
+                }
+              },
+              "thoughtSignature": "skip_thought_signature_validator"
+            }
+          ]
+        },
+        {
+          "role": "model",
+          "parts": [
+            {
+              "functionResponse": {
+                "name": "bash",
+                "response": {
+                  "output": "ok"
+                },
+                "id": "call_probe0005_fc_probe0005"
+              }
+            }
+          ]
+        }
+      ],
+      "tools": [
+        {
+          "functionDeclarations": [
+            {
+              "name": "bash",
+              "description": "Run a shell command",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "command": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "command"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "labels": {
+        "last_step_index": "2",
+        "model_enum": "MODEL_PLACEHOLDER_M35",
+        "request_id": "3eca7d1a-f0cb-5125-8f1d-71865dbd477e-1",
+        "trajectory_id": "3eca7d1a-f0cb-5125-8f1d-71865dbd477e",
+        "used_claude": "true",
+        "used_claude_conservative": "true",
+        "used_non_gemini_model": "true"
+      },
+      "generationConfig": {
+        "maxOutputTokens": 32768,
+        "thinkingConfig": {
+          "includeThoughts": true,
+          "thinkingBudget": 1024
+        }
+      },
+      "sessionId": "5539610016189382010"
+    },
+    "model": "claude-sonnet-4-6",
+    "userAgent": "antigravity",
+    "requestType": "agent"
+  }
+}

@@ -1,0 +1,7 @@
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": ""}]}}],"usageMetadata": {"promptTokenCount": 630,"candidatesTokenCount": 1,"totalTokenCount": 631},"modelVersion": "claude-sonnet-4-6","responseId": "req_vrtx_011CeuBqniwoxfU22HLLKy1F"},"traceId": "be30fcd2c3e48287","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": "ok"}]}}],"usageMetadata": {"promptTokenCount": 630,"candidatesTokenCount": 1,"totalTokenCount": 631},"modelVersion": "claude-sonnet-4-6","responseId": "req_vrtx_011CeuBqniwoxfU22HLLKy1F"},"traceId": "be30fcd2c3e48287","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": ""}]},"finishReason": "STOP"}],"usageMetadata": {"promptTokenCount": 630,"candidatesTokenCount": 4,"totalTokenCount": 634},"modelVersion": "claude-sonnet-4-6","responseId": "req_vrtx_011CeuBqniwoxfU22HLLKy1F"},"traceId": "be30fcd2c3e48287","metadata": {}}
+
+

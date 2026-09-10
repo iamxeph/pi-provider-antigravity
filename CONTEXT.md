@@ -26,6 +26,10 @@ _Avoid_: Thought token, thinking hash, thought checksum
 대화 이력(Turn Trace)과 Model Plan을 입력받아 세션 식별자 파생, Thought Signature 검증, 도구 스키마 변환을 캡슐화하여 백엔드가 요구하는 단일 Wire Fingerprint 요청 엔벨로프로 조립하는 모듈.
 _Avoid_: Request serializer, payload generator, message mapper
 
+**Sentinel Divergence**:
+`agy`가 만들 수 없는 상황(다른 provider/model family가 저작한 도구 호출)에 한해 무서명 `functionCall`에 `skip_thought_signature_validator`를 실어 보내는 의도된 Wire Fingerprint 예외. 같은 provider/family의 서명 유실에는 적용하지 않아 실패를 드러낸다 (ADR-0007).
+_Avoid_: Sentinel injection, signature bypass, validation skip
+
 ### Models & Routing
 
 **Public Model ID**:
