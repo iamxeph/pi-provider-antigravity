@@ -16,18 +16,26 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+    env:
+      # Mirrored into env because `secrets` is not available in a step-level `if`.
+      RELEASE_PLEASE_APP_CLIENT_ID: ${{ secrets.RELEASE_PLEASE_APP_CLIENT_ID }}
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
     steps:
+      # A GitHub App installation token authors the release PR as `<app>[bot]` and lets
+      # `pull_request` workflows run automatically, while a `GITHUB_TOKEN`-authored PR is
+      # parked in `action_required` until a maintainer approves it. Skipped until the app
+      # secrets exist, which leaves the run on the default token.
+      - uses: actions/create-github-app-token@v3
+        id: app-token
+        if: env.RELEASE_PLEASE_APP_CLIENT_ID != ''
+        with:
+          client-id: ${{ env.RELEASE_PLEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_PLEASE_APP_PRIVATE_KEY }}
       - uses: googleapis/release-please-action@v5
         id: release
         with:
-          # Author the release PR with a user token. GitHub holds workflow runs on
-          # `github-actions[bot]` PRs in `action_required` until a maintainer approves them,
-          # which left every release PR with unrun/red checks; a user-authored PR runs CI
-          # normally. Falls back to the default token when the secret is unset.
-          # Needs a fine-grained PAT scoped to this repo: Contents RW + Pull requests RW.
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          token: ${{ steps.app-token.outputs.token || github.token }}
 
   publish:
     name: Publish to npm
