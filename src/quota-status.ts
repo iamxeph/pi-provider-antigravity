@@ -255,7 +255,7 @@ export function formatQuotaWindowPart(bucket: QuotaBucket): string {
 // foreground-only reset, mirroring Theme.fg instead of a full reset.
 const ANSI_RED = "\x1b[31m";
 const ANSI_YELLOW = "\x1b[33m";
-const ANSI_FG_RESET = "\x1b[39m";
+export const ANSI_FG_RESET = "\x1b[39m";
 
 export const QUOTA_WARN_PCT = 30;
 export const QUOTA_ALERT_PCT = 10;
@@ -352,7 +352,7 @@ export function paintQuotaStatus(coord: QuotaStatusCoordinator, ctx: QuotaStatus
   const plain = coord.footerFor(ctx.model?.id, mode);
   ctx.ui.setStatus(
     QUOTA_STATUS_KEY,
-    mode === "both" ? colorizeQuotaFooterBoth(plain) : colorizeQuotaFooter(plain),
+    mode === "all" ? colorizeQuotaFooterBoth(plain) : colorizeQuotaFooter(plain),
   );
 }
 
@@ -382,9 +382,9 @@ export class QuotaStatusCoordinator {
     return this.store.loadMode();
   }
 
-  footerFor(modelId?: string, mode: QuotaFooterMode = "single"): string | undefined {
+  footerFor(modelId?: string, mode: QuotaFooterMode = "smart"): string | undefined {
     if (!this.summary || mode === "off") return undefined;
-    return mode === "both"
+    return mode === "all"
       ? buildQuotaFooterBoth(this.summary, modelId)
       : buildQuotaFooter(this.summary, modelId, this.weeklyTo5hRatio);
   }
@@ -411,12 +411,13 @@ export class QuotaStatusCoordinator {
     paintQuotaStatus(this, ctx);
   }
 
-  // One fetch for preview purposes even when the footer slot is off: opening
-  // quota settings is an explicit look at quota.
+  // One fetch for preview purposes even when the footer slot is off or the
+  // current model belongs to another provider: opening quota settings is an
+  // explicit look at quota (like /antigravity usage), and the preview is the
+  // only place that quota is visible while a foreign model is selected.
   ensurePreview(ctx: QuotaStatusCtx): Promise<QuotaSummary | undefined> {
     if (this.summary) return Promise.resolve(this.summary);
     if (this.inflight) return this.inflight;
-    if (!isAntigravityModel(ctx.model)) return Promise.resolve(undefined);
     return this.fetchOnce(ctx);
   }
 

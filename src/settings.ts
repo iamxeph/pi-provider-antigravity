@@ -4,6 +4,7 @@ import * as path from "node:path";
 import type { ExtensionCommandContext, Theme } from "@earendil-works/pi-coding-agent";
 import { SettingsList, type SettingItem, type SettingsListTheme } from "@earendil-works/pi-tui";
 import {
+  ANSI_FG_RESET,
   colorizeQuotaFooter,
   colorizeQuotaFooterBoth,
   paintQuotaStatus,
@@ -20,12 +21,12 @@ export interface ProviderFileConfig {
   states?: { [name: string]: { [key: string]: unknown } | undefined };
 }
 
-export type QuotaFooterMode = "off" | "single" | "both";
+export type QuotaFooterMode = "off" | "smart" | "all";
 
 // Single opt-in file next to Pi's settings.json (NOT settings.json itself —
 // Pi manages that file and may drop unknown keys). Pi resolves its dir via
 // PI_CODING_AGENT_DIR else ~/.pi/agent; mirror that:
-//   { "settings": { "quotaFooter": "single" } }   // off (default) | single | both
+//   { "settings": { "quotaFooter": "smart" } }   // off (default) | smart | all
 // A "states" section holds runtime data namespaced per subsystem
 // (e.g. states.quota); unknown keys and sections pass through untouched. Read per call: tiny file, and edits apply
 // on the next refresh without a restart.
@@ -60,7 +61,7 @@ export function saveProviderConfig(file: string, data: ProviderFileConfig): bool
 
 export function normalizeFooterMode(value: unknown): QuotaFooterMode | undefined {
   const v = typeof value === "string" ? value.trim().toLowerCase() : "";
-  return v === "off" || v === "single" || v === "both" ? v : undefined;
+  return v === "off" || v === "smart" || v === "all" ? v : undefined;
 }
 
 export function resolveFooterMode(config?: ProviderFileConfig): QuotaFooterMode {
@@ -109,6 +110,9 @@ export interface SettingsFieldDef {
   description?: string;
   options: readonly string[];
   defaultValue?: string;
+  // Per-option explanation shown on its own line under the live sample (only
+  // the highlighted value's note is shown).
+  optionNotes?: Record<string, string>;
   // Immediate side-effect after save (e.g. repaint). Absent = save only.
   onChange?: (ctx: ExtensionCommandContext, quotaStatus?: QuotaStatusCoordinator) => Promise<void>;
 }
@@ -121,13 +125,20 @@ export const SETTINGS_FIELDS: readonly SettingsFieldDef[] = Object.freeze([
     key: "quotaFooter",
     label: "Quota footer",
     description: "Show remaining quota in the footer",
-    options: ["off", "single", "both"],
+    options: ["off", "smart", "all"],
     defaultValue: "off",
+    optionNotes: {
+      smart:
+        "Picks whichever window runs out first (5h or weekly), weighting the weekly pool by a ratio learned from your usage",
+      all: "Lists every window of the pool backing the current model (5h or weekly)",
+    },
     onChange: async (ctx, quotaStatus) => {
-      if (quotaStatus) {
-        await quotaStatus.refresh(ctx);
-        paintQuotaStatus(quotaStatus, ctx);
-      }
+      if (!quotaStatus) return;
+      // An explicit pick is an explicit look: the mode/model gates would
+      // otherwise leave the preview blank while the footer is off or another
+      // provider's model is selected. Nothing to fetch when the new value is off.
+      if (quotaStatus.mode() !== "off") await quotaStatus.refresh(ctx, { ignoreMode: true });
+      paintQuotaStatus(quotaStatus, ctx);
     },
   },
 ]);
@@ -162,17 +173,20 @@ export async function applySettingValue(
 }
 
 // Rendered footer sample for a mode, for settings previews. Model-aware like
-// the slot itself (a Claude model previews the 3P pool). Plain data only —
-// callers colorize. Off has no sample: the slot stays empty.
+// the slot itself (a Claude model previews the 3P pool). Off has no sample: the
+// slot stays empty. The leading reset closes the dim description color the
+// dialog renders it in — the sample must read like the footer, where an
+// uncolored window is plain foreground and only low ones are yellow/red.
 export function previewQuotaFooterText(
   coord: QuotaStatusCoordinator | undefined,
   modelId: string | undefined,
   mode: string,
 ): string | undefined {
   if (!coord || mode === "off") return undefined;
-  const plain = coord.footerFor(modelId, mode === "both" ? "both" : "single");
+  const plain = coord.footerFor(modelId, mode === "all" ? "all" : "smart");
   if (!plain) return undefined;
-  return mode === "both" ? colorizeQuotaFooterBoth(plain) : colorizeQuotaFooter(plain);
+  const colored = mode === "all" ? colorizeQuotaFooterBoth(plain) : colorizeQuotaFooter(plain);
+  return ANSI_FG_RESET + colored;
 }
 
 // Rows for pi-tui's SettingsList — the same list component Pi's /settings is
@@ -278,7 +292,11 @@ async function openSettingsDialog(
       if (!item) return;
       const base = quotaField?.description ?? "";
       const sample = mode === "off" ? "hidden" : previewQuotaFooterText(quotaStatus, ctx.model?.id, mode);
-      item.description = sample && base ? `${base}: ${sample}` : (sample ?? base);
+      const head = sample && base ? `${base}: ${sample}` : (sample ?? base);
+      const note = quotaField?.optionNotes?.[mode];
+      // Note on its own line, not appended: the sample closes the description
+      // color, so anything trailing it would lose dim.
+      item.description = note ? `${head}\n${note}` : head;
     };
     paintPreview(resolveFooterMode(config));
     const list = new SettingsList(

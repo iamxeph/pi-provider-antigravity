@@ -23,7 +23,7 @@ const quotaJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.1.26/quota.resp
 
 // In-memory adapter behind the coordinator seam: no files, no network setup.
 // Shared backing lets two coordinators act as two processes on one file.
-function memStore(mode = "single", state) {
+function memStore(mode = "smart", state) {
   const backing = { state };
   return {
     store: {
@@ -263,7 +263,7 @@ test("Coordinator: refresh paints footer and throttles refetch", async () => {
   const counter = { calls: 0 };
   globalThis.fetch = stubQuotaFetch(quotaJson, counter);
   try {
-    const coord = new QuotaStatusCoordinator(memStore("single").store);
+    const coord = new QuotaStatusCoordinator(memStore("smart").store);
     const statuses = [];
     const ctx = makeCtx(statuses);
 
@@ -297,7 +297,7 @@ test("Coordinator: foreign model fetches nothing and clears the slot", async () 
   const counter = { calls: 0 };
   globalThis.fetch = stubQuotaFetch(quotaJson, counter);
   try {
-    const coord = new QuotaStatusCoordinator(memStore("single").store);
+    const coord = new QuotaStatusCoordinator(memStore("smart").store);
     const statuses = [];
     const ctx = {
       ...makeCtx(statuses),
@@ -338,7 +338,7 @@ test("Coordinator: off mode fetches nothing and clears the slot", async () => {
   }
 });
 
-test("Coordinator: both mode paints both windows", async () => {
+test("Coordinator: all mode paints both windows", async () => {
   const realFetch = globalThis.fetch;
   const counter = { calls: 0 };
   const payload = { groups: [{ displayName: "Gemini Models", buckets: [
@@ -347,12 +347,12 @@ test("Coordinator: both mode paints both windows", async () => {
   ] }] };
   globalThis.fetch = stubQuotaFetch(payload, counter);
   try {
-    const coord = new QuotaStatusCoordinator(memStore("both").store);
+    const coord = new QuotaStatusCoordinator(memStore("all").store);
     const statuses = [];
     const ctx = makeCtx(statuses);
 
     await coord.refresh(ctx);
-    assert.equal(coord.footerFor(ctx.model.id, "both"), "5h 22% · Wk 87%");
+    assert.equal(coord.footerFor(ctx.model.id, "all"), "5h 22% · Wk 87%");
     paintQuotaStatus(coord, ctx);
     assert.deepEqual(statuses.at(-1), [QUOTA_STATUS_KEY, "\x1b[33m5h 22%\x1b[39m · Wk 87%"]);
   } finally {
@@ -392,22 +392,24 @@ test("ensurePreview fetches even when the slot is off", async () => {
   }
 });
 
-test("ensurePreview stays silent for foreign models", async () => {
+test("ensurePreview fetches for foreign models: the dialog is an explicit look", async () => {
   const realFetch = globalThis.fetch;
   const counter = { calls: 0 };
   globalThis.fetch = stubQuotaFetch(quotaJson, counter);
   try {
     const coord = new QuotaStatusCoordinator(memStore("off").store);
     const ctx = { ...makeCtx([]), model: { id: "zen", provider: "opencode-go" } };
-    assert.equal(await coord.ensurePreview(ctx), undefined);
-    assert.equal(counter.calls, 0);
+    // The preview is the only place quota is visible while a foreign model is
+    // selected, so opening settings must fetch rather than stay silent.
+    assert.ok(await coord.ensurePreview(ctx));
+    assert.equal(counter.calls, 1);
   } finally {
     globalThis.fetch = realFetch;
   }
 });
 
 test("Coordinator: unauthenticated refresh stays silent", async () => {
-  const coord = new QuotaStatusCoordinator(memStore("single").store);
+  const coord = new QuotaStatusCoordinator(memStore("smart").store);
   const statuses = [];
   const ctx = makeCtx(statuses, { authed: false });
 
@@ -431,7 +433,7 @@ test("Coordinator: two fetches calibrate the ratio and persist it", async () => 
   ];
   globalThis.fetch = stubQuotaFetch((call) => payloads[Math.min(call, 2) - 1], counter);
   try {
-    const { store, backing } = memStore("single");
+    const { store, backing } = memStore("smart");
     const coord = new QuotaStatusCoordinator(store);
     const ctx = makeCtx([]);
 
@@ -456,7 +458,7 @@ test("Coordinator: fetch failure keeps stale footer", async () => {
   const counter = { calls: 0 };
   globalThis.fetch = stubQuotaFetch(quotaJson, counter);
   try {
-    const coord = new QuotaStatusCoordinator(memStore("single").store);
+    const coord = new QuotaStatusCoordinator(memStore("smart").store);
     const ctx = makeCtx([]);
     await coord.refresh(ctx);
     const stale = coord.footerFor(ctx.model.id);
@@ -474,7 +476,7 @@ test("Coordinator: first fetch persists its observation", async () => {
   const realFetch = globalThis.fetch;
   globalThis.fetch = stubQuotaFetch(quotaJson, { calls: 0 });
   try {
-    const { store, backing } = memStore("single");
+    const { store, backing } = memStore("smart");
     const coord = new QuotaStatusCoordinator(store);
     await coord.refresh(makeCtx([]));
     assert.equal(backing.state.weeklyTo5hRatio, DEFAULT_WEEKLY_TO_5H_RATIO);
@@ -501,7 +503,7 @@ test("Coordinator: calibration works across processes via persisted pairs", asyn
   globalThis.fetch = stubQuotaFetch((call) => payloads[Math.min(call, 2) - 1], counter);
   try {
     // One shared backing: two coordinators act as two processes on one file.
-    const { store, backing } = memStore("single");
+    const { store, backing } = memStore("smart");
     await new QuotaStatusCoordinator(store).refresh(makeCtx([]));
     const coord2 = new QuotaStatusCoordinator(store);
     assert.equal(coord2.ratio, DEFAULT_WEEKLY_TO_5H_RATIO);
@@ -517,7 +519,7 @@ test("Coordinator: stale persisted pairs are ignored", async () => {
   const realFetch = globalThis.fetch;
   globalThis.fetch = stubQuotaFetch(quotaJson, { calls: 0 });
   try {
-    const { store, backing } = memStore("single", {
+    const { store, backing } = memStore("smart", {
       weeklyTo5hRatio: 9,
       previousObservation: { "gemini": { "5h": 0.9, weekly: 0.9 } },
       updatedAt: Date.now() - 6 * 60 * 60 * 1000,
@@ -541,7 +543,7 @@ test("Coordinator: hour-old baseline still calibrates", async () => {
   ] }] };
   globalThis.fetch = stubQuotaFetch(payload, counter);
   try {
-    const { store, backing } = memStore("single", {
+    const { store, backing } = memStore("smart", {
       previousObservation: { "test": { "5h": 0.5, weekly: 0.9 } },
       updatedAt: Date.now() - 30 * 60 * 1000,
     });
@@ -560,7 +562,7 @@ test("Coordinator: refreshAndPaint paints, refreshes when stale, repaints", asyn
   const counter = { calls: 0 };
   globalThis.fetch = stubQuotaFetch(quotaJson, counter);
   try {
-    const coord = new QuotaStatusCoordinator(memStore("single").store);
+    const coord = new QuotaStatusCoordinator(memStore("smart").store);
     const statuses = [];
     const ctx = makeCtx(statuses);
     await coord.refreshAndPaint(ctx);
