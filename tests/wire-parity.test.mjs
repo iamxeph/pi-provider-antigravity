@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import { DEFAULT_USER_AGENT } from "../src/protocol.ts";
 import { parseAvailableModels } from "../src/catalog-refresh.ts";
@@ -19,14 +20,40 @@ const DIRS = fs
   .map((d) => d.name)
   .sort();
 
+// The canonical capture scenario (captures/scenarios.json): slot names, capture
+// order, model/effort, expected shapes and the replay chains between slots. It is
+// the single source of truth for scripts/capture-flow.mjs and the scenario gate at
+// the bottom of this file, which is why it is read from the repo rather than
+// restated here. Runbook: captures/README.md.
+const SCENARIOS = JSON.parse(fs.readFileSync("captures/scenarios.json", "utf-8"));
+
+// Canonical slots minus a version's declared omissions, its generation remap and its
+// patch applied. `models` exists because the canonical pins follow the newest model
+// generation (gemini-3.8-flash) while directories frozen earlier captured the one
+// before it; patches exist for directories that deviated in other ways.
+const effectiveSlots = (dir) => {
+  const cfg = SCENARIOS.dirs[dir] ?? {};
+  const omit = new Set(cfg.omit ?? []);
+  const generation = (base) => cfg.models?.[base] ?? base;
+  return SCENARIOS.stream
+    .filter((s) => !omit.has(s.slot))
+    .map((s) => {
+      const model = generation(s.model);
+      const slot = model === s.model ? { ...s } : { ...s, model, wireModel: s.wireModel.replace(s.model, model) };
+      const patch = cfg.patch?.[s.slot];
+      if (!patch) return slot;
+      const merged = { ...slot, ...patch };
+      // `expect` merges key by key so a patch can relax one assertion without
+      // restating the rest of the slot (scripts/capture-flow.mjs does the same).
+      if (patch.expect) merged.expect = { ...slot.expect, ...patch.expect };
+      return merged;
+    });
+};
+
 // Fingerprint rows captured live via mitmdump (one row per agy release).
 const EXPECTED_UA = {
-  "agy_cli_1.1.26":
-    "antigravity/cli/1.1.26 (aidev_client; os_type=linux; arch=amd64; cl=976013059; auth_method=consumer)",
-  "agy_cli_1.1.27":
-    "antigravity/cli/1.1.27 (aidev_client; os_type=linux; arch=amd64; cl=976543523; auth_method=consumer)",
-  "agy_cli_1.1.28":
-    "antigravity/cli/1.1.28 (aidev_client; os_type=linux; arch=amd64; cl=978129418; auth_method=consumer)",
+  "agy_cli_1.2.0":
+    "antigravity/cli/1.2.0 (aidev_client; os_type=linux; arch=amd64; cl=978750357; auth_method=consumer)",
 };
 const load = (dir, name) => {
   const p = `captures/${dir}/${name}.req.json`;
@@ -154,6 +181,7 @@ for (const dir of DIRS) {
 
   test(`Wire parity (${dir}): User-Agent matches fingerprinted row`, () => {
     assert.ok(turn1, "stream_turn1_initial required");
+    assert.ok(EXPECTED_UA[dir], `${dir}: add the EXPECTED_UA row printed by npm run capture:extract`);
     assert.equal(turn1.headers["User-Agent"], EXPECTED_UA[dir]);
   });
 
@@ -412,13 +440,23 @@ for (const dir of DIRS) {
 // Seams where one captured response, parsed by the production feed, is the
 // assistant turn the next captured request replays: parser output → builder →
 // agy's own bytes. A parser change that moved a signature or a block shows up
-// here even though the reconstruction test above still passes.
-const PARSER_SEAMS = [
-  { dir: "agy_cli_1.1.27", from: "stream_turn4_thinking", to: "stream_turn5_multiturn", stopReason: "stop" },
-  { dir: "agy_cli_1.1.28", from: "stream_turn4_thinking", to: "stream_turn5_multiturn", stopReason: "stop" },
-  { dir: "agy_cli_1.1.28", from: "stream_turn8_claude_thinking", to: "stream_turn8b_claude_followup1", stopReason: "stop" },
-  { dir: "agy_cli_1.1.28", from: "stream_turn8b_claude_followup1", to: "stream_turn9_claude_followup", stopReason: "stop" },
-];
+// here even though the reconstruction test above still passes. Seams come from
+// the manifest (`replays`), so a new capture inherits them instead of needing a
+// hand-written row.
+const PARSER_SEAMS = DIRS.flatMap((dir) => {
+  const slots = effectiveSlots(dir);
+  return slots
+    .filter((s) => s.replays && fs.existsSync(`captures/${dir}/${s.replays}.req.json`))
+    .map((s) => ({
+      dir,
+      from: s.replays,
+      to: s.slot,
+      // The seam replays the *previous* request's response, so its stop reason is
+      // the previous slot's expectation, not this slot's.
+      stopReason: slots.find((x) => x.slot === s.replays)?.expect?.responseStopReason,
+      divergence: s.divergence,
+    }));
+});
 
 for (const seam of PARSER_SEAMS) {
   test(`Wire parity (${seam.dir}): ${seam.from} → ${seam.to} survives parser→builder replay`, () => {
@@ -441,44 +479,37 @@ for (const seam of PARSER_SEAMS) {
       assistantMessageFromResponse(seam.dir, seam.from, from.model, seam.stopReason),
       ...piMessagesFromContents(tail.slice(1), to.model),
     ]);
+
+    if (!seam.divergence) {
+      assert.deepEqual(
+        canonical(built.request.contents),
+        canonical(to.request.contents),
+        `${seam.from} → ${seam.to}: contents`,
+      );
+      return;
+    }
+
+    // Known divergence, pinned rather than guessed: when a turn ends in a tool
+    // call, agy replays the functionCall with its signature but omits the
+    // thinking part, while this builder keeps it. The manifest declares the
+    // seam; the assertion below is what makes the declaration meaningful.
+    const stripThoughts = (contents) =>
+      contents.map((c) => ({ ...c, parts: (c.parts ?? []).filter((p) => !p.thought) }));
+    const thoughts = (contents) =>
+      contents.flatMap((c) => c.parts ?? []).filter((p) => p.thought).length;
+    assert.ok(
+      thoughts(built.request.contents) > thoughts(to.request.contents),
+      `${seam.from} → ${seam.to}: the previous turn exposed no visible thinking part, so this divergence seam proves nothing — pick a prompt that makes the model think`,
+    );
+    assert.equal(built.request.contents.length, to.request.contents.length, "same step count");
     assert.deepEqual(
-      canonical(built.request.contents),
-      canonical(to.request.contents),
-      `${seam.from} → ${seam.to}: contents`,
+      canonical(stripThoughts(built.request.contents)),
+      canonical(stripThoughts(to.request.contents)),
+      `${seam.from} → ${seam.to}: everything but agy's dropped thinking part must match its replay`,
     );
   });
 }
 
-// Known divergence, pinned rather than guessed: when a turn ends in a tool call,
-// agy 1.1.26 replays the functionCall with its signature but omits the thinking
-// part, while this builder keeps it. 1.1.27/1.1.28 freeze no thinking+tools turn,
-// so resolving it needs a capture (captures/README.md §2, tool success + effort).
-test("Wire parity (agy_cli_1.1.26): the tool-turn seam omits only agy's dropped thinking part", () => {
-  const dir = "agy_cli_1.1.26";
-  const from = load(dir, "stream_turn1_initial").body;
-  const to = load(dir, "stream_turn2_toolresult").body;
-  const tail = to.request.contents.slice(from.request.contents.length);
-  assert.equal(tail[0]?.role, "model", "first new content is the replayed model turn");
-
-  const built = replayCapture(dir, "stream_turn2_toolresult", [
-    ...piMessagesFromContents(from.request.contents, from.model),
-    assistantMessageFromResponse(dir, "stream_turn1_initial", from.model, "toolUse"),
-    ...piMessagesFromContents(tail.slice(1), to.model),
-  ]);
-
-  const ours = built.request.contents;
-  assert.equal(ours.length, to.request.contents.length, "same step count");
-  assert.equal(
-    ours.flatMap((c) => c.parts ?? []).filter((p) => p.thought).length,
-    1,
-    "exactly one replayed thinking part is the whole difference",
-  );
-  assert.deepEqual(
-    canonical(ours.map((c) => ({ ...c, parts: (c.parts ?? []).filter((p) => !p.thought) }))),
-    canonical(to.request.contents),
-    "everything but the thinking part must match agy's replay",
-  );
-});
 
 for (const dir of DIRS) {
   test(`Wire parity (${dir}): Claude thinking replays part-split (counter-capture #14)`, (t) => {
@@ -568,45 +599,15 @@ test("Wire parity: the three counters follow what each request carries", () => {
   }
 });
 
-test("Wire parity (agy_cli_1.1.27): thinkingBudget matrix low/medium/high", () => {
-  // Medium effort had no 1.1.26 fixture; 1.1.27 pins it via stream_turn3_medium.
-  const budgetOf = (dir, name) =>
-    load(dir, name)?.body.request.generationConfig.thinkingConfig.thinkingBudget;
-  assert.equal(budgetOf("agy_cli_1.1.27", "stream_turn7_initial_low"), 1000);
-  assert.equal(budgetOf("agy_cli_1.1.27", "stream_turn3_medium"), 4000);
-  assert.equal(budgetOf("agy_cli_1.1.27", "stream_turn1_initial"), -1);
-});
+// The effort matrix (low 1000 / medium 4000 / high -1) and the Pro runtime-ID
+// rename used to be version-specific tests here. Both are now per-slot facts in
+// captures/scenarios.json and are asserted for every frozen directory by the
+// scenario gate at the bottom of this file.
 
-test("Wire parity (agy_cli_1.1.27): pro request follows the deprecated rename", () => {
-  const turn = load("agy_cli_1.1.27", "stream_turn10_pro_high");
-  const catalog = parseAvailableModels(
-    JSON.parse(fs.readFileSync("captures/agy_cli_1.1.27/models.resp.json", "utf-8"))
-  );
-  // User-facing selection is gemini-3.1-pro + high; the wire must carry the
-  // renamed runtime ID, its enum, and its budget — exactly what agy sent.
-  const plan = resolveModelPlan("gemini-3.1-pro", "high", {
-    enums: catalog.modelEnums,
-    runtimeIds: catalog.models.map((m) => m.id),
-    thinking: buildThinkingMap(catalog.models),
-    deprecated: catalog.deprecated,
-    version: 0,
-  });
-  assert.equal(plan.runtimeModelId, turn.body.model);
-  assert.equal(plan.modelEnum, turn.body.request.labels.model_enum);
-  assert.deepEqual(plan.thinkingConfig, turn.body.request.generationConfig.thinkingConfig);
-});
-
-test("Wire parity (agy_cli_1.1.27): catalog delta vs 1.1.26", () => {
-  const cat = (dir) =>
-    parseAvailableModels(
-      JSON.parse(fs.readFileSync(`captures/${dir}/models.resp.json`, "utf-8"))
-    );
-  const oldIds = new Set(cat("agy_cli_1.1.26").models.map((m) => m.id));
-  const added = cat("agy_cli_1.1.27").models.filter((m) => !oldIds.has(m.id));
-  assert.deepEqual(added.map((m) => [m.id, m.modelEnum]), [
-    ["gemini-3.5-flash-lite", "MODEL_PLACEHOLDER_M277"],
-  ]);
-});
+// Cross-version catalog deltas (1.1.27 added gemini-3.5-flash-lite, 1.2.0 added
+// nothing over 1.1.28) were asserted here while those directories were in the tree.
+// They now live in git history; the per-directory loops above still assert every
+// dimension the newest capture ships.
 
 test("Wire parity (#15): thought:true parts never carry thoughtSignature (part-split shape)", () => {
   for (const dir of DIRS) {
@@ -694,10 +695,30 @@ test("Wire parity (ADR-0007): agy traffic carries no sentinel and the probe pair
     return clone;
   };
 
-  for (const [unsigned, sentinel] of [
-    ["stream_probeA_unsigned", "stream_probeB_sentinel"],
-    ["stream_probeC_claude_unsigned", "stream_probeD_claude_sentinel"],
-  ]) {
+  // Probe pairs are derived, not listed: `stream_probe<LETTER>[_<family>]_unsigned`
+  // pairs with the same-key `_sentinel` capture, so a new family's probe (e.g. gpt E/F)
+  // joins this gate by existing — pi_probe_sentinel/README.md has the procedure.
+  const probePairs = new Map();
+  for (const f of fs.readdirSync("captures/pi_probe_sentinel").filter((x) => x.endsWith(".req.json"))) {
+    const stem = f.replace(/\.req\.json$/, "");
+    const m = stem.match(/^stream_probe[A-Z](?:_(.*?))?_(unsigned|sentinel)$/);
+    if (!m) continue;
+    const key = m[1] ?? "gemini";
+    probePairs.set(key, { ...(probePairs.get(key) ?? {}), [m[2]]: stem });
+  }
+  assert.ok(probePairs.size > 0, "pi_probe_sentinel must ship at least one probe pair");
+
+  for (const [key, pair] of probePairs) {
+    const { unsigned, sentinel } = pair;
+    assert.ok(unsigned, `${key}: probe family needs a _unsigned request`);
+    assert.ok(sentinel, `${key}: probe family needs a _sentinel request`);
+    // The response is the evidence: 400 for the baseline, 200 for the sentinel run.
+    for (const probe of [unsigned, sentinel]) {
+      assert.ok(
+        ["resp.json", "resp.sse"].some((e) => fs.existsSync(`captures/pi_probe_sentinel/${probe}.${e}`)),
+        `${probe}: probe request without a frozen response`,
+      );
+    }
     const a = probeRequest(unsigned);
     const b = probeRequest(sentinel);
     assert.deepEqual(
@@ -719,4 +740,162 @@ test("Wire parity (ADR-0007): agy traffic carries no sentinel and the probe pair
       `${sentinel}: exactly one part may carry the sentinel`
     );
   }
+});
+
+// ── Capture scenario gate ────────────────────────────────────────────────────
+// captures/scenarios.json declares the canonical scenario: slot names, capture
+// order, model/effort, expected request/response shape and the replay chains
+// between slots. This gate keeps every frozen directory honest about it, so a
+// capture that drops a slot, splits a session or runs the wrong effort fails here
+// instead of rotting silently into the fixtures. Runbook: captures/README.md.
+
+const snapshotOf = (dir) => {
+  const catalog = parseAvailableModels(
+    JSON.parse(fs.readFileSync(`captures/${dir}/models.resp.json`, "utf-8"))
+  );
+  return {
+    enums: catalog.modelEnums,
+    runtimeIds: catalog.models.map((m) => m.id),
+    thinking: buildThinkingMap(catalog.models),
+    deprecated: catalog.deprecated,
+    version: 0,
+  };
+};
+
+for (const dir of DIRS) {
+  test(`Wire parity (scenario, ${dir}): matches its declared capture scenario`, () => {
+    const slots = effectiveSlots(dir);
+    const declared = new Set(slots.map((s) => s.slot));
+
+    // An undeclared stream fixture means the capture invented a slot: either add
+    // it to captures/scenarios.json or re-run the slot it was meant to be.
+    for (const f of fs.readdirSync(`captures/${dir}`)) {
+      if (!f.startsWith("stream_") || !f.endsWith(".req.json")) continue;
+      assert.ok(
+        declared.has(f.replace(/\.req\.json$/, "")),
+        `${dir}/${f}: not a canonical scenario slot (captures/scenarios.json)`,
+      );
+    }
+    for (const ep of SCENARIOS.endpoints) {
+      for (const f of ep.files) {
+        assert.ok(fs.existsSync(`captures/${dir}/${f}`), `${dir}/${f}: endpoint fixture missing`);
+      }
+    }
+    // Observed startup endpoints are reference-only: a fixture that exists must be
+    // complete (both halves), but a version that stops sending one is not a failure.
+    for (const ep of SCENARIOS.observedEndpoints ?? []) {
+      const present = ep.files.filter((f) => fs.existsSync(`captures/${dir}/${f}`));
+      if (present.length > 0) {
+        assert.equal(present.length, ep.files.length, `${dir}/${ep.id}: incomplete observed fixture (${present.join(", ")})`);
+      }
+    }
+
+    const snapshot = snapshotOf(dir);
+    for (const slot of slots) {
+      const at = `${dir}/${slot.slot}`;
+      const body = load(dir, slot.slot)?.body;
+      assert.ok(body, `${at}: missing — re-run the slot (node scripts/capture-flow.mjs plan)`);
+      assert.ok(fs.existsSync(`captures/${dir}/${slot.slot}.resp.sse`), `${at}: missing response fixture`);
+
+      // fresh/auto slots start without last_execution_id; `-c` continuations have it.
+      const continuation = "last_execution_id" in body.request.labels;
+      assert.equal(continuation, slot.mode === "continue", `${at}: last_execution_id vs mode ${slot.mode}`);
+
+      // The Model Plan (catalog + effort) must be what agy actually sent. A model
+      // rename or retirement is expected churn: fail with the catalog's candidates
+      // so the fix is a one-line manifest edit, not a guessing game.
+      let plan;
+      try {
+        plan = resolveModelPlan(slot.model, slot.effort ?? undefined, snapshot);
+      } catch (e) {
+        const family = slot.model.split("-")[0];
+        const candidates = snapshot.runtimeIds.filter((id) => id.startsWith(`${family}-`));
+        assert.fail(
+          `${at}: ${slot.model}${slot.effort ? ` (${slot.effort})` : ""} does not resolve in this catalog — update captures/scenarios.json [${e.message}]. Candidates: ${candidates.join(", ") || "none"}`,
+        );
+      }
+      // Parity first — agy's wire model must be the one this catalog resolves — then
+      // the manifest pin. A runtime-ID rename passes the first and fails the second
+      // with the value to write down, so the stale pin names its own fix.
+      const selector = `${slot.model}${slot.effort ? ` (${slot.effort})` : ""}`;
+      assert.equal(
+        body.model,
+        plan.runtimeModelId,
+        `${at}: parity — agy sent ${body.model}, this catalog resolves ${selector} to ${plan.runtimeModelId}`,
+      );
+      assert.equal(
+        slot.wireModel,
+        plan.runtimeModelId,
+        `${at}: manifest pin wireModel=${slot.wireModel} is stale — ${selector} now resolves to ${plan.runtimeModelId}; update captures/scenarios.json`,
+      );
+      assert.equal(body.request.labels.model_enum, plan.modelEnum, `${at}: model enum`);
+      if (slot.expect?.thinkingBudget !== undefined) {
+        assert.equal(
+          body.request.generationConfig?.thinkingConfig?.thinkingBudget,
+          slot.expect.thinkingBudget,
+          `${at}: thinkingBudget`,
+        );
+      }
+
+      const parts = (body.request.contents ?? []).flatMap((c) => c.parts ?? []);
+      const carries = (kind) =>
+        parts.some((p) => (kind === "thought" ? p.thought === true : kind === "text" ? p.text !== undefined : Boolean(p[kind])));
+      for (const kind of slot.expect?.requestHas ?? []) {
+        assert.ok(carries(kind), `${at}: request must carry ${kind}`);
+      }
+      for (const kind of slot.expect?.absent ?? []) {
+        assert.ok(!carries(kind), `${at}: request must not carry ${kind}`);
+      }
+      for (const [key, want] of Object.entries(slot.expect?.labels ?? {})) {
+        assert.equal(String(body.request.labels[key]), want, `${at}: label ${key}`);
+      }
+      if (slot.expect?.responseOutputKeys) {
+        const responses = parts.filter((p) => p.functionResponse);
+        assert.ok(responses.length > 0, `${at}: no functionResponse to check`);
+        for (const fr of responses) {
+          assert.deepEqual(
+            Object.keys(fr.functionResponse.response ?? {}),
+            slot.expect.responseOutputKeys,
+            `${at}: functionResponse keys`,
+          );
+        }
+      }
+
+      // Response side: parsed by the production feed, same as stream.ts does.
+      const parsed = parseWhole(fs.readFileSync(`captures/${dir}/${slot.slot}.resp.sse`, "utf-8"));
+      if (slot.expect?.responseStopReason !== undefined) {
+        assert.equal(parsed.stopReason, slot.expect.responseStopReason, `${at}: response stop reason`);
+      }
+      const blockType = { functionCall: "toolCall", thought: "thinking", text: "text" };
+      for (const kind of slot.expect?.responseHas ?? []) {
+        assert.ok(
+          parsed.content.some((b) => b.type === (blockType[kind] ?? kind)),
+          `${at}: response must contain ${kind}`,
+        );
+      }
+
+      // Chains: `after` means this request's history extends the target's with the
+      // target's replayed model turn first, inside the same session.
+      if (slot.after && fs.existsSync(`captures/${dir}/${slot.after}.req.json`)) {
+        const prev = load(dir, slot.after).body;
+        const same = canonical(prev.request.contents);
+        const prefix = canonical(body.request.contents.slice(0, prev.request.contents.length));
+        assert.equal(body.request.labels.trajectory_id, prev.request.labels.trajectory_id, `${at}: trajectory vs ${slot.after}`);
+        assert.ok(body.request.contents.length > prev.request.contents.length, `${at}: history must extend ${slot.after}`);
+        assert.deepEqual(prefix, same, `${at}: history prefix vs ${slot.after}`);
+        assert.equal(body.request.contents[prev.request.contents.length].role, "model", `${at}: first new content is a model turn`);
+      }
+    }
+  });
+}
+
+// The extractor is the only thing that assigns slot names to captured flows, so a
+// regression there would silently corrupt the next capture. self-check rebuilds
+// flows from the frozen directories and proves the matcher reproduces every
+// fixture byte for byte — offline, no quota (captures/README.md §3).
+test("Capture scenario: the extractor reproduces every frozen fixture (self-check)", () => {
+  const out = execFileSync(process.execPath, ["scripts/capture-flow.mjs", "self-check"], {
+    encoding: "utf-8",
+  });
+  assert.match(out, /self-check passed/);
 });

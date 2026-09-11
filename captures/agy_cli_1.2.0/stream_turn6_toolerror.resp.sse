@@ -1,0 +1,8 @@
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": "The file"}]}}],"usageMetadata": {"promptTokenCount": 15812,"candidatesTokenCount": 11,"totalTokenCount": 15832,"thoughtsTokenCount": 9},"modelVersion": "gemini-3.8-flash","responseId": "n2KjatbwH9W_1e8PtYbT2Ac"},"traceId": "82e67272e6a3d3c1","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": " [`/tmp/agy-no-such-file-xyz.txt`](file:///tmp/agy-no-such-file-xyz.txt) does"}]}}],"usageMetadata": {"promptTokenCount": 15812,"candidatesTokenCount": 35,"totalTokenCount": 15856,"thoughtsTokenCount": 9},"modelVersion": "gemini-3.8-flash","responseId": "n2KjatbwH9W_1e8PtYbT2Ac"},"traceId": "82e67272e6a3d3c1","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": " not exist (`No such file or directory`)."}]}}],"usageMetadata": {"promptTokenCount": 15812,"candidatesTokenCount": 44,"totalTokenCount": 15865,"thoughtsTokenCount": 9},"modelVersion": "gemini-3.8-flash","responseId": "n2KjatbwH9W_1e8PtYbT2Ac"},"traceId": "82e67272e6a3d3c1","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thoughtSignature": "EpkBCpYBARFNMg+iv1cnfTEIkbD1Fb/UT0aaMjUiaoYKgOubwIwdQZfmO4MLpyRdqQeq7eed/JjmEPtnV3O6GRfovhr9G1IPvNGXHXgcGzhCqb7VerQV3ZXEU2dvK4hAkl18BUFccrufdlmlxAunpToavCGP2hUj/SjC8krVSdrWdSXssK5Tv8rBQC3TFqWiqa/g6qLTi4IYVrEM","text": ""}]},"finishReason": "STOP"}],"usageMetadata": {"promptTokenCount": 15864,"candidatesTokenCount": 44,"totalTokenCount": 15917,"cachedContentTokenCount": 8133,"thoughtsTokenCount": 9},"modelVersion": "gemini-3.8-flash","responseId": "n2KjatbwH9W_1e8PtYbT2Ac"},"traceId": "82e67272e6a3d3c1","metadata": {}}
+

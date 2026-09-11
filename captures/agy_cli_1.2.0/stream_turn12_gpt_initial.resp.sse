@@ -1,0 +1,46 @@
+data: {"response": {"candidates": [{"content": {"role": "model"}}],"modelVersion": "gpt-oss-120b-medium","createTime": "2026-09-11T02:09:20Z","responseId": "38dc57af-3b47-4746-ab46-d4f2a6b12176"},"traceId": "33d00acdef090d32","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"text": "The user"}]}}],"modelVersion": "gpt-oss-120b-medium","createTime": "2026-09-11T02:09:20Z","responseId": "38dc57af-3b47-4746-ab46-d4f2a6b12176"},"traceId": "33d00acdef090d32","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"text": " wants"}]}}],"modelVersion": "gpt-oss-120b-medium","createTime": "2026-09-11T02:09:20Z","responseId": "38dc57af-3b47-4746-ab46-d4f2a6b12176"},"traceId": "33d00acdef090d32","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"text": " a one"}]}}],"modelVersion": "gpt-oss-120b-medium","createTime": "2026-09-11T02:09:20Z","responseId": "38dc57af-3b47-4746-ab46-d4f2a6b12176"},"traceId": "33d00acdef090d32","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"text": "-sentence answer"}]}}],"modelVersion": "gpt-oss-120b-medium","createTime": "2026-09-11T02:09:20Z","responseId": "38dc57af-3b47-4746-ab46-d4f2a6b12176"},"traceId": "33d00acdef090d32","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"text": ": compute"}]}}],"modelVersion": "gpt-oss-120b-medium","createTime": "2026-09-11T02:09:20Z","responseId": "38dc57af-3b47-4746-ab46-d4f2a6b12176"},"traceId": "33d00acdef090d32","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"text": " average speed ="}]}}],"modelVersion": "gpt-oss-120b-medium","createTime": "2026-09-11T02:09:20Z","responseId": "38dc57af-3b47-4746-ab46-d4f2a6b12176"},"traceId": "33d00acdef090d32","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"text": " distance"}]}}],"modelVersion": "gpt-oss-120b-medium","createTime": "2026-09-11T02:09:20Z","responseId": "38dc57af-3b47-4746-ab46-d4f2a6b12176"},"traceId": "33d00acdef090d32","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"text": " / time ="}]}}],"modelVersion": "gpt-oss-120b-medium","createTime": "2026-09-11T02:09:20Z","responseId": "38dc57af-3b47-4746-ab46-d4f2a6b12176"},"traceId": "33d00acdef090d32","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"text": " 120 km /"}]}}],"modelVersion": "gpt-oss-120b-medium","createTime": "2026-09-11T02:09:20Z","responseId": "38dc57af-3b47-4746-ab46-d4f2a6b12176"},"traceId": "33d00acdef090d32","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"text": " 1.5"}]}}],"modelVersion": "gpt-oss-120b-medium","createTime": "2026-09-11T02:09:20Z","responseId": "38dc57af-3b47-4746-ab46-d4f2a6b12176"},"traceId": "33d00acdef090d32","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"text": " h"}]}}],"modelVersion": "gpt-oss-120b-medium","createTime": "2026-09-11T02:09:20Z","responseId": "38dc57af-3b47-4746-ab46-d4f2a6b12176"},"traceId": "33d00acdef090d32","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"text": " = 80"}]}}],"modelVersion": "gpt-oss-120b-medium","createTime": "2026-09-11T02:09:20Z","responseId": "38dc57af-3b47-4746-ab46-d4f2a6b12176"},"traceId": "33d00acdef090d32","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"text": " km/h. Provide"}]}}],"modelVersion": "gpt-oss-120b-medium","createTime": "2026-09-11T02:09:20Z","responseId": "38dc57af-3b47-4746-ab46-d4f2a6b12176"},"traceId": "33d00acdef090d32","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"text": " exactly"}]}}],"modelVersion": "gpt-oss-120b-medium","createTime": "2026-09-11T02:09:20Z","responseId": "38dc57af-3b47-4746-ab46-d4f2a6b12176"},"traceId": "33d00acdef090d32","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"text": " one sentence."}]}}],"modelVersion": "gpt-oss-120b-medium","createTime": "2026-09-11T02:09:20Z","responseId": "38dc57af-3b47-4746-ab46-d4f2a6b12176"},"traceId": "33d00acdef090d32","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": "The"}]}}],"modelVersion": "gpt-oss-120b-medium","createTime": "2026-09-11T02:09:20Z","responseId": "38dc57af-3b47-4746-ab46-d4f2a6b12176"},"traceId": "33d00acdef090d32","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": " train’s"}]}}],"modelVersion": "gpt-oss-120b-medium","createTime": "2026-09-11T02:09:20Z","responseId": "38dc57af-3b47-4746-ab46-d4f2a6b12176"},"traceId": "33d00acdef090d32","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": " average speed is "}]}}],"modelVersion": "gpt-oss-120b-medium","createTime": "2026-09-11T02:09:20Z","responseId": "38dc57af-3b47-4746-ab46-d4f2a6b12176"},"traceId": "33d00acdef090d32","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": "80 km/h"}]}}],"modelVersion": "gpt-oss-120b-medium","createTime": "2026-09-11T02:09:20Z","responseId": "38dc57af-3b47-4746-ab46-d4f2a6b12176"},"traceId": "33d00acdef090d32","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": "."}]}}],"modelVersion": "gpt-oss-120b-medium","createTime": "2026-09-11T02:09:20Z","responseId": "38dc57af-3b47-4746-ab46-d4f2a6b12176"},"traceId": "33d00acdef090d32","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model"},"finishReason": "STOP"}],"modelVersion": "gpt-oss-120b-medium","createTime": "2026-09-11T02:09:20Z","responseId": "38dc57af-3b47-4746-ab46-d4f2a6b12176"},"traceId": "33d00acdef090d32","metadata": {}}
+
+data: {"response": {"usageMetadata": {"promptTokenCount": 13058,"candidatesTokenCount": 59,"totalTokenCount": 13117},"modelVersion": "gpt-oss-120b-medium","createTime": "2026-09-11T02:09:20Z","responseId": "38dc57af-3b47-4746-ab46-d4f2a6b12176"},"traceId": "33d00acdef090d32","metadata": {}}
+

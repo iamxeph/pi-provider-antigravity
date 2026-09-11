@@ -37,6 +37,9 @@
     "typecheck": "tsc --noEmit",
     "sanitize:captures": "node scripts/sanitize-captures.mjs",
     "lint:captures": "node scripts/lint-captures.mjs",
+    "capture:plan": "node scripts/capture-flow.mjs plan",
+    "capture:extract": "node scripts/capture-flow.mjs extract",
+    "capture:self-check": "node scripts/capture-flow.mjs self-check",
     "test": "npm run lint:captures && node --experimental-strip-types --test 'tests/**/*.test.mjs' 'tests/**/*.test.ts'",
     "prepublishOnly": "npm run typecheck && npm run test && npm run build"
   },

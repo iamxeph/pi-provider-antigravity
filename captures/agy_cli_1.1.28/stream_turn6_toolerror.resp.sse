@@ -1,9 +1,0 @@
-data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": "The file"}]}}],"usageMetadata": {"promptTokenCount": 15488,"candidatesTokenCount": 4,"totalTokenCount": 15492},"modelVersion": "gemini-3.7-flash","responseId": "KECharb3KfTS1e8P85uruAw"},"traceId": "226b192dcc60773a","metadata": {}}
-
-data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": " [`/tmp/agy-no-such-file-xyz.txt`](file:///"}]}}],"usageMetadata": {"promptTokenCount": 15488,"candidatesTokenCount": 20,"totalTokenCount": 15508},"modelVersion": "gemini-3.7-flash","responseId": "KECharb3KfTS1e8P85uruAw"},"traceId": "226b192dcc60773a","metadata": {}}
-
-data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": "tmp/agy-no-such-file-xyz.txt) does not exist (`no such file or directory`)."}]}}],"usageMetadata": {"promptTokenCount": 15488,"candidatesTokenCount": 44,"totalTokenCount": 15532},"modelVersion": "gemini-3.7-flash","responseId": "KECharb3KfTS1e8P85uruAw"},"traceId": "226b192dcc60773a","metadata": {}}
-
-data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thoughtSignature": "EmcKZQERTTIPuZ+ibHTDLQ3RUu0n1DfeFHqv82uNU6T42QyMl8qM+eL2j69Qp8KnhqNClNVh1YITG1n3NgcWlGLkyJ4WimfFMuY5taj7dkxe7J6A0lTGdd+X1YInHFqScLd/1SYN6G3m","text": ""}]},"finishReason": "STOP"}],"usageMetadata": {"promptTokenCount": 15488,"candidatesTokenCount": 44,"totalTokenCount": 15532},"modelVersion": "gemini-3.7-flash","responseId": "KECharb3KfTS1e8P85uruAw"},"traceId": "226b192dcc60773a","metadata": {}}
-
-

@@ -1,0 +1,16 @@
+{
+  "method": "GET",
+  "url": "https://antigravity-unleash.goog/api/client/features",
+  "headers": {
+    "unleash-interval": "60000",
+    "user-agent": "codeium-language-server",
+    "unleash-client-spec": "4.3.1",
+    "authorization": "*:production.e44558998bfc35ea9584dc65858e4485fdaa5d7ef46903e0c67712d1",
+    "unleash-sdk": "unleash-client-go:4.5.0",
+    "unleash-connection-id": "16b49ad2-a45c-4373-ad05-76556f881f4e",
+    "unleash-appname": "codeium-language-server",
+    "unleash-instanceid": "<REDACTED_USER>-t1",
+    "accept-encoding": "gzip"
+  },
+  "body": null
+}

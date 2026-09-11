@@ -1,0 +1,28 @@
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": ""}]}}],"usageMetadata": {"promptTokenCount": 18431,"candidatesTokenCount": 1,"totalTokenCount": 18432},"modelVersion": "claude-sonnet-4-6","responseId": "req_vrtx_011CevqWoZSwtcdY3TTy75DK"},"traceId": "be924ae74ef1e3f2","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"text": "120"}]}}],"usageMetadata": {"promptTokenCount": 18431,"candidatesTokenCount": 1,"totalTokenCount": 18432},"modelVersion": "claude-sonnet-4-6","responseId": "req_vrtx_011CevqWoZSwtcdY3TTy75DK"},"traceId": "be924ae74ef1e3f2","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"text": " "}]}}],"usageMetadata": {"promptTokenCount": 18431,"candidatesTokenCount": 1,"totalTokenCount": 18432},"modelVersion": "claude-sonnet-4-6","responseId": "req_vrtx_011CevqWoZSwtcdY3TTy75DK"},"traceId": "be924ae74ef1e3f2","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"text": "÷ 1.5"}]}}],"usageMetadata": {"promptTokenCount": 18431,"candidatesTokenCount": 1,"totalTokenCount": 18432},"modelVersion": "claude-sonnet-4-6","responseId": "req_vrtx_011CevqWoZSwtcdY3TTy75DK"},"traceId": "be924ae74ef1e3f2","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"text": " = 80"}]}}],"usageMetadata": {"promptTokenCount": 18431,"candidatesTokenCount": 1,"totalTokenCount": 18432},"modelVersion": "claude-sonnet-4-6","responseId": "req_vrtx_011CevqWoZSwtcdY3TTy75DK"},"traceId": "be924ae74ef1e3f2","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"text": ""}]}}],"usageMetadata": {"promptTokenCount": 18431,"candidatesTokenCount": 1,"totalTokenCount": 18432},"modelVersion": "claude-sonnet-4-6","responseId": "req_vrtx_011CevqWoZSwtcdY3TTy75DK"},"traceId": "be924ae74ef1e3f2","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thought": true,"thoughtSignature": "RW9ZQ0NwUUJDQkVRQWhnQ0trRE9qbGZyRVZRclExL1FTbFU0aStnYlpEUFk1NnJtU0s1VGhIaXVWOEFCWUtVeWpjYk1EcmNwUnk5NGJSWllSYlk0anR0WEU1bDF6em80b2xoWDA1TDZNaEZqYkdGMVpHVXRjMjl1Ym1WMExUUXROamdBUWdoMGFHbHVhMmx1WjFvTU9EZzBNelUwT1RFNU1EVXljaEIweHJxRjRZMktJVURlZ0R2S3Z4Q09pQUVCcUFHcHhZM1ZCckFCQWhJTVJYT3VwYWRLemloQlZISTdHZ3dvUWpCdWhyTVFkMjF4V3J3aU1CdEhNQUpKUmVaOUF0dEl4ckQ1N2ZqdTBvV2xzUFNka2JadStTK0pBQldRT2NScHNvamxONU4wdFN6QnJvSE42Q29mamJ4Ly9QQXM3eTJXM2FudFR5MHFXc2QvcVNHVXhKNkFDMXVEb2NtU3VoZ0I=","text": ""}]}}],"usageMetadata": {"promptTokenCount": 18431,"candidatesTokenCount": 1,"totalTokenCount": 18432},"modelVersion": "claude-sonnet-4-6","responseId": "req_vrtx_011CevqWoZSwtcdY3TTy75DK"},"traceId": "be924ae74ef1e3f2","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": "**"}]}}],"usageMetadata": {"promptTokenCount": 18431,"candidatesTokenCount": 1,"totalTokenCount": 18432},"modelVersion": "claude-sonnet-4-6","responseId": "req_vrtx_011CevqWoZSwtcdY3TTy75DK"},"traceId": "be924ae74ef1e3f2","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": "80 km/h**"}]}}],"usageMetadata": {"promptTokenCount": 18431,"candidatesTokenCount": 1,"totalTokenCount": 18432},"modelVersion": "claude-sonnet-4-6","responseId": "req_vrtx_011CevqWoZSwtcdY3TTy75DK"},"traceId": "be924ae74ef1e3f2","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": " (120"}]}}],"usageMetadata": {"promptTokenCount": 18431,"candidatesTokenCount": 1,"totalTokenCount": 18432},"modelVersion": "claude-sonnet-4-6","responseId": "req_vrtx_011CevqWoZSwtcdY3TTy75DK"},"traceId": "be924ae74ef1e3f2","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": " "}]}}],"usageMetadata": {"promptTokenCount": 18431,"candidatesTokenCount": 1,"totalTokenCount": 18432},"modelVersion": "claude-sonnet-4-6","responseId": "req_vrtx_011CevqWoZSwtcdY3TTy75DK"},"traceId": "be924ae74ef1e3f2","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": "÷ 1.5"}]}}],"usageMetadata": {"promptTokenCount": 18431,"candidatesTokenCount": 1,"totalTokenCount": 18432},"modelVersion": "claude-sonnet-4-6","responseId": "req_vrtx_011CevqWoZSwtcdY3TTy75DK"},"traceId": "be924ae74ef1e3f2","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": " = 80)."}]}}],"usageMetadata": {"promptTokenCount": 18431,"candidatesTokenCount": 1,"totalTokenCount": 18432},"modelVersion": "claude-sonnet-4-6","responseId": "req_vrtx_011CevqWoZSwtcdY3TTy75DK"},"traceId": "be924ae74ef1e3f2","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": ""}]},"finishReason": "STOP"}],"usageMetadata": {"promptTokenCount": 18431,"candidatesTokenCount": 48,"totalTokenCount": 18479},"modelVersion": "claude-sonnet-4-6","responseId": "req_vrtx_011CevqWoZSwtcdY3TTy75DK"},"traceId": "be924ae74ef1e3f2","metadata": {}}
+
