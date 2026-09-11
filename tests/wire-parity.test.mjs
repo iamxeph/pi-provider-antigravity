@@ -386,7 +386,6 @@ for (const dir of DIRS) {
       runtimeIds: fixtureCatalog.models.map((m) => m.id),
       thinking: buildThinkingMap(fixtureCatalog.models),
       deprecated: fixtureCatalog.deprecated,
-      version: 0,
     });
     // 9 assistant turns + trailing user turn, mirroring the Turn 4/5 shape.
     const messages = [];
@@ -758,7 +757,6 @@ const snapshotOf = (dir) => {
     runtimeIds: catalog.models.map((m) => m.id),
     thinking: buildThinkingMap(catalog.models),
     deprecated: catalog.deprecated,
-    version: 0,
   };
 };
 

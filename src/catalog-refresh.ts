@@ -1,39 +1,41 @@
 import { postAntigravity } from "./protocol.ts";
 import { parseStoredCredentials } from "./auth.ts";
-import type { AvailableModelItem, AvailableModelsCatalog } from "./model-catalog.ts";
-import { buildDynamicPublicModels, getCatalogSnapshot, getStoredCatalog, ingestCatalog, updateCatalogStore } from "./model-catalog.ts";
+import type {
+  AvailableModelItem,
+  AvailableModelsCatalog,
+  CatalogStore,
+  PersistedSnapshot,
+} from "./model-catalog.ts";
+import {
+  buildDynamicPublicModels,
+  fromPersistedSnapshot,
+  toPersistedSnapshot,
+} from "./model-catalog.ts";
 import type { Model } from "@earendil-works/pi-ai";
 import type { RefreshModelsContext } from "@earendil-works/pi-ai";
-import type { CatalogThinking } from "./model-catalog.ts";
 
 /**
  * The provider-private snapshot kept inside this provider's own store entry.
  * Pi persists unknown keys verbatim, and the canonical store entry carries only
  * pi `Model`s — which do not hold the Wire-side data an offline restart needs
  * (model enums, per-Runtime-ID thinking budgets, server-directed renames).
+ * Shape and codec: model-catalog.ts.
  */
 const PRIVATE_SNAPSHOT_KEY = "pi-provider-antigravity";
-
-interface PrivateSnapshot {
-  modelEnums?: Record<string, string>;
-  runtimeIds?: string[];
-  thinking?: Record<string, CatalogThinking>;
-  deprecated?: Record<string, string>;
-}
 
 type StoreEntry = NonNullable<RefreshModelsContext["stored"]>;
 
 /**
  * `RefreshModelsContext` plus the private key above: the canonical type covers
- * pi's own fields (no `any`), this adds what this provider writes into the entry,
- * so a rename on pi's side fails the typecheck instead of silently disabling the
- * offline restore (every field below is read through optional chaining, so a
- * vanished name would read as `undefined` and take the wrong branch).
+ * pi's own fields (no `any`), this adds what this provider writes into the entry.
+ * The persisted value is typed through the codec's own shape, so a rename on
+ * either side fails the typecheck instead of silently disabling the offline
+ * restore.
  */
 type RefreshContext = Omit<RefreshModelsContext, "stored" | "publish"> & {
-  stored?: Readonly<StoreEntry> & { [PRIVATE_SNAPSHOT_KEY]?: PrivateSnapshot };
+  stored?: Readonly<StoreEntry> & { [PRIVATE_SNAPSHOT_KEY]?: PersistedSnapshot };
   publish(publication: {
-    persist?: (StoreEntry & { [PRIVATE_SNAPSHOT_KEY]?: PrivateSnapshot }) | null;
+    persist?: (StoreEntry & { [PRIVATE_SNAPSHOT_KEY]?: PersistedSnapshot }) | null;
     update?: () => void;
   }): Promise<boolean>;
 };
@@ -41,21 +43,16 @@ type RefreshContext = Omit<RefreshModelsContext, "stored" | "publish"> & {
 /**
  * Model Catalog refresh (wire, ports & adapters): fetchAvailableModels fetch,
  * Capture Fixture-shaped parse, and Catalog Persistence publish.
- * Produces AvailableModelsCatalog values and records generations via
- * updateCatalogStore; all pure mapping and presentation lives in model-catalog.ts.
+ * Produces AvailableModelsCatalog values and records them through the injected
+ * CatalogStore; the store, the snapshot types and the persistence codec live in
+ * model-catalog.ts.
  */
-export async function refreshCatalog(context: RefreshContext): Promise<Array<Model<any>>> {
-  // Restore from context.stored first for offline restart support,
-  // but only into a pristine store: a failed refresh must not clobber a
-  // fresher in-memory snapshot with older persisted data.
-  const storedSnapshot = context.stored?.[PRIVATE_SNAPSHOT_KEY];
-  const storedEnums = storedSnapshot?.modelEnums;
-  const storedRuntimeIds = storedSnapshot?.runtimeIds;
-  const storedThinking = storedSnapshot?.thinking;
-  const storedDeprecated = storedSnapshot?.deprecated;
-  if ((storedEnums || storedRuntimeIds || storedThinking || storedDeprecated) && getCatalogSnapshot().version === 0) {
-    updateCatalogStore(storedEnums || {}, storedRuntimeIds || [], storedThinking || {}, storedDeprecated || {});
-  }
+export async function refreshCatalog(context: RefreshContext, store: CatalogStore): Promise<Array<Model<any>>> {
+  // Restore the persisted snapshot first for offline restart support. The store
+  // keeps it out of a recorded generation, so a later restore in the same
+  // process can never clobber fresher in-memory data with older persisted data.
+  const persisted = fromPersistedSnapshot(context.stored?.[PRIVATE_SNAPSHOT_KEY]);
+  if (persisted) store.restore(persisted);
 
   // The stored models are pi's own (readonly) array: hand the caller its own copy.
   const storedModels = () => [...(context.stored?.models ?? [])];
@@ -75,24 +72,18 @@ export async function refreshCatalog(context: RefreshContext): Promise<Array<Mod
 
     const { token, projectId } = parseStoredCredentials(apiKey);
     const catalog = await fetchAvailableModelsCatalog(token, projectId, context.signal);
-    ingestCatalog(catalog);
+    store.record(catalog);
 
     const dynamicModels = buildDynamicPublicModels(catalog);
 
-    // Publish to Pi models-store.json from the stored generation (not the
+    // Publish to Pi models-store.json from the recorded generation (not the
     // transient parse), so stored and published are always one generation.
     if (context.publish) {
-      const snap = getCatalogSnapshot();
       await context.publish({
         persist: {
           models: dynamicModels,
           checkedAt: Date.now(),
-          [PRIVATE_SNAPSHOT_KEY]: {
-            modelEnums: { ...snap.enums },
-            runtimeIds: [...snap.runtimeIds],
-            thinking: { ...(snap.thinking ?? {}) },
-            deprecated: { ...(snap.deprecated ?? {}) },
-          },
+          [PRIVATE_SNAPSHOT_KEY]: toPersistedSnapshot(store.generation().snapshot),
         },
       });
     }
@@ -123,14 +114,14 @@ export interface CatalogRefreshOutcome {
  * contract (swallow-and-fallback); only the freshness verdict moves here.
  */
 export async function refreshCatalogGeneration(
+  store: CatalogStore,
   doRefresh: () => unknown,
 ): Promise<CatalogRefreshOutcome> {
-  const before = getCatalogSnapshot().version;
+  const versionBefore = store.generation().version;
   await doRefresh();
-  const catalog = getStoredCatalog();
-  if (!catalog) return { status: "failed" };
-  if (getCatalogSnapshot().version === before) return { status: "stale", catalog };
-  return { status: "fresh", catalog };
+  const { items, version } = store.generation();
+  if (!items) return { status: "failed" };
+  return { status: version === versionBefore ? "stale" : "fresh", catalog: items };
 }
 
 export function parseAvailableModels(data: any): AvailableModelsCatalog {

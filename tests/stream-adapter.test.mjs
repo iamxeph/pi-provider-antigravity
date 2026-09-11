@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { streamAntigravity } from "../src/stream.ts";
 import { buildAntigravityRequestBody } from "../src/builder.ts";
-import { resolveModelPlan, buildThinkingMap, updateCatalogStore } from "../src/model-catalog.ts";
+import { resolveModelPlan, createCatalogStore } from "../src/model-catalog.ts";
 import { parseAvailableModels } from "../src/catalog-refresh.ts";
 
 const sseTurn5 = fs.readFileSync("captures/agy_cli_1.2.0/stream_turn5_multiturn.resp.sse", "utf-8");
@@ -23,22 +23,11 @@ const loneText = textOf(sseLoneSig);
 const FIXTURE_CATALOG = parseAvailableModels(
   JSON.parse(fs.readFileSync("captures/agy_cli_1.2.0/models.resp.json", "utf-8"))
 );
-const FIXTURE_SNAPSHOT = {
-  enums: FIXTURE_CATALOG.modelEnums,
-  runtimeIds: FIXTURE_CATALOG.models.map((m) => m.id),
-  thinking: buildThinkingMap(FIXTURE_CATALOG.models),
-  deprecated: FIXTURE_CATALOG.deprecated,
-  version: 0,
-};
-
-// streamAntigravity resolves against the live snapshot: seed it as a completed
-// refresh would, so adapter tests exercise parsing — not catalog misses.
-updateCatalogStore(
-  FIXTURE_SNAPSHOT.enums,
-  FIXTURE_SNAPSHOT.runtimeIds,
-  FIXTURE_SNAPSHOT.thinking,
-  FIXTURE_SNAPSHOT.deprecated || {}
-);
+// streamAntigravity resolves against the store the extension wires up: record
+// one generation into a local store, as a completed refresh would, so these
+// adapter tests exercise parsing — not catalog misses.
+const store = createCatalogStore();
+store.record(FIXTURE_CATALOG);
 
 function stubFetchWithSse(rawSse, chunkBytes = 4096) {
   const bytes = new TextEncoder().encode(rawSse);
@@ -71,7 +60,8 @@ test("Seam 2: stream adapter translates feeder events to Pi message", async () =
     const message = await streamAntigravity(
       model,
       { messages: [{ role: "user", content: "hi" }] },
-      { apiKey: JSON.stringify({ token: "test-token", projectId: "test-project" }) }
+      { apiKey: JSON.stringify({ token: "test-token", projectId: "test-project" }) },
+      store
     ).result();
 
     const text = message.content
@@ -105,7 +95,8 @@ test("Seam 2 (#16): lone thoughtSignature surfaces on the message and replays in
         cost: { input: 0.1, output: 0.4, cacheRead: 0.025, cacheWrite: 0.1 },
       },
       { messages: [{ role: "user", content: "hi" }] },
-      { apiKey: JSON.stringify({ token: "test-token", projectId: "test-project" }) }
+      { apiKey: JSON.stringify({ token: "test-token", projectId: "test-project" }) },
+      store
     ).result();
   } finally {
     globalThis.fetch = realFetch;
@@ -122,7 +113,7 @@ test("Seam 2 (#16): lone thoughtSignature surfaces on the message and replays in
   // Builder continuation replays it as [{text, thoughtSignature}] (agy CLI shape).
   const body = buildAntigravityRequestBody({
     projectId: "test-project",
-    plan: resolveModelPlan("gemini-3.8-flash-high", undefined, FIXTURE_SNAPSHOT),
+    plan: resolveModelPlan("gemini-3.8-flash-high", undefined, store.generation().snapshot),
     context: {
       messages: [{ role: "user", content: "hi" }, message, { role: "user", content: "next" }],
     },

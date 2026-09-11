@@ -14,10 +14,19 @@ import {
   resolveModelPlan,
   classifyModelFamily,
   isCompatibleFamily,
+  fromPersistedSnapshot,
 } from "../src/model-catalog.ts";
 import { buildAntigravityRequestBody } from "../src/builder.ts";
 
 const modelsJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.2.0/models.resp.json", "utf-8"));
+
+// The Catalog Snapshot a recorded generation hands to a request path.
+const snapshotOf = (catalog) => ({
+  enums: catalog.modelEnums,
+  runtimeIds: catalog.models.map((m) => m.id),
+  thinking: buildThinkingMap(catalog.models),
+  deprecated: catalog.deprecated ?? {},
+});
 
 test("Seam 3: parseAvailableModels extracts models and model_enum", () => {
   const catalog = parseAvailableModels(modelsJson);
@@ -264,7 +273,8 @@ test("Seam 3: resolveModelPlan dynamically resolves tiers for new models", () =>
       "gemini-99.9-flash-medium",
       "gemini-99.9-flash-low",
     ],
-    version: 0,
+    thinking: {},
+    deprecated: {},
   };
 
   assert.equal(resolveModelPlan("gemini-99.9-flash", "high", snapshot).runtimeModelId, "gemini-99.9-flash-high");
@@ -280,13 +290,7 @@ test("Seam 3: resolveModelPlan dynamically resolves tiers for new models", () =>
 
 test("Seam 3: resolveModelPlan resolves thinking from snapshot wire values", () => {
   const catalog = parseAvailableModels(modelsJson);
-  const snapshot = {
-    enums: catalog.modelEnums,
-    runtimeIds: catalog.models.map((m) => m.id),
-    thinking: buildThinkingMap(catalog.models),
-    deprecated: catalog.deprecated,
-    version: 1,
-  };
+  const snapshot = snapshotOf(catalog);
 
   // Expected values read from the fixture itself, never hardcoded here.
   const cases = [
@@ -312,12 +316,7 @@ test("Seam 3: resolveModelPlan resolves thinking from snapshot wire values", () 
 
 test("Seam 3: resolveModelPlan disables thoughts for wire-marked non-thinking models", () => {
   const catalog = parseAvailableModels(modelsJson);
-  const snapshot = {
-    enums: catalog.modelEnums,
-    runtimeIds: catalog.models.map((m) => m.id),
-    thinking: buildThinkingMap(catalog.models),
-    version: 1,
-  };
+  const snapshot = snapshotOf(catalog);
   // A wire-marked non-thinking model (no thinking fields at all): absent means off.
   // Derived from the capture so a server-side change to one id cannot break the rule.
   const plain = catalog.models.find((m) => m.thinkingBudget === undefined);
@@ -331,15 +330,11 @@ test("Seam 3: resolveModelPlan degrades to disabled thoughts without per-ID thin
   const runtimeIds = ["gemini-3.8-flash-high"];
   const disabled = { includeThoughts: false, thinkingBudget: 0 };
 
-  // Legacy pre-budget persist: enums + runtime IDs, empty thinking map.
+  // Legacy pre-budget persist: enums + runtime IDs, no thinking data. The codec
+  // materializes the maps, so this is the snapshot a restart actually produces.
   assert.deepEqual(
-    resolveModelPlan("gemini-3.8-flash", "high", { enums, runtimeIds, thinking: {}, version: 0 })
+    resolveModelPlan("gemini-3.8-flash", "high", fromPersistedSnapshot({ modelEnums: enums, runtimeIds }))
       .thinkingConfig,
-    disabled
-  );
-  // Hand-built snapshot with no thinking key at all.
-  assert.deepEqual(
-    resolveModelPlan("gemini-3.8-flash", "high", { enums, runtimeIds, version: 0 }).thinkingConfig,
     disabled
   );
   // Entry present but no wire budget (incomplete info): still disabled.
@@ -348,7 +343,7 @@ test("Seam 3: resolveModelPlan degrades to disabled thoughts without per-ID thin
       enums,
       runtimeIds,
       thinking: { "gemini-3.8-flash-high": { supportsThinking: true } },
-      version: 0,
+      deprecated: {},
     }).thinkingConfig,
     disabled
   );
@@ -356,18 +351,15 @@ test("Seam 3: resolveModelPlan degrades to disabled thoughts without per-ID thin
 
 test("Seam 3: resolveModelPlan fails fast without runtime IDs instead of guessing a tier", () => {
   const enums = { "gemini-3.8-flash-high": "MODEL_PLACEHOLDER_M318" };
+  const empty = { enums, runtimeIds: [], thinking: {}, deprecated: {} };
   // The suffixed ID exists, but a snapshot with no runtime-ID list cannot map
   // the bare public ID onto it — fail with refresh guidance, do not guess.
   assert.throws(
-    () => resolveModelPlan("gemini-3.8-flash", "high", { enums, runtimeIds: [], version: 0 }),
+    () => resolveModelPlan("gemini-3.8-flash", "high", empty),
     /Unknown model "gemini-3.8-flash".*\/antigravity refresh/
   );
   // An exact (already-suffixed) ID still resolves from the same snapshot.
-  assert.equal(
-    resolveModelPlan("gemini-3.8-flash-high", undefined, { enums, runtimeIds: [], version: 0 })
-      .modelEnum,
-    "MODEL_PLACEHOLDER_M318"
-  );
+  assert.equal(resolveModelPlan("gemini-3.8-flash-high", undefined, empty).modelEnum, "MODEL_PLACEHOLDER_M318");
 });
 
 test("Seam 3: resolveModelPlan throws for IDs missing from the snapshot", () => {
@@ -375,7 +367,7 @@ test("Seam 3: resolveModelPlan throws for IDs missing from the snapshot", () => 
     enums: { "gemini-3.7-flash-high": "MODEL_PLACEHOLDER_M298" },
     runtimeIds: ["gemini-3.7-flash-high"],
     thinking: {},
-    version: 3,
+    deprecated: {},
   };
   assert.throws(
     () => resolveModelPlan("gemini-3.6-flash-high", undefined, snapshot),
@@ -389,7 +381,8 @@ test("Seam 3: buildAntigravityRequestBody uses the plan model_enum", () => {
     plan: resolveModelPlan("gemini-99.9-flash-high", undefined, {
       enums: { "gemini-99.9-flash-high": "MODEL_PLACEHOLDER_M999" },
       runtimeIds: [],
-      version: 0,
+      thinking: {},
+      deprecated: {},
     }),
     context: {
       messages: [{ role: "user", content: "Hello Future Gemini" }],
@@ -408,13 +401,7 @@ test("Seam 3: parseAvailableModels extracts server-directed renames", () => {
 
 test("Seam 3: resolveModelPlan follows server-directed renames", () => {
   const catalog = parseAvailableModels(modelsJson);
-  const snapshot = {
-    enums: catalog.modelEnums,
-    runtimeIds: catalog.models.map((m) => m.id),
-    thinking: buildThinkingMap(catalog.models),
-    deprecated: catalog.deprecated,
-    version: 1,
-  };
+  const snapshot = snapshotOf(catalog);
   // Redirect applies uniformly, whether the old ID was derived or passed directly.
   assert.equal(resolveModelPlan("gemini-3.1-pro", "high", snapshot).runtimeModelId, "gemini-pro-agent");
   assert.equal(resolveModelPlan("gemini-3.1-pro-high", undefined, snapshot).runtimeModelId, "gemini-pro-agent");
@@ -426,13 +413,7 @@ test("Seam 3: resolveModelPlan follows server-directed renames", () => {
 
 test("Seam 3: unlisted 3.5 tiers fail fast instead of guessing", () => {
   const catalog = parseAvailableModels(modelsJson);
-  const snapshot = {
-    enums: catalog.modelEnums,
-    runtimeIds: catalog.models.map((m) => m.id),
-    thinking: buildThinkingMap(catalog.models),
-    deprecated: catalog.deprecated,
-    version: 1,
-  };
+  const snapshot = snapshotOf(catalog);
   // gemini-3.5-flash-low exists on the wire so low resolves; -medium/-high
   // were never listed (3.5 sits outside Recommended sorts) → throw, don't guess.
   assert.equal(resolveModelPlan("gemini-3.5-flash", "low", snapshot).runtimeModelId, "gemini-3.5-flash-low");

@@ -4,7 +4,7 @@ import fs from "node:fs";
 import { SCOPES, CLIENT_ID, AUTH_URL, REDIRECT_URI, extractCodeFromInput } from "../src/auth.ts";
 import initExtension from "../src/index.ts";
 import { resolveToken } from "../src/commands.ts";
-import { refreshCatalog } from "../src/catalog-refresh.ts";
+
 
 const loginFixture = JSON.parse(fs.readFileSync("captures/agy_cli_1.2.0/auth_login_params.json", "utf-8"));
 const refreshFixture = JSON.parse(fs.readFileSync("captures/agy_cli_1.2.0/auth_token_refresh.req.json", "utf-8"));
@@ -150,8 +150,11 @@ test("Seam Auth: /antigravity login falls back to console in non-UI mode", async
 
 test("Seam Auth: /antigravity model is an alias of models", async () => {
   let commandHandler;
+  let providerConfig;
   const mockPi = {
-    registerProvider: () => {},
+    registerProvider: (_name, config) => {
+      providerConfig = config;
+    },
     on: () => {},
     registerCommand: (name, def) => {
       if (name === "antigravity") {
@@ -171,9 +174,11 @@ test("Seam Auth: /antigravity model is an alias of models", async () => {
       ui: { notify: (msg) => outputs.push(msg) },
       modelRegistry: {
         getApiKeyForProvider: async () => "fake-token",
-        // models goes through the single refresh-owned path, like refresh does.
+        // models goes through the single refresh-owned path, like refresh does:
+        // Pi calls the provider's own refresh hook, which records into the store
+        // this extension wired up.
         refresh: async () =>
-          refreshCatalog({
+          providerConfig.refreshModels({
             allowNetwork: true,
             credential: { type: "oauth", access: "fake-token" },
             stored: {},

@@ -8,7 +8,7 @@ import {
 import { refreshCatalog, parseAvailableModels } from "../src/catalog-refresh.ts";
 import {
   resolveModelPlan,
-  getCatalogSnapshot,
+  createCatalogStore,
   buildThinkingMap,
 } from "../src/model-catalog.ts";
 
@@ -19,7 +19,6 @@ const FIXTURE_SNAPSHOT = {
   runtimeIds: FIXTURE_CATALOG.models.map((m) => m.id),
   thinking: buildThinkingMap(FIXTURE_CATALOG.models),
   deprecated: FIXTURE_CATALOG.deprecated,
-  version: 0,
 };
 const staticPlan = (runtimeModelId) =>
   resolveModelPlan(runtimeModelId, undefined, FIXTURE_SNAPSHOT);
@@ -588,10 +587,11 @@ test("Seam 1: resolveModelPlan bundles enum, thinking budget, and non-Gemini fla
   );
 });
 
-test("Seam 1: resolveModelPlan reads the passed snapshot, not live globals", async () => {
-  const stale = { enums: {}, runtimeIds: [], thinking: {}, version: 0 };
+test("Seam 1: resolveModelPlan reads the snapshot it is handed", async () => {
+  const stale = { enums: {}, runtimeIds: [], thinking: {}, deprecated: {} };
   assert.throws(() => resolveModelPlan("x-high", undefined, stale), /Unknown model "x-high"/);
 
+  const store = createCatalogStore();
   await refreshCatalog({
     allowNetwork: false,
     stored: {
@@ -601,12 +601,11 @@ test("Seam 1: resolveModelPlan reads the passed snapshot, not live globals", asy
         runtimeIds: ["x-high"],
       },
     },
-  });
+  }, store);
 
-  const live = getCatalogSnapshot();
-  assert.ok(live.version > stale.version);
+  const restored = store.generation().snapshot;
   assert.throws(() => resolveModelPlan("x-high", undefined, stale), /Unknown model "x-high"/);
-  assert.equal(resolveModelPlan("x-high", undefined, live).modelEnum, "ENUM_X");
+  assert.equal(resolveModelPlan("x-high", undefined, restored).modelEnum, "ENUM_X");
 });
 
 test("Seam 1: Turn Trace derives stable session identities across calls", () => {
