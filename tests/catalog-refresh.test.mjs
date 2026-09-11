@@ -7,7 +7,7 @@ import {
 } from "../src/catalog-refresh.ts";
 import { getCatalogSnapshot, getStoredCatalog } from "../src/model-catalog.ts";
 
-const modelsJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.1.26/models.resp.json", "utf-8"));
+const modelsJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.2.0/models.resp.json", "utf-8"));
 
 const storedModels = [{ id: "gemini-3.8-flash", name: "Cached" }];
 

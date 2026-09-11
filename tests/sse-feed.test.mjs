@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { createSseFeed } from "../src/parser.ts";
 
-const sseTurn1 = fs.readFileSync("captures/agy_cli_1.1.26/stream_turn1_initial.resp.sse", "utf-8");
-const sseTurn5 = fs.readFileSync("captures/agy_cli_1.1.26/stream_turn5_multiturn.resp.sse", "utf-8");
+const sseTurn1 = fs.readFileSync("captures/agy_cli_1.2.0/stream_turn1_initial.resp.sse", "utf-8");
+const sseTurn5 = fs.readFileSync("captures/agy_cli_1.2.0/stream_turn5_multiturn.resp.sse", "utf-8");
 
 test("Seam 2: feeding in split chunks equals one-shot feed", () => {
   for (const raw of [sseTurn1, sseTurn5]) {

@@ -16,7 +16,12 @@ test("Seam Protocol: buildAntigravityHeaders matches wire fingerprint", () => {
   assert.equal(headers["Content-Type"], "application/json");
   assert.equal(headers["Authorization"], `Bearer ${token}`);
   assert.equal(headers["User-Agent"], DEFAULT_USER_AGENT);
-  assert.match(headers["User-Agent"], /^antigravity\/cli\/1\.1\.\d+/);
+  // Version-agnostic shape pin: the exact release row lives in EXPECTED_UA
+  // (wire-parity), so this one catches a wrong constant shape, not a new version.
+  assert.match(
+    headers["User-Agent"],
+    /^antigravity\/cli\/\d+\.\d+\.\d+ \(aidev_client; os_type=linux; arch=amd64; cl=\d+; auth_method=consumer\)$/,
+  );
   // Never send Anthropic-beta or Accept: application/json in standard wire traffic
   assert.equal(headers["anthropic-beta"], undefined);
   assert.equal(headers["Accept"], undefined);

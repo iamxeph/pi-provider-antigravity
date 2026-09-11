@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { refreshCatalog, refreshCatalogGeneration } from "../src/catalog-refresh.ts";
 
-const modelsJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.1.26/models.resp.json", "utf-8"));
+const modelsJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.2.0/models.resp.json", "utf-8"));
 const credential = { type: "oauth", access: JSON.stringify({ token: "t", projectId: "p" }) };
 
 function doRefresh() {
