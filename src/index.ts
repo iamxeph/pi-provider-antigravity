@@ -6,18 +6,10 @@ import { createCatalogStore } from "./model-catalog.ts";
 import { QuotaStatusCoordinator } from "./quota-status.ts";
 import { fileQuotaStatusStore } from "./settings.ts";
 import { streamAntigravity } from "./stream.ts";
-import { runAntigravitySubcommand } from "./commands.ts";
+import { completeSubcommands, runAntigravitySubcommand } from "./commands.ts";
 
 export { PROVIDER_ID };
 export const PROVIDER_NAME = "Antigravity";
-
-const SUBCOMMANDS = [
-  { name: "usage", description: "Show 5h and weekly quota pool limits" },
-  { name: "models", description: "List recommended models with context window and remaining quota" },
-  { name: "refresh", description: "Force refresh model catalog" },
-  { name: "settings", description: "Pick provider settings: Enter cycles values" },
-  { name: "login", description: "Run /login antigravity" },
-];
 
 export default function (pi: ExtensionAPI): void {
   const quotaStatus = new QuotaStatusCoordinator(fileQuotaStatusStore());
@@ -42,19 +34,7 @@ export default function (pi: ExtensionAPI): void {
 
   pi.registerCommand("antigravity", {
     description: "Antigravity quota, models and settings",
-    getArgumentCompletions: (prefix) => {
-      const trimmed = prefix.trim();
-      if (trimmed === "") {
-        return SUBCOMMANDS.map((s) => ({ value: s.name, label: s.name, description: s.description }));
-      }
-      if (/\s/.test(trimmed)) return null;
-      const lower = trimmed.toLowerCase();
-      return SUBCOMMANDS.filter((s) => s.name.startsWith(lower)).map((s) => ({
-        value: s.name,
-        label: s.name,
-        description: s.description,
-      }));
-    },
+    getArgumentCompletions: (prefix) => completeSubcommands(prefix),
     handler: async (args: string, ctx: ExtensionCommandContext) => {
       await runAntigravitySubcommand(args, ctx, quotaStatus, catalog);
     },

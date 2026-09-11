@@ -2,7 +2,6 @@ import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { parseStoredCredentials } from "./auth.ts";
 import { classifyModelFamily } from "./model-catalog.ts";
 import { postAntigravity, PROVIDER_ID } from "./protocol.ts";
-import type { QuotaFooterMode } from "./settings.ts";
 
 /**
  * Quota Status module (deep, mock): everything behind the footer slot and
@@ -335,10 +334,66 @@ function validPairs(raw: unknown): Record<string, WindowFractionPair> | undefine
 
 export type QuotaStatusCtx = Pick<ExtensionContext, "ui" | "modelRegistry" | "model">;
 
-// Footer quota belongs to this provider: foreign models (or none selected)
-// get no slot and trigger no quota fetch. Pi core keeps Model.id bare
-// ("gemini-3.8-flash"); the "antigravity/..." form is only /model selection
-// syntax, so the provider field is the single reliable signal.
+export type QuotaFooterMode = "off" | "smart" | "all";
+
+export interface FooterModeDef {
+  key: QuotaFooterMode;
+  label: string;
+  note: string;
+  render: (
+    summary: QuotaSummary | undefined,
+    modelId?: string,
+    ratio?: number,
+  ) => { plain?: string; colored?: string };
+}
+
+export const FOOTER_MODES: Record<QuotaFooterMode, FooterModeDef> = Object.freeze({
+  off: {
+    key: "off",
+    label: "Off",
+    note: "",
+    render: () => ({}),
+  },
+  smart: {
+    key: "smart",
+    label: "Smart",
+    note:
+      "Picks whichever window runs out first (5h or weekly), weighting the weekly pool by a ratio learned from your usage",
+    render: (summary, modelId, ratio = DEFAULT_WEEKLY_TO_5H_RATIO) => {
+      if (!summary) return {};
+      const plain = buildQuotaFooter(summary, modelId, ratio);
+      return { plain, colored: colorizeQuotaFooter(plain) };
+    },
+  },
+  all: {
+    key: "all",
+    label: "All",
+    note: "Lists every window of the pool backing the current model (5h or weekly)",
+    render: (summary, modelId) => {
+      if (!summary) return {};
+      const plain = buildQuotaFooterBoth(summary, modelId);
+      return { plain, colored: colorizeQuotaFooterBoth(plain) };
+    },
+  },
+});
+
+export const FOOTER_MODE_OPTIONS: readonly QuotaFooterMode[] = Object.freeze(
+  Object.keys(FOOTER_MODES) as QuotaFooterMode[],
+);
+
+export const FOOTER_MODE_NOTES: Readonly<Record<string, string>> = Object.freeze(
+  Object.fromEntries(
+    Object.entries(FOOTER_MODES)
+      .filter(([, def]) => def.note.length > 0)
+      .map(([key, def]) => [key, def.note]),
+  ),
+);
+
+export function normalizeFooterMode(value: unknown): QuotaFooterMode | undefined {
+  const v = typeof value === "string" ? value.trim().toLowerCase() : "";
+  return v in FOOTER_MODES ? (v as QuotaFooterMode) : undefined;
+}
+
 export function isAntigravityModel(model?: { provider?: string }): boolean {
   return model?.provider === PROVIDER_ID;
 }
@@ -349,11 +404,8 @@ export function paintQuotaStatus(coord: QuotaStatusCoordinator, ctx: QuotaStatus
     ctx.ui.setStatus(QUOTA_STATUS_KEY, undefined);
     return;
   }
-  const plain = coord.footerFor(ctx.model?.id, mode);
-  ctx.ui.setStatus(
-    QUOTA_STATUS_KEY,
-    mode === "all" ? colorizeQuotaFooterBoth(plain) : colorizeQuotaFooter(plain),
-  );
+  const { colored } = coord.renderFooter(ctx.model?.id, mode);
+  ctx.ui.setStatus(QUOTA_STATUS_KEY, colored);
 }
 
 // In-memory throttle around the quota fetch: at most one network call per
@@ -383,10 +435,14 @@ export class QuotaStatusCoordinator {
   }
 
   footerFor(modelId?: string, mode: QuotaFooterMode = "smart"): string | undefined {
-    if (!this.summary || mode === "off") return undefined;
-    return mode === "all"
-      ? buildQuotaFooterBoth(this.summary, modelId)
-      : buildQuotaFooter(this.summary, modelId, this.weeklyTo5hRatio);
+    return FOOTER_MODES[mode]?.render(this.summary, modelId, this.weeklyTo5hRatio).plain;
+  }
+
+  renderFooter(
+    modelId?: string,
+    mode: QuotaFooterMode = "smart",
+  ): { plain?: string; colored?: string } {
+    return FOOTER_MODES[mode]?.render(this.summary, modelId, this.weeklyTo5hRatio) ?? {};
   }
 
   get isFresh(): boolean {

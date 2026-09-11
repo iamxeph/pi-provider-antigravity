@@ -81,6 +81,18 @@ _Avoid_: Resolved model, model config, runtime bundle
 The `Runtime Model ID` grouping that decides whether Thought Signature replay is possible (`gemini-`/`claude-`/`gpt-` prefix plus base-id equality). Signatures are carried forward only inside the same family.
 _Avoid_: Model group, vendor prefix
 
+**Canonical Tier Suffix**:
+The Wire Fingerprint model identifier suffix that mirrors the user-requested thinking effort by name (`-low`, `-medium`, `-high`), attempted first when resolving a Runtime Model ID.
+_Avoid_: Default suffix, primary tier, standard suffix
+
+**Tier Alias**:
+An alternative Wire Fingerprint spelling representing the same thinking effort tier (`-thinking` or `-agent` for high, `-extra-low` for low, or an unsuffixed base identifier for the default tier), resolved when the canonical suffix is absent.
+_Avoid_: Secondary suffix, legacy suffix, fallback tier
+
+**Tier Fallback**:
+The unidirectional upward-escalation policy that resolves to an alternative tier (such as medium escalating to high on models lacking a medium variant, or unadvertised efforts clamping to available tiers) when neither canonical nor alias suffixes exist.
+_Avoid_: Suffix fallback, downgrade, auto-retry
+
 ### Quota & Account
 
 **Quota Pool**:

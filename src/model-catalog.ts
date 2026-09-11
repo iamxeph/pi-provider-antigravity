@@ -10,11 +10,69 @@ import { DEFAULT_ENDPOINT, PROVIDER_ID } from "./protocol.ts";
  * only through createCatalogStore (one generation behind one read) and the
  * persistence codec, so one recorded generation is the single freshness truth.
  */
+export type CanonicalTier = "low" | "medium" | "high";
+
+/**
+ * Canonical Tier Suffix: The wire suffix that mirrors the user-requested thinking
+ * effort by name (-low, -medium, -high), attempted first when resolving a Runtime Model ID.
+ * (See CONTEXT.md and ADR-0014)
+ */
+export const CANONICAL_TIER_SUFFIXES: Record<CanonicalTier, string> = Object.freeze({
+  low: "-low",
+  medium: "-medium",
+  high: "-high",
+});
+
+/**
+ * Tier Alias: Alternative wire spellings representing the same thinking effort tier
+ * (-thinking or -agent for high, -extra-low for low, or an unsuffixed base identifier
+ * for the default tier), resolved when the canonical suffix is absent.
+ * (See CONTEXT.md and ADR-0014)
+ */
+export const TIER_ALIASES: Record<CanonicalTier, readonly string[]> = Object.freeze({
+  low: Object.freeze(["-extra-low"]),
+  medium: Object.freeze([]),
+  high: Object.freeze(["-thinking", "-agent"]),
+});
+
+/**
+ * Special suffixes present in captures that designate non-effort variant types (e.g. server-directed
+ * dynamic thinking selection). Stripped for base model grouping and recognized as runtime IDs,
+ * but not selectable as a user thinking effort tier.
+ */
+export const SPECIAL_TIER_SUFFIXES: readonly string[] = Object.freeze(["-tiered"]);
+
+/**
+ * Union of all known model ID tier suffixes (canonical, aliases, and special tokens).
+ */
+export const ALL_TIER_SUFFIXES: readonly string[] = Object.freeze([
+  ...new Set([
+    ...Object.values(CANONICAL_TIER_SUFFIXES),
+    ...Object.values(TIER_ALIASES).flat(),
+    ...SPECIAL_TIER_SUFFIXES,
+  ]),
+]);
+
+/**
+ * Strips any known tier suffix from a model ID for grouping.
+ */
+const TIER_SUFFIX_PATTERN = new RegExp(
+  `-(?:${ALL_TIER_SUFFIXES.map((s) => s.replace(/^-/, "")).join("|")})$`,
+);
+
+/**
+ * Suffixes (canonical + aliases) that count toward a specific tier when advertising
+ * available effort levels in the model picker.
+ */
+export function tierSpellings(tier: CanonicalTier): readonly string[] {
+  return [CANONICAL_TIER_SUFFIXES[tier], ...TIER_ALIASES[tier]];
+}
+
 export function extractBaseModelId(runtimeId: string): string {
   if (runtimeId === "gemini-pro-agent") return "gemini-3.1-pro";
   if (runtimeId.startsWith("gemini-3.1-pro-")) return "gemini-3.1-pro";
 
-  return runtimeId.replace(/-(?:high|medium|low|tiered|thinking|agent|extra-low)$/, "");
+  return runtimeId.replace(TIER_SUFFIX_PATTERN, "");
 }
 
 /**
@@ -246,34 +304,45 @@ export function fromPersistedSnapshot(raw: unknown): CatalogSnapshot | undefined
 }
 
 /**
- * Wire tier spellings per Pi effort, best first. A variant named after the
- * effort itself (`low` → `-low`) is tried before these, so a tier the wire adds
- * later needs no edit here; only spellings that differ or are missing are
- * listed.
+ * Tier Fallback: The unidirectional upward-escalation policy that resolves to an alternative
+ * tier (such as medium escalating to high on models lacking a medium variant, or unadvertised
+ * efforts clamping to available tiers) when neither canonical nor alias suffixes exist.
+ * (See CONTEXT.md and ADR-0014)
  */
-const TIER_FALLBACKS: Record<string, string[]> = {
-  minimal: ["-low", "-extra-low", ""], // the wire lists no -minimal today
-  low: ["-extra-low", ""],
-  medium: ["", "-high"], // Gemini 3.1 Pro lists no -medium: up to high, never down
-  high: ["-thinking", "-agent", ""], // Claude's high tier is -thinking
-  xhigh: ["-high", "-thinking", "-agent", ""],
-  max: ["-high", "-thinking", "-agent", ""],
-};
+export const TIER_FALLBACKS: Record<string, readonly string[]> = Object.freeze({
+  minimal: Object.freeze(["-low", "-extra-low", ""]),
+  low: Object.freeze(["-extra-low", ""]),
+  medium: Object.freeze(["", "-high"]), // Gemini 3.1 Pro lists no -medium: up to high, never down
+  high: Object.freeze(["-thinking", "-agent", ""]), // Claude's high tier is -thinking
+  xhigh: Object.freeze(["-high", "-thinking", "-agent", ""]),
+  max: Object.freeze(["-high", "-thinking", "-agent", ""]),
+});
+
+export const DEFAULT_TIER_ORDER: readonly string[] = Object.freeze([
+  CANONICAL_TIER_SUFFIXES.high,
+  ...TIER_ALIASES.high,
+  "",
+]);
+
+/**
+ * Ordered candidate suffixes attempted when resolving a Runtime Model ID for an effort.
+ * Canonical suffix comes first, followed by fallbacks.
+ */
+export function tierCandidateOrder(effort?: string): readonly string[] {
+  if (!effort) return DEFAULT_TIER_ORDER;
+  const canonical = effort in CANONICAL_TIER_SUFFIXES
+    ? [CANONICAL_TIER_SUFFIXES[effort as CanonicalTier]]
+    : [`-${effort}`];
+  const fallbacks = TIER_FALLBACKS[effort] ?? DEFAULT_TIER_ORDER;
+  return [...new Set([...canonical, ...fallbacks])];
+}
 
 function resolveRuntimeModelId(
   modelId: string,
   effort: string | undefined,
   availableRuntimeIds: string[]
 ): string {
-  if (
-    modelId.endsWith("-high") ||
-    modelId.endsWith("-medium") ||
-    modelId.endsWith("-low") ||
-    modelId.endsWith("-thinking") ||
-    modelId.endsWith("-agent") ||
-    modelId.endsWith("-extra-low") ||
-    modelId.endsWith("-tiered")
-  ) {
+  if (ALL_TIER_SUFFIXES.some((suffix) => modelId.endsWith(suffix))) {
     return modelId;
   }
 
@@ -282,10 +351,7 @@ function resolveRuntimeModelId(
   // released models (e.g. gemini-3.9-flash) resolve with no code change.
   if (availableRuntimeIds.length > 0) {
     const variants = new Set(availableRuntimeIds.filter((id) => extractBaseModelId(id) === modelId));
-    const order = [
-      ...(effort ? [`-${effort}`] : []),
-      ...(TIER_FALLBACKS[effort ?? ""] ?? ["-high", "-thinking", "-agent", ""]),
-    ];
+    const order = tierCandidateOrder(effort);
 
     for (const suffix of order) {
       if (variants.has(`${modelId}${suffix}`)) {
@@ -404,21 +470,22 @@ export function synthesizeDynamicModel(baseId: string, items: AvailableModelItem
   // vocabulary is low|medium|high (ADR-0009) and a model may list fewer:
   // Gemini 3.1 Pro has no -medium, gpt-oss only -medium, Claude only -thinking
   // (the default/high tier). `xhigh`/`max` stay unsupported (no mapping entry).
-  const hasVariant = (suffixes: string[]) =>
+  const hasVariant = (suffixes: readonly string[]) =>
     items.some((it) => suffixes.some((suffix) => it.id.endsWith(suffix)));
   const thinkingLevelMap = {
     off: null,
     minimal: null,
-    ...(hasVariant(["-low", "-extra-low"]) ? {} : { low: null }),
-    ...(hasVariant(["-medium"]) ? {} : { medium: null }),
-    ...(hasVariant(["-high", "-thinking", "-agent"]) || items.some((it) => it.id === baseId)
+    ...(hasVariant(tierSpellings("low")) ? {} : { low: null }),
+    ...(hasVariant(tierSpellings("medium")) ? {} : { medium: null }),
+    ...(hasVariant(tierSpellings("high")) || items.some((it) => it.id === baseId)
       ? {}
       : { high: null }),
   };
 
+  const family = classifyModelFamily(baseId);
   const isFlash = baseId.includes("flash");
-  const isClaude = baseId.startsWith("claude-");
-  const isGpt = baseId.startsWith("gpt-");
+  const isClaude = family === "claude";
+  const isGpt = family === "gpt";
 
   // Static fallbacks mirror captures/agy_cli_1.2.0/models.resp.json
   // (Claude maxTokens 250000 / maxOutputTokens 64000, also seen on the wire

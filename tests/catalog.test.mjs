@@ -5,16 +5,24 @@ import {
   parseAvailableModels,
 } from "../src/catalog-refresh.ts";
 import {
+  ALL_TIER_SUFFIXES,
   buildDynamicPublicModels,
   buildThinkingMap,
+  CANONICAL_TIER_SUFFIXES,
+  classifyModelFamily,
   estimateModelCost,
+  extractBaseModelId,
   formatModelDisplayName,
   formatModelsList,
-  synthesizeDynamicModel,
-  resolveModelPlan,
-  classifyModelFamily,
-  isCompatibleFamily,
   fromPersistedSnapshot,
+  isCompatibleFamily,
+  resolveModelPlan,
+  SPECIAL_TIER_SUFFIXES,
+  synthesizeDynamicModel,
+  TIER_ALIASES,
+  TIER_FALLBACKS,
+  tierCandidateOrder,
+  tierSpellings,
 } from "../src/model-catalog.ts";
 import { buildAntigravityRequestBody } from "../src/builder.ts";
 
@@ -259,6 +267,48 @@ test("Seam 3: synthesized models hide effort levels the snapshot has no variant 
   assert.deepEqual(hiddenLevels("gpt-oss-120b"), ["high", "low", "minimal", "off"]);
   assert.deepEqual(hiddenLevels("claude-opus-4-6"), ["low", "medium", "minimal", "off"]);
   assert.deepEqual(hiddenLevels("claude-sonnet-4-6"), ["low", "medium", "minimal", "off"]);
+});
+
+test("Seam 3: unified tier vocabulary enforces canonical resolution order and picker invariants", () => {
+  // 1. All tier suffixes union completeness
+  for (const suffix of Object.values(CANONICAL_TIER_SUFFIXES)) {
+    assert.ok(ALL_TIER_SUFFIXES.includes(suffix));
+  }
+  for (const suffixes of Object.values(TIER_ALIASES)) {
+    for (const suffix of suffixes) {
+      assert.ok(ALL_TIER_SUFFIXES.includes(suffix));
+    }
+  }
+  for (const suffix of SPECIAL_TIER_SUFFIXES) {
+    assert.ok(ALL_TIER_SUFFIXES.includes(suffix));
+  }
+
+  // 2. Base ID extraction strips all recognized suffixes
+  for (const suffix of ALL_TIER_SUFFIXES) {
+    assert.equal(extractBaseModelId(`gemini-model${suffix}`), "gemini-model");
+  }
+
+  // 3. Canonical suffixes are attempted first
+  for (const [tier, canonicalSuffix] of Object.entries(CANONICAL_TIER_SUFFIXES)) {
+    const order = tierCandidateOrder(tier);
+    assert.equal(order[0], canonicalSuffix, `Canonical suffix must be first for ${tier}`);
+  }
+
+  // 4. Invariant: every advertised tier spelling is tested before cross-tier fallbacks
+  for (const tier of ["low", "medium", "high"]) {
+    const spellings = tierSpellings(tier);
+    const order = tierCandidateOrder(tier);
+    for (const spelling of spellings) {
+      assert.ok(order.includes(spelling), `${spelling} must be in resolution order for ${tier}`);
+    }
+  }
+
+  // 5. Fallback entries all belong to known suffixes or empty string
+  for (const fallbacks of Object.values(TIER_FALLBACKS)) {
+    for (const fb of fallbacks) {
+      assert.ok(fb === "" || ALL_TIER_SUFFIXES.includes(fb), `unknown fallback suffix: ${fb}`);
+    }
+  }
 });
 
 test("Seam 3: resolveModelPlan dynamically resolves tiers for new models", () => {

@@ -9,6 +9,8 @@ import {
   colorizeQuotaFooterBoth,
   DEFAULT_WEEKLY_TO_5H_RATIO,
   extractWindowFractionPairs,
+  FOOTER_MODES,
+  FOOTER_MODE_OPTIONS,
   formatQuotaSummary,
   formatQuotaWindowPart,
   parseQuotaSummary,
@@ -167,6 +169,25 @@ test("Footer: claude model shows 3p pool bottleneck", () => {
   const summary = parseQuotaSummary(quotaJson);
   const footer = buildQuotaFooter(summary, "antigravity/claude-sonnet-4-6");
   assert.match(footer, fiveHourRe(thirdParty5hPct));
+});
+
+test("Footer modes table: every mode defines consistent render behavior", () => {
+  const summary = parseQuotaSummary(quotaJson);
+  assert.deepEqual(FOOTER_MODE_OPTIONS, ["off", "smart", "all"]);
+
+  // off mode
+  assert.deepEqual(FOOTER_MODES.off.render(summary, "gemini-3-flash"), {});
+  assert.deepEqual(FOOTER_MODES.off.render(undefined), {});
+
+  // smart mode
+  const smartRender = FOOTER_MODES.smart.render(summary, "gemini-3-flash");
+  assert.match(smartRender.plain, fiveHourRe(gemini5hPct));
+  assert.equal(smartRender.colored, colorizeQuotaFooter(smartRender.plain));
+
+  // all mode
+  const allRender = FOOTER_MODES.all.render(summary, "gemini-3-flash");
+  assert.ok(allRender.plain.includes(" · "));
+  assert.equal(allRender.colored, colorizeQuotaFooterBoth(allRender.plain));
 });
 
 test("Footer: no model defaults to the Gemini pool", () => {

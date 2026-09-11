@@ -3,7 +3,12 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { runAntigravitySubcommand } from "../src/commands.ts";
+import {
+  runAntigravitySubcommand,
+  SUBCOMMANDS,
+  buildUsageText,
+  completeSubcommands,
+} from "../src/commands.ts";
 import { refreshCatalog } from "../src/catalog-refresh.ts";
 import { createCatalogStore } from "../src/model-catalog.ts";
 import initExtension from "../src/index.ts";
@@ -322,6 +327,55 @@ test("Command: tab completion offers subcommands", () => {
   assert.deepEqual(def.getArgumentCompletions("set").map((i) => i.value), ["settings"]);
   assert.deepEqual(def.getArgumentCompletions("x"), []);
   assert.equal(def.getArgumentCompletions("set x"), null);
+});
+
+test("Subcommand registry: commands, usage text, and completion stay consistent", () => {
+  assert.ok(SUBCOMMANDS.length >= 5);
+  const names = new Set();
+  const allAliases = new Set();
+
+  for (const cmd of SUBCOMMANDS) {
+    assert.ok(cmd.name && typeof cmd.name === "string");
+    assert.ok(cmd.description && typeof cmd.description === "string");
+    assert.equal(typeof cmd.run, "function");
+    assert.equal(names.has(cmd.name), false, `duplicate command name: ${cmd.name}`);
+    names.add(cmd.name);
+
+    if (cmd.aliases) {
+      for (const alias of cmd.aliases) {
+        assert.equal(names.has(alias), false, `alias collides with command name: ${alias}`);
+        assert.equal(allAliases.has(alias), false, `duplicate alias: ${alias}`);
+        allAliases.add(alias);
+      }
+    }
+  }
+
+  // buildUsageText derives lines covering all commands
+  const usage = buildUsageText();
+  for (const cmd of SUBCOMMANDS) {
+    assert.ok(usage.includes(cmd.name), `usage text missing command: ${cmd.name}`);
+    assert.ok(usage.includes(cmd.description), `usage text missing description for: ${cmd.name}`);
+    if (cmd.aliases?.length) {
+      assert.ok(usage.includes(cmd.aliases.join(", ")), `usage text missing alias for: ${cmd.name}`);
+    }
+  }
+
+  // completeSubcommands reflects all canonical commands
+  const completions = completeSubcommands("");
+  assert.deepEqual(
+    completions.map((c) => c.value),
+    SUBCOMMANDS.map((c) => c.name),
+  );
+
+  // README documents every subcommand name verbatim
+  const readme = fs.readFileSync("README.md", "utf-8");
+  for (const cmd of SUBCOMMANDS) {
+    assert.match(
+      readme,
+      new RegExp(`\\|\\s*\`${cmd.name}\`\\s*\\|`),
+      `README.md missing documentation for subcommand: ${cmd.name}`,
+    );
+  }
 });
 
 test("Subcommand: unknown subcommand shows usage", async () => {
