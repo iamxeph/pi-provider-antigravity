@@ -14,6 +14,12 @@ export interface ParsedStreamResult {
     input: number;
     output: number;
     cacheRead: number;
+    /**
+     * Reasoning tokens, a subset of `output` (pi-ai Usage.reasoning). Captured
+     * turns without a `thoughtsTokenCount` report 0, like pi-ai's own Google
+     * adapter does for a missing count.
+     */
+    reasoning: number;
     total: number;
   };
   stopReason: "stop" | "toolUse" | "length" | "error";
@@ -68,6 +74,7 @@ export function createSseFeed(): {
     input: 0,
     output: 0,
     cacheRead: 0,
+    reasoning: 0,
     total: 0,
   };
   let stopReason: ParsedStreamResult["stopReason"] = "stop";
@@ -142,6 +149,7 @@ export function createSseFeed(): {
       const candidates = typeof um.candidatesTokenCount === "number" ? um.candidatesTokenCount : 0;
       const thoughts = typeof um.thoughtsTokenCount === "number" ? um.thoughtsTokenCount : 0;
       usage.output = candidates + thoughts;
+      usage.reasoning = thoughts;
       if (typeof um.totalTokenCount === "number") usage.total = um.totalTokenCount;
     }
 

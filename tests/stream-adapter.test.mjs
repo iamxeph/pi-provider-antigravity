@@ -75,6 +75,7 @@ test("Seam 2: stream adapter translates feeder events to Pi message", async () =
     assert.match(text, /SHA-256/);
     assert.equal(message.stopReason, "stop");
     assert.ok(message.usage.totalTokens > 0, "usage must flow through the adapter");
+    assert.equal(message.usage.reasoning, 416, "thinking tokens surface as reasoning (fixture count)");
   } finally {
     globalThis.fetch = realFetch;
   }

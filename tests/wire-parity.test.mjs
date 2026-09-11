@@ -327,6 +327,11 @@ test("Wire parity: every captured SSE parses with usage and stop reason", () => 
       const parsed = parseWhole(sse);
       assert.ok(parsed.content.length >= 1, `${dir}/${f}: at least one block`);
       assert.ok(parsed.usage, `${dir}/${f}: usage metadata`);
+      // Reasoning tokens ride `output` but are reported separately (pi-ai
+      // Usage.reasoning). The wire's own count is the source; a turn that omits
+      // it reports 0, exactly as pi-ai's Google adapter reads a missing count.
+      const thoughts = [...sse.matchAll(/"thoughtsTokenCount": (\d+)/g)].pop();
+      assert.equal(parsed.usage.reasoning, thoughts ? Number(thoughts[1]) : 0, `${dir}/${f}: reasoning tokens`);
       assert.ok(["stop", "toolUse"].includes(parsed.stopReason), `${dir}/${f}: stop reason`);
     }
   }

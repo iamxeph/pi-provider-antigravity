@@ -45,6 +45,7 @@ test("Seam 2: parseWhole extracts usage metadata", () => {
   assert.equal(result.usage.input, 15615 - 8137);
   // output includes thinking tokens (candidates 50 + thoughts 381, per fixture)
   assert.equal(result.usage.output, 50 + 381);
+  assert.equal(result.usage.reasoning, 381);
   assert.equal(result.usage.cacheRead, 8137);
   assert.equal(result.stopReason, "toolUse");
 });
