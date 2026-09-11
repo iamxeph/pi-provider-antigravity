@@ -3,12 +3,12 @@ import { DEFAULT_ENDPOINT, PROVIDER_ID } from "./protocol.ts";
 
 /**
  * Model Catalog map (pure, in-process): Public Model ID ↔ Runtime Model ID
- * mapping, Model Plan resolution, the versioned snapshot store, Pi Model
+ * mapping, Model Plan resolution, the Catalog Generation store, Pi Model
  * synthesis, and presentation (display names, Subcommand table format).
  * No network, no credentials, no persistence — the wire side
- * (fetch/parse/publish) lives in catalog-refresh.ts and talks to this
- * module only through ingestCatalog (writes) and the snapshot accessors
- * (reads), so one ingested generation is the single freshness truth.
+ * (fetch/parse/publish) lives in catalog-refresh.ts and talks to this module
+ * only through createCatalogStore (one generation behind one read) and the
+ * persistence codec, so one recorded generation is the single freshness truth.
  */
 export function extractBaseModelId(runtimeId: string): string {
   if (runtimeId === "gemini-pro-agent") return "gemini-3.1-pro";
@@ -74,20 +74,51 @@ export interface AvailableModelsCatalog {
   deprecated?: Record<string, string>;
 }
 
-// Active catalog state: single versioned snapshot. refreshCatalog owns writes;
-// request paths take one snapshot per call so enums, runtime IDs, and thinking
-// configs always come from the same refresh generation (see Model Plan in CONTEXT.md).
+// The catalog seam's types: what a request path reads (CatalogSnapshot), the
+// generation a store holds (CatalogGeneration), and the store that owns the
+// writes. Request paths take one snapshot per call so enums, runtime IDs, and
+// thinking configs always come from the same refresh generation (see Model Plan
+// in CONTEXT.md).
 export interface CatalogThinking {
   budget?: number;
   supportsThinking?: boolean;
 }
 
+/**
+ * The per-Runtime-Model-ID facts a request path reads and Catalog Persistence
+ * keeps — the only part of a generation that crosses a restart.
+ */
 export interface CatalogSnapshot {
   enums: Record<string, string>;
   runtimeIds: string[];
-  thinking?: Record<string, CatalogThinking>;
-  deprecated?: Record<string, string>;
+  thinking: Record<string, CatalogThinking>;
+  deprecated: Record<string, string>;
+}
+
+export interface CatalogGeneration {
+  snapshot: CatalogSnapshot;
+  /** Full item list of the recorded refresh; absent after an offline restore. */
+  items?: AvailableModelsCatalog;
+  /** Fetch successes recorded in this process; 0 until one is recorded. */
   version: number;
+}
+
+/**
+ * The single catalog seam. Callers get one read and two writes; the invariant
+ * that a restore never overwrites a recorded generation lives in here, not with
+ * the callers.
+ */
+export interface CatalogStore {
+  /**
+   * Current generation. The snapshot is a copy the caller may keep; `items` is
+   * shared, because readers only enumerate it (formatModelsList slices before
+   * sorting) and never mutate it.
+   */
+  generation(): CatalogGeneration;
+  /** Records one completed generation: derives its snapshot, bumps version. */
+  record(catalog: AvailableModelsCatalog): void;
+  /** Restores a persisted snapshot, but only into a pristine store. */
+  restore(snapshot: CatalogSnapshot): void;
 }
 
 /**
@@ -107,72 +138,111 @@ export function buildThinkingMap(models: AvailableModelItem[]): Record<string, C
   );
 }
 
-let activeStore: CatalogSnapshot = {
-  enums: {},
-  runtimeIds: [],
-  thinking: {},
-  deprecated: {},
-  version: 0,
-};
-
-export function getCatalogSnapshot(): CatalogSnapshot {
+function snapshotFromCatalog(catalog: AvailableModelsCatalog): CatalogSnapshot {
+  // A generation is complete: derive it wholesale instead of merging, so enums
+  // for server-removed models are evicted instead of pinned forever.
   return {
-    enums: { ...activeStore.enums },
-    runtimeIds: [...activeStore.runtimeIds],
+    enums: { ...catalog.modelEnums },
+    runtimeIds: [...new Set(catalog.models.map((m) => m.id))],
+    thinking: buildThinkingMap(catalog.models),
+    deprecated: { ...(catalog.deprecated ?? {}) },
+  };
+}
+
+function copySnapshot(snapshot: CatalogSnapshot): CatalogSnapshot {
+  return {
+    enums: { ...snapshot.enums },
+    runtimeIds: [...snapshot.runtimeIds],
     thinking: Object.fromEntries(
-      Object.entries(activeStore.thinking ?? {}).map(([id, info]) => [id, { ...info }]),
+      Object.entries(snapshot.thinking).map(([id, info]) => [id, { ...info }]),
     ),
-    deprecated: { ...(activeStore.deprecated ?? {}) },
-    version: activeStore.version,
+    deprecated: { ...snapshot.deprecated },
   };
 }
 
+const EMPTY_SNAPSHOT = (): CatalogSnapshot => ({ enums: {}, runtimeIds: [], thinking: {}, deprecated: {} });
+
 /**
- * Records one complete refresh generation. Wire-side only: the sole writer is
- * the refresh path in catalog-refresh.ts. Request paths never call this —
- * they read via getCatalogSnapshot and pass the snapshot explicitly.
+ * Creates the one catalog seam this provider wires up: `index.ts` builds it and
+ * hands it to the refresh hook and every request path.
  */
-export function updateCatalogStore(
-  enums: Record<string, string>,
-  runtimeIds: string[],
-  thinking: Record<string, CatalogThinking> = {},
-  deprecated: Record<string, string> = {}
-): void {
-  // A fresh generation is complete: replace instead of merging, so enums for
-  // server-removed models are evicted instead of pinned forever.
-  activeStore = {
-    enums: { ...enums },
-    runtimeIds: [...new Set(runtimeIds)],
-    thinking: { ...thinking },
-    deprecated: { ...deprecated },
-    version: activeStore.version + 1,
+export function createCatalogStore(): CatalogStore {
+  let generation: CatalogGeneration = { snapshot: EMPTY_SNAPSHOT(), version: 0 };
+  return {
+    generation: () => ({ ...generation, snapshot: copySnapshot(generation.snapshot) }),
+    record: (catalog) => {
+      generation = {
+        snapshot: snapshotFromCatalog(catalog),
+        items: catalog,
+        version: generation.version + 1,
+      };
+    },
+    // Version 0 means no fetch has landed in this process, so nothing here can
+    // be fresher than the persist: an older file must never replace a recorded
+    // generation (the refresh path calls this on every start, including after
+    // a successful fetch in the same process).
+    restore: (snapshot) => {
+      if (generation.version > 0) return;
+      generation = { snapshot: copySnapshot(snapshot), version: 0 };
+    },
   };
 }
 
-// Last full Model Catalog generation behind the single catalog seam: the
-// snapshot holds only IDs/enums/thinking, while the models table also needs
-// display names, quota flags, and sort order. Written only by ingestCatalog.
-let lastCatalog: AvailableModelsCatalog | undefined;
+// Catalog Persistence codec: the private entry this provider keeps inside its
+// own Pi store entry (PRIVATE_SNAPSHOT_KEY, catalog-refresh.ts). The key
+// spells a snapshot's `enums` as `modelEnums` and must keep doing so — Pi
+// persists unknown keys verbatim, and every installed provider already has
+// that spelling on disk (ADR-0004).
+export interface PersistedSnapshot {
+  modelEnums: Record<string, string>;
+  runtimeIds: string[];
+  thinking: Record<string, CatalogThinking>;
+  deprecated: Record<string, string>;
+}
 
-/**
- * Records one complete catalog generation: snapshot store plus the full
- * items the models table formats. The sole writer is the refresh path;
- * request paths read via getCatalogSnapshot / getStoredCatalog and never
- * write, so one generation is always the single freshness truth.
- */
-export function ingestCatalog(catalog: AvailableModelsCatalog): void {
-  updateCatalogStore(
-    catalog.modelEnums,
-    catalog.models.map((m) => m.id),
-    buildThinkingMap(catalog.models),
-    catalog.deprecated || {},
+export function toPersistedSnapshot(snapshot: CatalogSnapshot): PersistedSnapshot {
+  return {
+    modelEnums: { ...snapshot.enums },
+    runtimeIds: [...snapshot.runtimeIds],
+    thinking: { ...snapshot.thinking },
+    deprecated: { ...snapshot.deprecated },
+  };
+}
+
+function isStringRecord(value: unknown): value is Record<string, string> {
+  return (
+    !!value &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.values(value).every((entry) => typeof entry === "string")
   );
-  lastCatalog = catalog;
 }
 
-/** Full catalog behind the seam, if any generation was ingested yet. */
-export function getStoredCatalog(): AvailableModelsCatalog | undefined {
-  return lastCatalog;
+function isThinkingRecord(value: unknown): value is Record<string, CatalogThinking> {
+  return (
+    !!value &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.values(value).every((entry) => !!entry && typeof entry === "object" && !Array.isArray(entry))
+  );
+}
+
+/**
+ * Lenient inverse of toPersistedSnapshot: a field that is missing or malformed
+ * restores as empty rather than as garbage, and an entry with no usable field
+ * restores as absent (the refresh path then falls back to a fresh fetch).
+ */
+export function fromPersistedSnapshot(raw: unknown): CatalogSnapshot | undefined {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const entry = raw as Partial<PersistedSnapshot>;
+  const enums = isStringRecord(entry.modelEnums) ? entry.modelEnums : undefined;
+  const runtimeIds = Array.isArray(entry.runtimeIds)
+    ? entry.runtimeIds.filter((id): id is string => typeof id === "string")
+    : undefined;
+  const thinking = isThinkingRecord(entry.thinking) ? entry.thinking : undefined;
+  const deprecated = isStringRecord(entry.deprecated) ? entry.deprecated : undefined;
+  if (!enums && !runtimeIds && !thinking && !deprecated) return undefined;
+  return { enums: enums ?? {}, runtimeIds: runtimeIds ?? [], thinking: thinking ?? {}, deprecated: deprecated ?? {} };
 }
 
 /**
@@ -192,8 +262,8 @@ const TIER_FALLBACKS: Record<string, string[]> = {
 
 function resolveRuntimeModelId(
   modelId: string,
-  effort?: string,
-  availableRuntimeIds: string[] = activeStore.runtimeIds
+  effort: string | undefined,
+  availableRuntimeIds: string[]
 ): string {
   if (
     modelId.endsWith("-high") ||
@@ -210,7 +280,7 @@ function resolveRuntimeModelId(
   // Tier resolution against the live snapshot: the server's own variant list is
   // the candidate set, effort only sets the suffix preference order — so newly
   // released models (e.g. gemini-3.9-flash) resolve with no code change.
-  if (Array.isArray(availableRuntimeIds) && availableRuntimeIds.length > 0) {
+  if (availableRuntimeIds.length > 0) {
     const variants = new Set(availableRuntimeIds.filter((id) => extractBaseModelId(id) === modelId));
     const order = [
       ...(effort ? [`-${effort}`] : []),
@@ -248,13 +318,13 @@ export interface ModelPlan {
 /**
  * Resolves one Model Plan (see CONTEXT.md) from a single snapshot generation:
  * Runtime Model ID, model enum, thinking budget, and the non-Gemini flag that
- * switches tool schema mode. Pass an explicit snapshot in tests; otherwise the
- * live snapshot is read once, so enums and runtime IDs never mix generations.
+ * switches tool schema mode. The caller passes the store's current snapshot, so
+ * enums and runtime IDs never mix generations.
  */
 export function resolveModelPlan(
   publicModelId: string,
-  effort?: string,
-  snapshot: CatalogSnapshot = getCatalogSnapshot()
+  effort: string | undefined,
+  snapshot: CatalogSnapshot
 ): ModelPlan {
   const runtimeModelId = followRenames(
     resolveRuntimeModelId(publicModelId, effort, snapshot.runtimeIds),
@@ -265,7 +335,7 @@ export function resolveModelPlan(
     // Fail fast: a retired or mistyped ID must surface here with guidance,
     // not as a cryptic server rejection for an empty model_enum label.
     throw new Error(
-      `Unknown model "${runtimeModelId}" (not in catalog snapshot v${snapshot.version}). ` +
+      `Unknown model "${runtimeModelId}" (not in the current catalog snapshot). ` +
         `Run /antigravity refresh and pick a current model.`
     );
   }
@@ -307,13 +377,13 @@ function followRenames(runtimeModelId: string, snapshot: CatalogSnapshot): strin
  */
 function resolveThinkingConfig(
   runtimeModelId: string,
-  snapshot: CatalogSnapshot = getCatalogSnapshot()
+  snapshot: CatalogSnapshot
 ): { includeThoughts: boolean; thinkingBudget: number } {
   // Pi signals thinking-off by omitting `reasoning` entirely (never by an "off"
   // string: it is outside SimpleStreamOptions.reasoning's ThinkingLevel type),
   // so there is deliberately no string branch here. What the wire must carry
   // for that state is unverified — no capture has includeThoughts:false.
-  const budget = snapshot.thinking?.[runtimeModelId]?.budget;
+  const budget = snapshot.thinking[runtimeModelId]?.budget;
   return typeof budget === "number"
     ? { includeThoughts: true, thinkingBudget: budget }
     : { includeThoughts: false, thinkingBudget: 0 };

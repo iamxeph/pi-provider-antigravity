@@ -6,7 +6,7 @@ import {
   paintQuotaStatus,
   type QuotaStatusCoordinator,
 } from "./quota-status.ts";
-import { formatModelsList } from "./model-catalog.ts";
+import { formatModelsList, type CatalogStore } from "./model-catalog.ts";
 import { refreshCatalogGeneration } from "./catalog-refresh.ts";
 
 import { emitOutput, openSettings } from "./settings.ts";
@@ -22,7 +22,7 @@ export async function resolveToken(
   return parseStoredCredentials(apiKey);
 }
 
-async function runModelsSubcommand(ctx: ExtensionCommandContext): Promise<void> {
+async function runModelsSubcommand(ctx: ExtensionCommandContext, store: CatalogStore): Promise<void> {
   if ((await resolveToken(ctx)) === null) {
     emitOutput(ctx, "Not logged in. Run /login antigravity first.", "warning");
     return;
@@ -31,7 +31,7 @@ async function runModelsSubcommand(ctx: ExtensionCommandContext): Promise<void> 
     if (ctx.hasUI) ctx.ui.notify("Fetching available models…", "info");
     // Single Model Catalog path: freshness lives behind the catalog seam —
     // this module only branches on the verdict and prints.
-    const { status, catalog } = await refreshCatalogGeneration(() =>
+    const { status, catalog } = await refreshCatalogGeneration(store, () =>
       ctx.modelRegistry?.refresh?.({ force: true, providers: [PROVIDER_ID], signal: ctx.signal }),
     );
     if (status === "failed" || !catalog) {
@@ -90,7 +90,8 @@ async function runUsageSubcommand(
 export async function runAntigravitySubcommand(
   args: string,
   ctx: ExtensionCommandContext,
-  quotaStatus?: QuotaStatusCoordinator,
+  quotaStatus: QuotaStatusCoordinator | undefined,
+  store: CatalogStore,
 ): Promise<void> {
   const parts = (args || "").trim().split(/\s+/).filter(Boolean);
   const sub = parseAntigravitySubcommand(parts[0] || "");
@@ -101,7 +102,7 @@ export async function runAntigravitySubcommand(
   }
 
   if (sub === "models") {
-    await runModelsSubcommand(ctx);
+    await runModelsSubcommand(ctx, store);
     return;
   }
 
@@ -113,7 +114,7 @@ export async function runAntigravitySubcommand(
   if (sub === "refresh") {
     try {
       if (ctx.hasUI) ctx.ui.notify("Refreshing models…", "info");
-      const { status } = await refreshCatalogGeneration(() =>
+      const { status } = await refreshCatalogGeneration(store, () =>
         ctx.modelRegistry?.refresh?.({ force: true, providers: [PROVIDER_ID], signal: ctx.signal }),
       );
       if (status === "fresh") {

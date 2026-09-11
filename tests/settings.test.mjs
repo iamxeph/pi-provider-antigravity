@@ -6,6 +6,7 @@ import path from "node:path";
 import { applySettingValue, buildSettingsItems, defaultConfigFile, loadProviderConfig, normalizeFooterMode, previewQuotaFooterText, resolveFooterMode, SETTINGS_FIELDS } from "../src/settings.ts";
 import { runAntigravitySubcommand } from "../src/commands.ts";
 import { QuotaStatusCoordinator } from "../src/quota-status.ts";
+import { createCatalogStore } from "../src/model-catalog.ts";
 import { fileQuotaStatusStore } from "../src/settings.ts";
 
 function makeConf(settings) {
@@ -151,7 +152,7 @@ test("TUI dialog cycles the value with the real SettingsList", async () => {
       const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(file));
       const outputs = [];
       factories.length = 0;
-      await runAntigravitySubcommand("settings", makeCtx(outputs), coord);
+      await runAntigravitySubcommand("settings", makeCtx(outputs), coord, createCatalogStore());
       assert.equal(factories.length, 1);
 
       let renders = 0;
@@ -233,7 +234,7 @@ test("Settings preview samples quota while another provider's model is selected"
       const ctx = makeCtx(outputs);
       ctx.model = { id: "deepseek-flash", provider: "opencode-go" };
       factories.length = 0;
-      await runAntigravitySubcommand("settings", ctx, new QuotaStatusCoordinator(fileQuotaStatusStore(file)));
+      await runAntigravitySubcommand("settings", ctx, new QuotaStatusCoordinator(fileQuotaStatusStore(file)), createCatalogStore());
       const list = await factories[0]({ requestRender() {} }, { fg: (c, s) => `<${c}>${s}</>`, bold: (s) => `*${s}*` }, {}, () => {});
       assert.equal(counter.calls, 1); // opening the dialog fetches despite the foreign model
       assert.match(list.render(80).join("\n"), /hidden/); // off-mode preview
@@ -276,7 +277,7 @@ test("TUI dialog frames the list with border lines like /settings", async () => 
       const file = path.join(dir, "pi-provider-antigravity.json");
       const outputs = [];
       factories.length = 0;
-      await runAntigravitySubcommand("settings", makeCtx(outputs), new QuotaStatusCoordinator(fileQuotaStatusStore(file)));
+      await runAntigravitySubcommand("settings", makeCtx(outputs), new QuotaStatusCoordinator(fileQuotaStatusStore(file)), createCatalogStore());
       const comp = await factories[0]({ requestRender() {} }, { fg: (c, s) => `<${c}>${s}</>`, bold: (s) => `*${s}*` }, {}, () => {});
       const lines = comp.render(80);
       assert.match(lines[0], /<border>─+<\/>/); // top border, pi /settings parity
