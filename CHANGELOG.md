@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.6.0...v0.7.0) (2026-09-11)
+
+
+### Features
+
+* **capture:** pin agy CLI 1.2.0 and make the capture scenario rotatable ([131841b](https://github.com/iamxeph/pi-provider-antigravity/commit/131841b7f7d5c91ad9f5f8225612af8a3dbcd872))
+
+
+### Bug Fixes
+
+* **catalog:** resolve thinking from the snapshot and offer only agy's effort levels ([#61](https://github.com/iamxeph/pi-provider-antigravity/issues/61)) ([2b3be33](https://github.com/iamxeph/pi-provider-antigravity/commit/2b3be33659e1cea519c06805effa0b84c7e86838))
+
 ## [0.6.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.5.0...v0.6.0) (2026-09-10)
 
 
