@@ -5,16 +5,20 @@ import type { ExtensionCommandContext, Theme } from "@earendil-works/pi-coding-a
 import { SettingsList, type SettingItem, type SettingsListTheme } from "@earendil-works/pi-tui";
 import {
   ANSI_FG_RESET,
-  FOOTER_MODE_NOTES,
   FOOTER_MODE_OPTIONS,
   normalizeFooterMode,
-  paintQuotaStatus,
   type QuotaFooterMode,
   type QuotaStatusCoordinator,
   type QuotaStatusStore,
 } from "./quota-status.ts";
 
 export { type QuotaFooterMode, normalizeFooterMode };
+
+export const FOOTER_MODE_NOTES: Readonly<Record<string, string>> = Object.freeze({
+  smart:
+    "Picks whichever window runs out first (5h or weekly), weighting the weekly pool by a ratio learned from your usage",
+  all: "Lists every window of the pool backing the current model (5h or weekly)",
+});
 
 export const PROVIDER_CONFIG_FILE = "pi-provider-antigravity.json";
 
@@ -131,7 +135,7 @@ export const SETTINGS_FIELDS: readonly SettingsFieldDef[] = Object.freeze([
       // otherwise leave the preview blank while the footer is off or another
       // provider's model is selected. Nothing to fetch when the new value is off.
       if (quotaStatus.mode() !== "off") await quotaStatus.refresh(ctx, { ignoreMode: true });
-      paintQuotaStatus(quotaStatus, ctx);
+      quotaStatus.paint(ctx);
     },
   },
 ]);

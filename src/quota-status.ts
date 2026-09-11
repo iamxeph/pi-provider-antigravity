@@ -338,8 +338,6 @@ export type QuotaFooterMode = "off" | "smart" | "all";
 
 export interface FooterModeDef {
   key: QuotaFooterMode;
-  label: string;
-  note: string;
   render: (
     summary: QuotaSummary | undefined,
     modelId?: string,
@@ -350,15 +348,10 @@ export interface FooterModeDef {
 export const FOOTER_MODES: Record<QuotaFooterMode, FooterModeDef> = Object.freeze({
   off: {
     key: "off",
-    label: "Off",
-    note: "",
     render: () => ({}),
   },
   smart: {
     key: "smart",
-    label: "Smart",
-    note:
-      "Picks whichever window runs out first (5h or weekly), weighting the weekly pool by a ratio learned from your usage",
     render: (summary, modelId, ratio = DEFAULT_WEEKLY_TO_5H_RATIO) => {
       if (!summary) return {};
       const plain = buildQuotaFooter(summary, modelId, ratio);
@@ -367,8 +360,6 @@ export const FOOTER_MODES: Record<QuotaFooterMode, FooterModeDef> = Object.freez
   },
   all: {
     key: "all",
-    label: "All",
-    note: "Lists every window of the pool backing the current model (5h or weekly)",
     render: (summary, modelId) => {
       if (!summary) return {};
       const plain = buildQuotaFooterBoth(summary, modelId);
@@ -381,14 +372,6 @@ export const FOOTER_MODE_OPTIONS: readonly QuotaFooterMode[] = Object.freeze(
   Object.keys(FOOTER_MODES) as QuotaFooterMode[],
 );
 
-export const FOOTER_MODE_NOTES: Readonly<Record<string, string>> = Object.freeze(
-  Object.fromEntries(
-    Object.entries(FOOTER_MODES)
-      .filter(([, def]) => def.note.length > 0)
-      .map(([key, def]) => [key, def.note]),
-  ),
-);
-
 export function normalizeFooterMode(value: unknown): QuotaFooterMode | undefined {
   const v = typeof value === "string" ? value.trim().toLowerCase() : "";
   return v in FOOTER_MODES ? (v as QuotaFooterMode) : undefined;
@@ -399,13 +382,7 @@ export function isAntigravityModel(model?: { provider?: string }): boolean {
 }
 
 export function paintQuotaStatus(coord: QuotaStatusCoordinator, ctx: QuotaStatusCtx): void {
-  const mode = coord.mode();
-  if (mode === "off" || !isAntigravityModel(ctx.model)) {
-    ctx.ui.setStatus(QUOTA_STATUS_KEY, undefined);
-    return;
-  }
-  const { colored } = coord.renderFooter(ctx.model?.id, mode);
-  ctx.ui.setStatus(QUOTA_STATUS_KEY, colored);
+  coord.paint(ctx);
 }
 
 // In-memory throttle around the quota fetch: at most one network call per
@@ -462,9 +439,31 @@ export class QuotaStatusCoordinator {
   // refresh when the throttle window expired, repaint with fresh text.
   // Event handlers delegate here instead of replicating the sequence.
   async refreshAndPaint(ctx: QuotaStatusCtx): Promise<void> {
-    paintQuotaStatus(this, ctx);
+    this.paint(ctx);
     await this.refresh(ctx);
-    paintQuotaStatus(this, ctx);
+    this.paint(ctx);
+  }
+
+  // Paints current cached quota status to the footer slot.
+  paint(ctx: QuotaStatusCtx): void {
+    const mode = this.mode();
+    if (mode === "off" || !isAntigravityModel(ctx.model)) {
+      ctx.ui.setStatus(QUOTA_STATUS_KEY, undefined);
+      return;
+    }
+    const { colored } = this.renderFooter(ctx.model?.id, mode);
+    ctx.ui.setStatus(QUOTA_STATUS_KEY, colored);
+  }
+
+  // Atomic inspect for /antigravity usage: forces fresh quota fetch, repaints
+  // the footer slot, and formats the full summary. Callers need no flag knowledge.
+  async inspectUsage(ctx: QuotaStatusCtx & { signal?: AbortSignal }): Promise<string> {
+    const summary = await this.refresh(ctx, { force: true, ignoreMode: true, signal: ctx.signal });
+    if (!summary) {
+      throw new Error("Failed to fetch usage.");
+    }
+    this.paint(ctx);
+    return formatQuotaSummary(summary);
   }
 
   // One fetch for preview purposes even when the footer slot is off or the

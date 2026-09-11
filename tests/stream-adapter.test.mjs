@@ -3,8 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { streamAntigravity } from "../src/stream.ts";
 import { buildAntigravityRequestBody } from "../src/builder.ts";
-import { resolveModelPlan, createCatalogStore } from "../src/model-catalog.ts";
-import { parseAvailableModels } from "../src/catalog-refresh.ts";
+import { resolveModelPlan, createCatalogStore, parseAvailableModels } from "../src/model-catalog.ts";
 
 const sseTurn5 = fs.readFileSync("captures/agy_cli_1.2.0/stream_turn5_multiturn.resp.sse", "utf-8");
 // A lone-signature turn: visible text plus a signature carrier, nothing else.

@@ -625,6 +625,32 @@ test("Coordinator: refreshAndPaint paints, refreshes when stale, repaints", asyn
   }
 });
 
+test("Coordinator: paint updates status slot directly", () => {
+  const coord = new QuotaStatusCoordinator(memStore("smart").store);
+  const statuses = [];
+  const ctx = makeCtx(statuses);
+  coord.paint(ctx);
+  assert.deepEqual(statuses, [[QUOTA_STATUS_KEY, undefined]]);
+});
+
+test("Coordinator: inspectUsage atomically refreshes, paints footer, and formats summary", async () => {
+  const realFetch = globalThis.fetch;
+  const counter = { calls: 0 };
+  globalThis.fetch = stubQuotaFetch(quotaJson, counter);
+  try {
+    const coord = new QuotaStatusCoordinator(memStore("smart").store);
+    const statuses = [];
+    const ctx = makeCtx(statuses);
+    const text = await coord.inspectUsage(ctx);
+    assert.equal(counter.calls, 1);
+    assert.ok(text.includes("Gemini Models"));
+    assert.ok(statuses.length > 0);
+    assert.deepEqual(statuses.at(-1), [QUOTA_STATUS_KEY, colorizeQuotaFooter(coord.footerFor(ctx.model.id))]);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
 // The status key is a documented contract: users hand this key to Pi when they
 // ask it to rearrange their footer (README "Footer placement"). Renaming the
 // constant without updating the README would silently break those prompts.

@@ -5,11 +5,12 @@ import {
   buildAntigravityRequestBody,
   SKIP_THOUGHT_SIGNATURE_VALIDATOR,
 } from "../src/builder.ts";
-import { refreshCatalog, parseAvailableModels } from "../src/catalog-refresh.ts";
 import {
   resolveModelPlan,
   createCatalogStore,
   buildThinkingMap,
+  refreshCatalog,
+  parseAvailableModels,
 } from "../src/model-catalog.ts";
 
 const modelsJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.2.0/models.resp.json", "utf-8"));

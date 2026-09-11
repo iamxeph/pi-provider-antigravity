@@ -1,15 +1,31 @@
-import type { Model } from "@earendil-works/pi-ai";
-import { DEFAULT_ENDPOINT, PROVIDER_ID } from "./protocol.ts";
+import type { Model, RefreshModelsContext } from "@earendil-works/pi-ai";
+import { DEFAULT_ENDPOINT, PROVIDER_ID, postAntigravity } from "./protocol.ts";
+import { parseStoredCredentials } from "./auth.ts";
 
 /**
- * Model Catalog map (pure, in-process): Public Model ID ↔ Runtime Model ID
- * mapping, Model Plan resolution, the Catalog Generation store, Pi Model
- * synthesis, and presentation (display names, Subcommand table format).
- * No network, no credentials, no persistence — the wire side
- * (fetch/parse/publish) lives in catalog-refresh.ts and talks to this module
- * only through createCatalogStore (one generation behind one read) and the
- * persistence codec, so one recorded generation is the single freshness truth.
+ * Model Catalog module (deep, ports & adapters): wire fetch/parse, Pi Catalog
+ * Persistence codec, snapshot generations, Public Model ID ↔ Runtime Model ID
+ * mapping, Model Plan resolution, Pi Model synthesis, and CLI table formatting.
+ * Owns the full lifecycle of models: offline restore, live network refresh,
+ * snapshot management, and tier resolution.
  */
+export const PRIVATE_SNAPSHOT_KEY = "pi-provider-antigravity";
+
+type StoreEntry = NonNullable<RefreshModelsContext["stored"]>;
+
+export type RefreshContext = Omit<RefreshModelsContext, "stored" | "publish"> & {
+  stored?: Readonly<StoreEntry> & { [PRIVATE_SNAPSHOT_KEY]?: PersistedSnapshot };
+  publish(publication: {
+    persist?: (StoreEntry & { [PRIVATE_SNAPSHOT_KEY]?: PersistedSnapshot }) | null;
+    update?: () => void;
+  }): Promise<boolean>;
+};
+
+export interface CatalogRefreshOutcome {
+  status: "fresh" | "stale" | "failed";
+  catalog?: AvailableModelsCatalog;
+}
+
 export type CanonicalTier = "low" | "medium" | "high";
 
 /**
@@ -162,11 +178,10 @@ export interface CatalogGeneration {
 }
 
 /**
- * The single catalog seam. Callers get one read and two writes; the invariant
- * that a restore never overwrites a recorded generation lives in here, not with
- * the callers.
+ * The single deep Model Catalog interface. Encapsulates snapshot generations,
+ * persistence, network refresh, plan resolution, and CLI formatting.
  */
-export interface CatalogStore {
+export interface ModelCatalog {
   /**
    * Current generation. The snapshot is a copy the caller may keep; `items` is
    * shared, because readers only enumerate it (formatModelsList slices before
@@ -177,7 +192,27 @@ export interface CatalogStore {
   record(catalog: AvailableModelsCatalog): void;
   /** Restores a persisted snapshot, but only into a pristine store. */
   restore(snapshot: CatalogSnapshot): void;
+  /**
+   * Pi SDK refreshModels entry point: restores stored snapshot, fetches wire
+   * catalog when online, updates generation, and publishes to Pi store.
+   */
+  refresh(context: RefreshContext): Promise<Array<Model<any>>>;
+  /**
+   * Refreshes catalog via the provided hook and reports freshness verdict.
+   */
+  refreshGeneration(doRefresh: () => unknown): Promise<CatalogRefreshOutcome>;
+  /**
+   * Resolves one Model Plan for the requested model and effort against
+   * the current snapshot generation.
+   */
+  resolvePlan(publicModelId: string, effort?: string): ModelPlan;
+  /**
+   * Formats the current catalog generation as a readable CLI table string.
+   */
+  formatList(): string;
 }
+
+export type CatalogStore = ModelCatalog;
 
 /**
  * Builds the per-Runtime-ID thinking lookup for a snapshot generation from
@@ -224,26 +259,168 @@ const EMPTY_SNAPSHOT = (): CatalogSnapshot => ({ enums: {}, runtimeIds: [], thin
  * Creates the one catalog seam this provider wires up: `index.ts` builds it and
  * hands it to the refresh hook and every request path.
  */
-export function createCatalogStore(): CatalogStore {
+export function createModelCatalog(): ModelCatalog {
   let generation: CatalogGeneration = { snapshot: EMPTY_SNAPSHOT(), version: 0 };
+
+  const record = (catalog: AvailableModelsCatalog) => {
+    generation = {
+      snapshot: snapshotFromCatalog(catalog),
+      items: catalog,
+      version: generation.version + 1,
+    };
+  };
+
+  const restore = (snapshot: CatalogSnapshot) => {
+    if (generation.version > 0) return;
+    generation = { snapshot: copySnapshot(snapshot), version: 0 };
+  };
+
+  const refresh = async (context: RefreshContext): Promise<Array<Model<any>>> => {
+    const persisted = fromPersistedSnapshot(context.stored?.[PRIVATE_SNAPSHOT_KEY]);
+    if (persisted) restore(persisted);
+
+    const storedModels = () => [...(context.stored?.models ?? [])];
+    if (!context.allowNetwork) return storedModels();
+
+    try {
+      const credential = context.credential;
+      const apiKey = credential?.type === "oauth" ? credential.access : undefined;
+      if (!apiKey) return storedModels();
+
+      const { token, projectId } = parseStoredCredentials(apiKey);
+      const catalog = await fetchAvailableModelsCatalog(token, projectId, context.signal);
+      record(catalog);
+
+      const dynamicModels = buildDynamicPublicModels(catalog);
+
+      if (context.publish) {
+        await context.publish({
+          persist: {
+            models: dynamicModels,
+            checkedAt: Date.now(),
+            [PRIVATE_SNAPSHOT_KEY]: toPersistedSnapshot(generation.snapshot),
+          },
+        });
+      }
+
+      return dynamicModels;
+    } catch {
+      return storedModels();
+    }
+  };
+
+  const refreshGen = async (doRefresh: () => unknown): Promise<CatalogRefreshOutcome> => {
+    const versionBefore = generation.version;
+    await doRefresh();
+    const { items, version } = generation;
+    if (!items) return { status: "failed" };
+    return { status: version === versionBefore ? "stale" : "fresh", catalog: items };
+  };
+
   return {
     generation: () => ({ ...generation, snapshot: copySnapshot(generation.snapshot) }),
-    record: (catalog) => {
-      generation = {
-        snapshot: snapshotFromCatalog(catalog),
-        items: catalog,
-        version: generation.version + 1,
-      };
-    },
-    // Version 0 means no fetch has landed in this process, so nothing here can
-    // be fresher than the persist: an older file must never replace a recorded
-    // generation (the refresh path calls this on every start, including after
-    // a successful fetch in the same process).
-    restore: (snapshot) => {
-      if (generation.version > 0) return;
-      generation = { snapshot: copySnapshot(snapshot), version: 0 };
-    },
+    record,
+    restore,
+    refresh,
+    refreshGeneration: refreshGen,
+    resolvePlan: (publicModelId, effort) => resolveModelPlan(publicModelId, effort, generation.snapshot),
+    formatList: () => (generation.items ? formatModelsList(generation.items) : "No models available."),
   };
+}
+
+export const createCatalogStore = createModelCatalog;
+
+export async function refreshCatalog(context: RefreshContext, store: ModelCatalog): Promise<Array<Model<any>>> {
+  return store.refresh(context);
+}
+
+export async function refreshCatalogGeneration(
+  store: ModelCatalog,
+  doRefresh: () => unknown,
+): Promise<CatalogRefreshOutcome> {
+  return store.refreshGeneration(doRefresh);
+}
+
+export function parseAvailableModels(data: any): AvailableModelsCatalog {
+  const models: AvailableModelItem[] = [];
+  const modelEnums: Record<string, string> = {};
+
+  const modelsObj = data.models || {};
+  for (const [id, info] of Object.entries<any>(modelsObj)) {
+    if (id.startsWith("tab_") || id.startsWith("chat_")) continue; // hide internal completions
+
+    const modelEnum = typeof info.model === "string" ? info.model : undefined;
+    if (modelEnum) {
+      modelEnums[id] = modelEnum;
+    }
+
+    const quotaInfo = info.quotaInfo || {};
+    models.push({
+      id,
+      displayName: info.displayName || info.label || id,
+      modelEnum,
+      remainingFraction: quotaInfo.remainingFraction,
+      resetTime: quotaInfo.resetTime,
+      supportsThinking: Boolean(info.supportsThinking),
+      thinkingBudget: typeof info.thinkingBudget === "number" ? info.thinkingBudget : undefined,
+      minThinkingBudget: typeof info.minThinkingBudget === "number" ? info.minThinkingBudget : undefined,
+      supportsImages: Boolean(info.supportsImages),
+      maxTokens: typeof info.maxTokens === "number" ? info.maxTokens : undefined,
+      maxOutputTokens: typeof info.maxOutputTokens === "number" ? info.maxOutputTokens : undefined,
+    });
+  }
+
+  const agentModelSorts: string[] = [];
+  if (Array.isArray(data.agentModelSorts)) {
+    for (const sortGroup of data.agentModelSorts) {
+      if (Array.isArray(sortGroup.groups)) {
+        for (const group of sortGroup.groups) {
+          if (Array.isArray(group.modelIds)) {
+            agentModelSorts.push(...group.modelIds);
+          }
+        }
+      }
+    }
+  }
+
+  models.sort((a, b) => a.id.localeCompare(b.id));
+
+  // Server-directed renames (old Runtime Model ID → current one).
+  const deprecated: Record<string, string> = {};
+  const rawDeprecated = (data as any).deprecatedModelIds;
+  if (rawDeprecated && typeof rawDeprecated === "object") {
+    for (const [oldId, info] of Object.entries<any>(rawDeprecated)) {
+      if (info && typeof info.newModelId === "string") {
+        deprecated[oldId] = info.newModelId;
+      }
+    }
+  }
+
+  return {
+    models,
+    modelEnums,
+    ...(agentModelSorts.length > 0 ? { agentModelSorts } : {}),
+    ...(Object.keys(deprecated).length > 0 ? { deprecated } : {}),
+  };
+}
+
+export async function fetchAvailableModelsCatalog(
+  token: string,
+  projectId: string,
+  signal?: AbortSignal
+): Promise<AvailableModelsCatalog> {
+  const res = await postAntigravity({
+    token,
+    path: "v1internal:fetchAvailableModels",
+    body: { project: projectId },
+    signal,
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Failed to fetch models (${res.status}): ${errText}`);
+  }
+  const json = await res.json();
+  return parseAvailableModels(json);
 }
 
 // Catalog Persistence codec: the private entry this provider keeps inside its
