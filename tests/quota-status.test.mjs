@@ -19,7 +19,26 @@ import {
   paintQuotaStatus,
 } from "../src/quota-status.ts";
 
-const quotaJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.1.26/quota.resp.json", "utf-8"));
+const quotaJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.2.0/quota.resp.json", "utf-8"));
+
+// The capture rotates with every agy release: derive its percentages instead of
+// hardcoding them, so these tests pin the formatting/routing logic, not one capture.
+const fixturePct = (group, bucketId) => {
+  const buckets = quotaJson.groups.find((g) => g.displayName === group).buckets;
+  return Math.round(buckets.find((b) => b.bucketId === bucketId).remainingFraction * 100);
+};
+const gemini5hPct = fixturePct("Gemini Models", "gemini-5h");
+const thirdParty5hPct = fixturePct("Claude and GPT models", "3p-5h");
+const fixtureFraction = (group, bucketId) => {
+  const buckets = quotaJson.groups.find((g) => g.displayName === group).buckets;
+  return buckets.find((b) => b.bucketId === bucketId).remainingFraction;
+};
+const geminiObservation = {
+  "5h": fixtureFraction("Gemini Models", "gemini-5h"),
+  weekly: fixtureFraction("Gemini Models", "gemini-weekly"),
+};
+const pctRe = (pct) => new RegExp(`${pct}(?:\\.\\d)?%`);
+const fiveHourRe = (pct) => new RegExp(`^5h ${pct}(?:\\.\\d)?%`);
 
 // In-memory adapter behind the coordinator seam: no files, no network setup.
 // Shared backing lets two coordinators act as two processes on one file.
@@ -62,13 +81,13 @@ test("parseQuotaSummary parses 5h and weekly buckets for Gemini and Claude", () 
 
   const gemini5h = geminiGroup.buckets.find((b) => b.window === "5h");
   assert.ok(gemini5h);
-  assert.equal(Math.round(gemini5h.remainingFraction * 100), 22);
+  assert.equal(Math.round(gemini5h.remainingFraction * 100), gemini5hPct);
 
   const claudeGroup = summary.groups.find((g) => g.displayName === "Claude and GPT models");
   assert.ok(claudeGroup);
   const claude5h = claudeGroup.buckets.find((b) => b.window === "5h");
   assert.ok(claude5h);
-  assert.equal(Math.round(claude5h.remainingFraction * 100), 84);
+  assert.equal(Math.round(claude5h.remainingFraction * 100), thirdParty5hPct);
 });
 
 test("formatQuotaSummary renders clear progress bar text", () => {
@@ -78,8 +97,8 @@ test("formatQuotaSummary renders clear progress bar text", () => {
   assert.match(output, /Gemini Models/);
   assert.match(output, /Claude and GPT models/);
   assert.match(output, /\[.*\]/); // progress bar
-  assert.match(output, /22(\.2)?%/);
-  assert.match(output, /84%/);
+  assert.match(output, pctRe(gemini5hPct));
+  assert.match(output, pctRe(thirdParty5hPct));
 });
 
 test("formatQuotaSummary renders pretty grouped gauge view", () => {
@@ -141,13 +160,13 @@ test("Footer both: 5h first, each part stands alone", () => {
 test("Footer: gemini model shows Gemini pool bottleneck", () => {
   const summary = parseQuotaSummary(quotaJson);
   const footer = buildQuotaFooter(summary, "antigravity/gemini-3-flash");
-  assert.match(footer, /^5h 22%/);
+  assert.match(footer, fiveHourRe(gemini5hPct));
 });
 
 test("Footer: claude model shows 3p pool bottleneck", () => {
   const summary = parseQuotaSummary(quotaJson);
   const footer = buildQuotaFooter(summary, "antigravity/claude-sonnet-4-6");
-  assert.match(footer, /^5h 84%/);
+  assert.match(footer, fiveHourRe(thirdParty5hPct));
 });
 
 test("Footer: no model defaults to the Gemini pool", () => {
@@ -272,7 +291,7 @@ test("Coordinator: refresh paints footer and throttles refetch", async () => {
     paintQuotaStatus(coord, ctx);
 
     assert.equal(counter.calls, 1);
-    assert.match(coord.footerFor(ctx.model.id), /^5h 22%/);
+    assert.match(coord.footerFor(ctx.model.id), fiveHourRe(gemini5hPct));
     assert.deepEqual(statuses.at(-1), [QUOTA_STATUS_KEY, colorizeQuotaFooter(coord.footerFor(ctx.model.id))]);
 
     // Fresh: second refresh is a no-op without network.
@@ -462,7 +481,7 @@ test("Coordinator: fetch failure keeps stale footer", async () => {
     const ctx = makeCtx([]);
     await coord.refresh(ctx);
     const stale = coord.footerFor(ctx.model.id);
-    assert.match(stale, /^5h 22%/);
+    assert.match(stale, fiveHourRe(gemini5hPct));
 
     globalThis.fetch = stubQuotaFetch(new Error("boom"), counter);
     assert.equal(await coord.refresh(ctx, { force: true }), undefined);
@@ -480,7 +499,7 @@ test("Coordinator: first fetch persists its observation", async () => {
     const coord = new QuotaStatusCoordinator(store);
     await coord.refresh(makeCtx([]));
     assert.equal(backing.state.weeklyTo5hRatio, DEFAULT_WEEKLY_TO_5H_RATIO);
-    assert.deepEqual(backing.state.previousObservation["gemini"], { "5h": 0.2216828, weekly: 0.87028044 });
+    assert.deepEqual(backing.state.previousObservation["gemini"], geminiObservation);
     assert.equal(typeof backing.state.updatedAt, "number");
   } finally {
     globalThis.fetch = realFetch;
@@ -528,7 +547,8 @@ test("Coordinator: stale persisted pairs are ignored", async () => {
     assert.equal(coord.ratio, 9); // ratio itself survives
     await coord.refresh(makeCtx([]), { force: true });
     assert.equal(coord.ratio, 9); // stale baseline calibrates nothing
-    assert.ok(backing.state.previousObservation["gemini"]["5h"] < 0.9); // rebaselined
+    // Rebaselined to the fresh capture, not the 6-hour-old synthetic baseline.
+    assert.equal(backing.state.previousObservation["gemini"]["5h"], geminiObservation["5h"]);
   } finally {
     globalThis.fetch = realFetch;
   }
@@ -571,7 +591,7 @@ test("Coordinator: refreshAndPaint paints, refreshes when stale, repaints", asyn
       [QUOTA_STATUS_KEY, undefined],
       [QUOTA_STATUS_KEY, colorizeQuotaFooter(coord.footerFor(ctx.model.id))],
     ]);
-    assert.match(statuses[1][1], /5h 22%/);
+    assert.match(statuses[1][1], pctRe(gemini5hPct));
     assert.equal(counter.calls, 1);
 
     // Fresh cache: still paints twice, fetches zero times.

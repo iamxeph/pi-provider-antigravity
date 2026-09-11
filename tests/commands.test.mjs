@@ -9,8 +9,13 @@ import initExtension from "../src/index.ts";
 import { QuotaStatusCoordinator } from "../src/quota-status.ts";
 import { fileQuotaStatusStore } from "../src/settings.ts";
 
-const quotaJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.1.26/quota.resp.json", "utf-8"));
-const modelsJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.1.26/models.resp.json", "utf-8"));
+const quotaJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.2.0/quota.resp.json", "utf-8"));
+// Fixture-derived: the capture rotates every agy release, the command plumbing does not.
+const gemini5hBucket = quotaJson.groups
+  .find((g) => g.displayName === "Gemini Models")
+  .buckets.find((b) => b.bucketId === "gemini-5h");
+const gemini5h = String(Math.round(gemini5hBucket.remainingFraction * 100));
+const modelsJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.2.0/models.resp.json", "utf-8"));
 
 function stubFetchRouter() {
   return async (url) => {
@@ -204,7 +209,7 @@ test("Subcommand: settings picks mode in a dialog and applies it", async () => {
       assert.deepEqual(seen, [["Quota footer (current: off)", ["off", "smart", "all"]]]);
       const all = outputs.join("\n");
       assert.match(all, /Quota footer set to smart\./);
-      assert.match(all, /\[pi-provider-antigravity-footer-usage\].*5h 22%/);
+      assert.match(all, new RegExp(`\\[pi-provider-antigravity-footer-usage\\].*5h ${gemini5h}`));
       const saved = JSON.parse(fs.readFileSync(file, "utf-8"));
       assert.equal(saved.settings.quotaFooter, "smart");
       assert.equal(saved.states.quota.weeklyTo5hRatio, 4); // state preserved
@@ -325,9 +330,9 @@ test("Subcommand: usage feeds the shared cache and footer", async () => {
       await runAntigravitySubcommand("usage", makeCtx(outputs), coord);
       const all = outputs.join("\n");
       assert.match(all, /Gemini Models/); // full quota text still printed
-      assert.match(all, /\[pi-provider-antigravity-footer-usage\].*5h 22%/); // footer repainted from the same fetch
+      assert.match(all, new RegExp(`\\[pi-provider-antigravity-footer-usage\\].*5h ${gemini5h}`)); // footer repainted from the same fetch
       const saved = JSON.parse(fs.readFileSync(file, "utf-8"));
-      assert.equal(saved.states.quota.previousObservation["gemini"]["5h"], 0.2216828);
+      assert.equal(saved.states.quota.previousObservation["gemini"]["5h"], gemini5hBucket.remainingFraction);
     } finally {
       globalThis.fetch = realFetch;
     }
