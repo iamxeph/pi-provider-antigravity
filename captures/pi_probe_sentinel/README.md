@@ -25,6 +25,19 @@ model that does not include thought signatures"). C/D show the divergence is
 Gemini-specific: the Claude wire neither needs nor benefits from it, so the builder leaves
 Claude/GPT requests alone (`docs/adr/0007-sentinel-divergence-for-foreign-calls.md`).
 
+**The gpt half is measured too (probe E/F, 2026-09-11).** Same body on
+`gpt-oss-120b-medium`, with the current CLI User-Agent:
+
+| Fixture | Request body | Response |
+|---|---|---|
+| `stream_probeE_gpt_unsigned.req.json` | foreign unsigned `functionCall` on the gpt wire | `stream_probeE_gpt_unsigned.resp.sse` — **200**, no signature demanded |
+| `stream_probeF_gpt_sentinel.req.json` | byte-identical body + the sentinel | `stream_probeF_gpt_sentinel.resp.sse` — **200**: tolerated, buys nothing |
+
+This matches what agy itself does on that wire: the 1.2.0 capture (`captures/agy_cli_1.2.0
+stream_turn12 → stream_turn13`) replays a gpt turn as plain text with no thought part and
+no signature, so there is never a signature for the sentinel to stand in for. The builder's
+non-Gemini path is therefore correct for gpt by measurement, not by extrapolation.
+
 ## Re-running
 
 1. Start the runbook proxy (`../README.md` §1), record the PID, keep port 18080.
