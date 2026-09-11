@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { applySettingValue, buildSettingsItems, defaultConfigFile, loadProviderConfig, normalizeFooterMode, previewQuotaFooterText, resolveFooterMode, SETTINGS_FIELDS } from "../src/settings.ts";
 import { runAntigravitySubcommand } from "../src/commands.ts";
-import { QuotaStatusCoordinator } from "../src/quota-status.ts";
+import { FOOTER_MODES, QuotaStatusCoordinator } from "../src/quota-status.ts";
 import { createCatalogStore } from "../src/model-catalog.ts";
 import { fileQuotaStatusStore } from "../src/settings.ts";
 
@@ -68,6 +68,17 @@ test("Footer mode: settings.quotaFooter or off", () => {
   assert.equal(resolveFooterMode({ settings: { quotaFooter: "everything" } }), "off");
   assert.equal(resolveFooterMode({ settings: {} }), "off");
   assert.equal(normalizeFooterMode(42), undefined);
+});
+
+test("Footer mode table: SETTINGS_FIELDS derives options and notes from FOOTER_MODES", () => {
+  const quotaField = SETTINGS_FIELDS.find((f) => f.key === "quotaFooter");
+  assert.ok(quotaField);
+  assert.deepEqual(quotaField.options, Object.keys(FOOTER_MODES));
+  for (const [key, def] of Object.entries(FOOTER_MODES)) {
+    if (def.note) {
+      assert.equal(quotaField.optionNotes?.[key], def.note);
+    }
+  }
 });
 
 test("File config: default path mirrors Pi, garbage is unconfigured", () => {

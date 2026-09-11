@@ -5,12 +5,16 @@ import type { ExtensionCommandContext, Theme } from "@earendil-works/pi-coding-a
 import { SettingsList, type SettingItem, type SettingsListTheme } from "@earendil-works/pi-tui";
 import {
   ANSI_FG_RESET,
-  colorizeQuotaFooter,
-  colorizeQuotaFooterBoth,
+  FOOTER_MODE_NOTES,
+  FOOTER_MODE_OPTIONS,
+  normalizeFooterMode,
   paintQuotaStatus,
+  type QuotaFooterMode,
   type QuotaStatusCoordinator,
   type QuotaStatusStore,
 } from "./quota-status.ts";
+
+export { type QuotaFooterMode, normalizeFooterMode };
 
 export const PROVIDER_CONFIG_FILE = "pi-provider-antigravity.json";
 
@@ -20,8 +24,6 @@ export interface ProviderFileConfig {
   // entries pass through untouched.
   states?: { [name: string]: { [key: string]: unknown } | undefined };
 }
-
-export type QuotaFooterMode = "off" | "smart" | "all";
 
 // Single opt-in file next to Pi's settings.json (NOT settings.json itself —
 // Pi manages that file and may drop unknown keys). Pi resolves its dir via
@@ -57,11 +59,6 @@ export function saveProviderConfig(file: string, data: ProviderFileConfig): bool
   } catch {
     return false;
   }
-}
-
-export function normalizeFooterMode(value: unknown): QuotaFooterMode | undefined {
-  const v = typeof value === "string" ? value.trim().toLowerCase() : "";
-  return v === "off" || v === "smart" || v === "all" ? v : undefined;
 }
 
 export function resolveFooterMode(config?: ProviderFileConfig): QuotaFooterMode {
@@ -125,13 +122,9 @@ export const SETTINGS_FIELDS: readonly SettingsFieldDef[] = Object.freeze([
     key: "quotaFooter",
     label: "Quota footer",
     description: "Show remaining quota in the footer",
-    options: ["off", "smart", "all"],
+    options: FOOTER_MODE_OPTIONS,
     defaultValue: "off",
-    optionNotes: {
-      smart:
-        "Picks whichever window runs out first (5h or weekly), weighting the weekly pool by a ratio learned from your usage",
-      all: "Lists every window of the pool backing the current model (5h or weekly)",
-    },
+    optionNotes: FOOTER_MODE_NOTES,
     onChange: async (ctx, quotaStatus) => {
       if (!quotaStatus) return;
       // An explicit pick is an explicit look: the mode/model gates would
@@ -182,10 +175,11 @@ export function previewQuotaFooterText(
   modelId: string | undefined,
   mode: string,
 ): string | undefined {
-  if (!coord || mode === "off") return undefined;
-  const plain = coord.footerFor(modelId, mode === "all" ? "all" : "smart");
-  if (!plain) return undefined;
-  const colored = mode === "all" ? colorizeQuotaFooterBoth(plain) : colorizeQuotaFooter(plain);
+  if (!coord) return undefined;
+  const normalized = normalizeFooterMode(mode);
+  if (!normalized || normalized === "off") return undefined;
+  const { colored } = coord.renderFooter(modelId, normalized);
+  if (!colored) return undefined;
   return ANSI_FG_RESET + colored;
 }
 
