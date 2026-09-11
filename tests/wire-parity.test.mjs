@@ -3,10 +3,10 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import { DEFAULT_USER_AGENT } from "../src/protocol.ts";
-import { parseAvailableModels } from "../src/catalog-refresh.ts";
 import {
   resolveModelPlan,
   buildThinkingMap,
+  parseAvailableModels,
 } from "../src/model-catalog.ts";
 import { buildAntigravityRequestBody, SKIP_THOUGHT_SIGNATURE_VALIDATOR } from "../src/builder.ts";
 import { createSseFeed } from "../src/parser.ts";

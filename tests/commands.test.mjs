@@ -9,8 +9,7 @@ import {
   buildUsageText,
   completeSubcommands,
 } from "../src/commands.ts";
-import { refreshCatalog } from "../src/catalog-refresh.ts";
-import { createCatalogStore } from "../src/model-catalog.ts";
+import { createCatalogStore, refreshCatalog } from "../src/model-catalog.ts";
 import initExtension from "../src/index.ts";
 import { QuotaStatusCoordinator } from "../src/quota-status.ts";
 import { fileQuotaStatusStore } from "../src/settings.ts";

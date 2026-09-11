@@ -12,13 +12,13 @@ import { parseStoredCredentials } from "./auth.ts";
 import { createSseFeed, type SseFeedOutput } from "./parser.ts";
 import { buildAntigravityRequestBody } from "./builder.ts";
 import { postAntigravity } from "./protocol.ts";
-import { resolveModelPlan, type CatalogStore } from "./model-catalog.ts";
+import { type ModelCatalog } from "./model-catalog.ts";
 
 export function streamAntigravity(
   model: Model<any>,
   context: Context,
   options: SimpleStreamOptions | undefined,
-  store: CatalogStore
+  catalog: ModelCatalog
 ): AssistantMessageEventStream {
   const stream = createAssistantMessageEventStream();
 
@@ -58,8 +58,7 @@ export function streamAntigravity(
         options && "trajectoryId" in options && typeof options.trajectoryId === "string"
           ? options.trajectoryId
           : undefined;
-      const snapshot = store.generation().snapshot;
-      const plan = resolveModelPlan(model.id, effort, snapshot);
+      const plan = catalog.resolvePlan(model.id, effort);
 
       const requestBody = buildAntigravityRequestBody({
         projectId,

@@ -1,8 +1,7 @@
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { loginAntigravity, refreshAntigravityToken, getApiKey } from "./auth.ts";
 import { DEFAULT_ENDPOINT, PROVIDER_ID } from "./protocol.ts";
-import { refreshCatalog } from "./catalog-refresh.ts";
-import { createCatalogStore } from "./model-catalog.ts";
+import { createModelCatalog } from "./model-catalog.ts";
 import { QuotaStatusCoordinator } from "./quota-status.ts";
 import { fileQuotaStatusStore } from "./settings.ts";
 import { streamAntigravity } from "./stream.ts";
@@ -13,9 +12,9 @@ export const PROVIDER_NAME = "Antigravity";
 
 export default function (pi: ExtensionAPI): void {
   const quotaStatus = new QuotaStatusCoordinator(fileQuotaStatusStore());
-  // The one catalog seam for this extension: the refresh hook records into it,
-  // and every request path reads its current Catalog Generation.
-  const catalog = createCatalogStore();
+  // The one deep Model Catalog seam for this extension: handles Pi refreshModels,
+  // Model Plan resolution for streaming, and CLI formatting for subcommands.
+  const catalog = createModelCatalog();
 
   pi.registerProvider(PROVIDER_ID, {
     name: PROVIDER_NAME,
@@ -29,7 +28,7 @@ export default function (pi: ExtensionAPI): void {
       getApiKey,
     },
     streamSimple: (model, context, options) => streamAntigravity(model, context, options, catalog),
-    refreshModels: async (context) => refreshCatalog(context, catalog),
+    refreshModels: async (context) => catalog.refresh(context),
   });
 
   pi.registerCommand("antigravity", {

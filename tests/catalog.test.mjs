@@ -2,20 +2,22 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import {
-  parseAvailableModels,
-} from "../src/catalog-refresh.ts";
-import {
   ALL_TIER_SUFFIXES,
   buildDynamicPublicModels,
   buildThinkingMap,
   CANONICAL_TIER_SUFFIXES,
   classifyModelFamily,
+  createCatalogStore,
+  createModelCatalog,
   estimateModelCost,
   extractBaseModelId,
   formatModelDisplayName,
   formatModelsList,
   fromPersistedSnapshot,
   isCompatibleFamily,
+  parseAvailableModels,
+  refreshCatalog,
+  refreshCatalogGeneration,
   resolveModelPlan,
   SPECIAL_TIER_SUFFIXES,
   synthesizeDynamicModel,
@@ -23,6 +25,7 @@ import {
   TIER_FALLBACKS,
   tierCandidateOrder,
   tierSpellings,
+  toPersistedSnapshot,
 } from "../src/model-catalog.ts";
 import { buildAntigravityRequestBody } from "../src/builder.ts";
 
@@ -468,4 +471,293 @@ test("Seam 3: unlisted 3.5 tiers fail fast instead of guessing", () => {
   // were never listed (3.5 sits outside Recommended sorts) → throw, don't guess.
   assert.equal(resolveModelPlan("gemini-3.5-flash", "low", snapshot).runtimeModelId, "gemini-3.5-flash-low");
   assert.throws(() => resolveModelPlan("gemini-3.5-flash", "medium", snapshot), /Unknown model/);
+});
+
+// --- Consolidated Model Catalog Deep Module Tests ---
+
+test("ModelCatalog deep interface: resolvePlan and formatList against current generation", () => {
+  const catalog = createModelCatalog();
+  catalog.record(parseAvailableModels(modelsJson));
+
+  const plan = catalog.resolvePlan("gemini-3.8-flash", "low");
+  assert.equal(plan.runtimeModelId, "gemini-3.8-flash-low");
+  assert.ok(plan.modelEnum);
+  assert.equal(plan.thinkingConfig.includeThoughts, true);
+
+  const formatted = catalog.formatList();
+  assert.ok(formatted.includes("Available Antigravity Models"));
+  assert.ok(formatted.includes("gemini-3.8-flash"));
+});
+
+test("Catalog freshness seam: failed when nothing is retained", async () => {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({ ok: false, status: 500, text: async () => "boom" });
+  try {
+    const catalog = createModelCatalog();
+    const { status, catalog: items } = await catalog.refreshGeneration(() =>
+      catalog.refresh({
+        allowNetwork: true,
+        credential: { type: "oauth", access: JSON.stringify({ token: "t", projectId: "p" }) },
+        stored: {},
+      }),
+    );
+    assert.equal(status, "failed");
+    assert.equal(items, undefined);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Catalog freshness seam: fresh lands a new generation", async () => {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({ ok: true, json: async () => modelsJson });
+  try {
+    const catalog = createModelCatalog();
+    const { status, catalog: items } = await catalog.refreshGeneration(() =>
+      catalog.refresh({
+        allowNetwork: true,
+        credential: { type: "oauth", access: JSON.stringify({ token: "t", projectId: "p" }) },
+        stored: {},
+      }),
+    );
+    assert.equal(status, "fresh");
+    assert.ok(items && items.models.length > 0);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Catalog freshness seam: stale keeps the retained generation", async () => {
+  const realFetch = globalThis.fetch;
+  const catalog = createModelCatalog();
+  const doRefresh = () =>
+    catalog.refresh({
+      allowNetwork: true,
+      credential: { type: "oauth", access: JSON.stringify({ token: "t", projectId: "p" }) },
+      stored: {},
+    });
+  try {
+    globalThis.fetch = async () => ({ ok: true, json: async () => modelsJson });
+    await catalog.refreshGeneration(doRefresh);
+
+    globalThis.fetch = async () => ({ ok: false, status: 500, text: async () => "boom" });
+    const { status, catalog: items } = await catalog.refreshGeneration(doRefresh);
+    assert.equal(status, "stale");
+    assert.ok(items && items.models.length > 0);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+const storedModels = [{ id: "gemini-3.8-flash", name: "Cached" }];
+
+test("Catalog refresh: offline returns stored models without fetching", async () => {
+  let fetched = false;
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => {
+    fetched = true;
+    throw new Error("must not fetch offline");
+  };
+  try {
+    const catalog = createModelCatalog();
+    const models = await catalog.refresh({ allowNetwork: false, stored: { models: storedModels } });
+    assert.deepEqual(models, storedModels);
+    assert.equal(fetched, false);
+    assert.deepEqual(catalog.generation().snapshot.enums, {});
+    assert.equal(catalog.generation().version, 0);
+    assert.equal(catalog.generation().items, undefined);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Catalog refresh: missing credential falls back to stored models", async () => {
+  const catalog = createModelCatalog();
+  const models = await catalog.refresh({
+    allowNetwork: true,
+    credential: {},
+    stored: { models: storedModels },
+  });
+  assert.deepEqual(models, storedModels);
+  assert.equal(catalog.generation().version, 0);
+});
+
+test("Catalog refresh: stored enums and runtime IDs restore active state", async () => {
+  const catalog = createModelCatalog();
+  const models = await catalog.refresh({
+    allowNetwork: false,
+    stored: {
+      models: storedModels,
+      "pi-provider-antigravity": {
+        modelEnums: { "x-high": "ENUM_X" },
+        runtimeIds: ["x-high"],
+        thinking: { "x-high": { budget: 4000, supportsThinking: true } },
+        deprecated: { "old-high": "x-high" },
+      },
+    },
+  });
+  assert.deepEqual(models, storedModels);
+  const { snapshot, version, items } = catalog.generation();
+  assert.deepEqual(snapshot.enums, { "x-high": "ENUM_X" });
+  assert.deepEqual(snapshot.runtimeIds, ["x-high"]);
+  assert.deepEqual(snapshot.thinking["x-high"], { budget: 4000, supportsThinking: true });
+  assert.deepEqual(snapshot.deprecated, { "old-high": "x-high" });
+  assert.equal(version, 0);
+  assert.equal(items, undefined);
+});
+
+test("Catalog refresh: fresh fetch builds dynamic models and publishes", async () => {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({ ok: true, json: async () => modelsJson });
+  try {
+    const published = [];
+    const catalog = createModelCatalog();
+    const models = await catalog.refresh({
+      allowNetwork: true,
+      credential: { type: "oauth", access: JSON.stringify({ token: "t", projectId: "p" }) },
+      stored: {},
+      publish: async (arg) => {
+        published.push(arg);
+      },
+    });
+
+    const expected = parseAvailableModels(modelsJson);
+    assert.ok(models.length > 0, "fixture catalog must yield public models");
+    assert.ok(models.every((m) => m.provider === "antigravity"));
+    const { snapshot, items, version } = catalog.generation();
+    assert.ok(snapshot.runtimeIds.length > 0, "active runtime IDs must populate");
+    assert.equal(version, 1, "one recorded refresh is one generation");
+    assert.ok(items && items.models.length > 0, "record must retain the full catalog");
+    assert.deepEqual(items.modelEnums, expected.modelEnums);
+
+    assert.equal(published.length, 1);
+    const persist = published[0].persist;
+    assert.deepEqual(persist.models, models);
+    assert.equal(typeof persist.checkedAt, "number");
+    assert.deepEqual(persist["pi-provider-antigravity"], toPersistedSnapshot(snapshot));
+    assert.deepEqual(persist["pi-provider-antigravity"].modelEnums, expected.modelEnums);
+    assert.equal(persist["pi-provider-antigravity"].thinking["gemini-3.7-flash-medium"].budget, 4000);
+    assert.deepEqual(persist["pi-provider-antigravity"].deprecated, expected.deprecated);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Catalog refresh: fetch failure falls back to stored models", async () => {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({ ok: false, status: 500, text: async () => "boom" });
+  try {
+    const catalog = createModelCatalog();
+    const models = await catalog.refresh({
+      allowNetwork: true,
+      credential: { type: "oauth", access: JSON.stringify({ token: "t", projectId: "p" }) },
+      stored: { models: storedModels },
+    });
+    assert.deepEqual(models, storedModels);
+    assert.equal(catalog.generation().version, 0);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Catalog refresh: sequential refreshes evict stale enums", async () => {
+  const realFetch = globalThis.fetch;
+  const staleJson = {
+    ...modelsJson,
+    models: {
+      ...modelsJson.models,
+      "stale-model-high": { model: "MODEL_STALE", displayName: "Stale" },
+    },
+  };
+  const credential = { type: "oauth", access: JSON.stringify({ token: "t", projectId: "p" }) };
+  try {
+    const catalog = createModelCatalog();
+    globalThis.fetch = async () => ({ ok: true, json: async () => staleJson });
+    await catalog.refresh({ allowNetwork: true, credential, stored: {} });
+    assert.equal(catalog.generation().snapshot.enums["stale-model-high"], "MODEL_STALE");
+
+    globalThis.fetch = async () => ({ ok: true, json: async () => modelsJson });
+    await catalog.refresh({ allowNetwork: true, credential, stored: {} });
+    const { snapshot, version } = catalog.generation();
+    assert.ok(!("stale-model-high" in snapshot.enums), "stale enum must be evicted by the fresh generation");
+    assert.ok(snapshot.runtimeIds.length > 0);
+    assert.equal(version, 2);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Catalog refresh: persisted state never clobbers a fresher snapshot", async () => {
+  const realFetch = globalThis.fetch;
+  const credential = { type: "oauth", access: JSON.stringify({ token: "t", projectId: "p" }) };
+  try {
+    const catalog = createModelCatalog();
+    globalThis.fetch = async () => ({ ok: true, json: async () => modelsJson });
+    await catalog.refresh({ allowNetwork: true, credential, stored: {} });
+    assert.equal(catalog.generation().version, 1);
+
+    await catalog.refresh({
+      allowNetwork: false,
+      stored: {
+        models: storedModels,
+        "pi-provider-antigravity": {
+          modelEnums: { "stale-model-high": "MODEL_STALE" },
+          runtimeIds: ["stale-model-high"],
+        },
+      },
+    });
+    const { snapshot, version } = catalog.generation();
+    assert.ok(!("stale-model-high" in snapshot.enums), "older persisted data must not clobber the snapshot");
+    assert.ok(snapshot.runtimeIds.length > 0, "fresher runtime IDs must survive");
+    assert.equal(version, 1, "a restore must not bump the fetch counter");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Catalog refresh: server-removed models evict uniformly, no pinned fallbacks", async () => {
+  const realFetch = globalThis.fetch;
+  const prunedJson = {
+    ...modelsJson,
+    models: { ...modelsJson.models },
+  };
+  delete prunedJson.models["gemini-3.6-flash-high"];
+  const credential = { type: "oauth", access: JSON.stringify({ token: "t", projectId: "p" }) };
+  try {
+    const catalog = createModelCatalog();
+    globalThis.fetch = async () => ({ ok: true, json: async () => modelsJson });
+    await catalog.refresh({ allowNetwork: true, credential, stored: {} });
+    assert.ok("gemini-3.6-flash-high" in catalog.generation().snapshot.enums);
+
+    globalThis.fetch = async () => ({ ok: true, json: async () => prunedJson });
+    await catalog.refresh({ allowNetwork: true, credential, stored: {} });
+    const { snapshot } = catalog.generation();
+    assert.ok(!("gemini-3.6-flash-high" in snapshot.enums), "retired IDs must evict like any other");
+    assert.ok(!snapshot.runtimeIds.includes("gemini-3.6-flash-high"));
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Catalog Persistence codec: the file spelling round-trips, garbage restores as absent", () => {
+  const snapshot = {
+    enums: { "gemini-3.8-flash-high": "MODEL_PLACEHOLDER_M18" },
+    runtimeIds: ["gemini-3.8-flash-high"],
+    thinking: { "gemini-3.8-flash-high": { budget: 4000, supportsThinking: true } },
+    deprecated: { "gemini-3.1-pro-high": "gemini-pro-agent" },
+  };
+  const persisted = toPersistedSnapshot(snapshot);
+  assert.deepEqual(Object.keys(persisted).sort(), ["deprecated", "modelEnums", "runtimeIds", "thinking"]);
+  assert.deepEqual(fromPersistedSnapshot(persisted), snapshot);
+
+  assert.equal(fromPersistedSnapshot(undefined), undefined);
+  assert.equal(fromPersistedSnapshot("nope"), undefined);
+  assert.equal(fromPersistedSnapshot({}), undefined);
+  assert.equal(fromPersistedSnapshot({ modelEnums: 42 }), undefined);
+  assert.deepEqual(fromPersistedSnapshot({ modelEnums: { a: 1 }, runtimeIds: ["x", 2] }), {
+    enums: {},
+    runtimeIds: ["x"],
+    thinking: {},
+    deprecated: {},
+  });
 });

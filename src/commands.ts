@@ -6,15 +6,14 @@ import {
   paintQuotaStatus,
   type QuotaStatusCoordinator,
 } from "./quota-status.ts";
-import { formatModelsList, type CatalogStore } from "./model-catalog.ts";
-import { refreshCatalogGeneration } from "./catalog-refresh.ts";
+import type { ModelCatalog } from "./model-catalog.ts";
 
 import { emitOutput, openSettings } from "./settings.ts";
 
 export interface SubcommandContext {
   ctx: ExtensionCommandContext;
   quotaStatus?: QuotaStatusCoordinator;
-  store: CatalogStore;
+  catalog: ModelCatalog;
 }
 
 export interface SubcommandDef {
@@ -40,12 +39,12 @@ export const SUBCOMMANDS: readonly SubcommandDef[] = Object.freeze([
     name: "models",
     description: "List recommended models with context window and remaining quota",
     aliases: Object.freeze(["model"]),
-    run: async ({ ctx, store }) => runModelsSubcommand(ctx, store),
+    run: async ({ ctx, catalog }) => runModelsSubcommand(ctx, catalog),
   },
   {
     name: "refresh",
     description: "Force refresh model catalog",
-    run: async ({ ctx, store }) => runRefreshSubcommand(ctx, store),
+    run: async ({ ctx, catalog }) => runRefreshSubcommand(ctx, catalog),
   },
   {
     name: "settings",
@@ -111,7 +110,7 @@ export async function resolveToken(
   return parseStoredCredentials(apiKey);
 }
 
-async function runModelsSubcommand(ctx: ExtensionCommandContext, store: CatalogStore): Promise<void> {
+async function runModelsSubcommand(ctx: ExtensionCommandContext, catalog: ModelCatalog): Promise<void> {
   if ((await resolveToken(ctx)) === null) {
     emitOutput(ctx, "Not logged in. Run /login antigravity first.", "warning");
     return;
@@ -120,20 +119,20 @@ async function runModelsSubcommand(ctx: ExtensionCommandContext, store: CatalogS
     if (ctx.hasUI) ctx.ui.notify("Fetching available models…", "info");
     // Single Model Catalog path: freshness lives behind the catalog seam —
     // this module only branches on the verdict and prints.
-    const { status, catalog } = await refreshCatalogGeneration(store, () =>
+    const { status, catalog: items } = await catalog.refreshGeneration(() =>
       ctx.modelRegistry?.refresh?.({ force: true, providers: [PROVIDER_ID], signal: ctx.signal }),
     );
-    if (status === "failed" || !catalog) {
+    if (status === "failed" || !items) {
       throw new Error("no new generation received");
     }
     if (status === "stale") {
       // Refresh failed: say so, but still show the retained generation —
       // a stale list beats no list, as long as it is labeled.
       emitOutput(ctx, "Failed to refresh models, showing last known list.", "warning");
-      emitOutput(ctx, formatModelsList(catalog));
+      emitOutput(ctx, catalog.formatList());
       return;
     }
-    emitOutput(ctx, formatModelsList(catalog));
+    emitOutput(ctx, catalog.formatList());
   } catch (err: any) {
     emitOutput(ctx, `Failed to fetch models: ${err.message}`, "error");
   }
@@ -168,10 +167,10 @@ async function runUsageSubcommand(
   }
 }
 
-async function runRefreshSubcommand(ctx: ExtensionCommandContext, store: CatalogStore): Promise<void> {
+async function runRefreshSubcommand(ctx: ExtensionCommandContext, catalog: ModelCatalog): Promise<void> {
   try {
     if (ctx.hasUI) ctx.ui.notify("Refreshing models…", "info");
-    const { status } = await refreshCatalogGeneration(store, () =>
+    const { status } = await catalog.refreshGeneration(() =>
       ctx.modelRegistry?.refresh?.({ force: true, providers: [PROVIDER_ID], signal: ctx.signal }),
     );
     if (status === "fresh") {
@@ -199,13 +198,13 @@ export async function runAntigravitySubcommand(
   args: string,
   ctx: ExtensionCommandContext,
   quotaStatus: QuotaStatusCoordinator | undefined,
-  store: CatalogStore,
+  catalog: ModelCatalog,
 ): Promise<void> {
   const parts = (args || "").trim().split(/\s+/).filter(Boolean);
   const sub = parseAntigravitySubcommand(parts[0] || "");
   const cmd = SUBCOMMANDS.find((c) => c.name === sub);
   if (cmd) {
-    await cmd.run({ ctx, quotaStatus, store });
+    await cmd.run({ ctx, quotaStatus, catalog });
     return;
   }
 
