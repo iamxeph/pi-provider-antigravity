@@ -51,6 +51,52 @@ test("Seam 2: start/end events balance and deltas reconstruct blocks", () => {
   }
 });
 
+// Empty parts are Thought Signature carriers (or streamed artifacts), not
+// content: they must not open a block. 7 of the 26 frozen responses and 91% of
+// the antigravity turns in this machine's session history carried the empty text
+// block an eager create used to leave behind.
+test("Seam 2: empty parts open no block, and a signature never loses its carrier", () => {
+  const parse = (raw) => {
+    const feed = createSseFeed();
+    feed.feed(raw);
+    return feed.close();
+  };
+  const line = (parts) =>
+    `data: ${JSON.stringify({ response: { candidates: [{ content: { role: "model", parts } }] } })}\n`;
+  const emptyBlocks = (content) =>
+    content.filter(
+      (b) => (b.type === "text" && b.text === "") || (b.type === "thinking" && b.thinking === ""),
+    );
+
+  for (const [name, parts] of [
+    ["empty text", [{ text: "" }]],
+    ["empty thought", [{ thought: true, text: "" }]],
+    ["empty text after a tool call (1.1.26 turn1/2 shape)", [{ functionCall: { id: "c1", name: "bash", args: {} } }, { text: "" }]],
+    ["empty text before a thought (Claude turn shape)", [{ text: "" }, { thought: true, text: "why" }]],
+    ["empty thought after visible text", [{ text: "answer" }, { thought: true, text: "" }]],
+  ]) {
+    assert.equal(
+      emptyBlocks(parse(line(parts)).content).length,
+      0,
+      `${name}: no empty block may be created`,
+    );
+  }
+
+  // A signature that arrives with no content still needs somewhere to live: the
+  // builder drops the empty part and replays the signature on the following one.
+  for (const [name, parts] of [
+    ["empty text carrying a signature", [{ text: "", thoughtSignature: "SIG_ONLY" }]],
+    ["empty thought carrying a signature", [{ thought: true, text: "", thoughtSignature: "SIG_ONLY" }]],
+  ]) {
+    const signatures = parse(line(parts))
+      .content.map((b) =>
+        b.type === "text" ? b.textSignature : b.type === "thinking" ? b.thinkingSignature : b.thoughtSignature,
+      )
+      .filter(Boolean);
+    assert.deepEqual(signatures, ["SIG_ONLY"], `${name}: the signature must survive`);
+  }
+});
+
 test("Seam 2: close() flushes an unterminated trailing line", () => {
   const firstDataLine = sseTurn1
     .split("\n")

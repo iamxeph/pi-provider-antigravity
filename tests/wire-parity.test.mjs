@@ -332,6 +332,10 @@ test("Wire parity: every captured SSE parses with usage and stop reason", () => 
       // it reports 0, exactly as pi-ai's Google adapter reads a missing count.
       const thoughts = [...sse.matchAll(/"thoughtsTokenCount": (\d+)/g)].pop();
       assert.equal(parsed.usage.reasoning, thoughts ? Number(thoughts[1]) : 0, `${dir}/${f}: reasoning tokens`);
+      const empties = parsed.content.filter(
+        (b) => (b.type === "text" && b.text === "") || (b.type === "thinking" && b.thinking === ""),
+      );
+      assert.equal(empties.length, 0, `${dir}/${f}: no empty block (empty parts are signature carriers)`);
       assert.ok(["stop", "toolUse"].includes(parsed.stopReason), `${dir}/${f}: stop reason`);
     }
   }

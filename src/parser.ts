@@ -96,17 +96,23 @@ export function createSseFeed(): {
   const attachLoneSignature = (): void => {
     if (!lastThoughtSignature) return;
     const thinking = content.find((b): b is ThinkingContent => b.type === "thinking");
-    if (thinking && !thinking.thinkingSignature) {
-      thinking.thinkingSignature = lastThoughtSignature;
-    } else if (!thinking) {
-      for (let i = content.length - 1; i >= 0; i--) {
-        const block = content[i];
-        if (block?.type === "text" && !block.textSignature) {
-          block.textSignature = lastThoughtSignature;
-          break;
-        }
+    if (thinking) {
+      // The thinking block wins (never a second carrier), and one that already
+      // holds a signature keeps it.
+      if (!thinking.thinkingSignature) thinking.thinkingSignature = lastThoughtSignature;
+      return;
+    }
+    for (let i = content.length - 1; i >= 0; i--) {
+      const block = content[i];
+      if (block?.type === "text" && !block.textSignature) {
+        block.textSignature = lastThoughtSignature;
+        return;
       }
     }
+    // The turn carried no block to hold it: keep the signature rather than
+    // dropping it silently. The builder drops the empty part and replays the
+    // signature on the next one, so this never puts an empty text on the wire.
+    content.push({ type: "text", text: "", textSignature: lastThoughtSignature });
   };
 
   const closeOpenBlock = (events: FeedStreamEvent[]): void => {
@@ -172,6 +178,13 @@ export function createSseFeed(): {
       }
 
       if (part.thought) {
+        const delta = part.text || "";
+        // A part carrying no thinking text opens no block: the wire uses empty
+        // thought parts as Thought Signature carriers, and an eager block would
+        // outlive the turn as an empty thinking block, which the builder replays
+        // as `{thought:true,text:""}` — a part agy never sends. The signature is
+        // already recorded above; close() keeps a carrier for it.
+        if (delta === "" && openType !== "thinking") continue;
         if (openType !== "thinking") {
           closeOpenBlock(events);
           content.push({ type: "thinking", thinking: "" });
@@ -180,7 +193,6 @@ export function createSseFeed(): {
         }
         const block = content[content.length - 1];
         if (block?.type !== "thinking") continue;
-        const delta = part.text || "";
         block.thinking += delta;
         if (part.thoughtSignature) {
           block.thinkingSignature = part.thoughtSignature;
@@ -210,6 +222,11 @@ export function createSseFeed(): {
         });
         events.push({ type: "toolcall_end", contentIndex, toolCall: block });
       } else if (part.text !== undefined) {
+        // Same rule as the thinking branch: an empty text part is a Thought
+        // Signature carrier (or a streamed artifact), not content, so it opens no
+        // block. 7 of the 26 frozen responses and 91% of live antigravity turns
+        // carried the empty block this used to create.
+        if (part.text === "" && openType !== "text") continue;
         if (openType !== "text") {
           closeOpenBlock(events);
           content.push({ type: "text", text: "" });
