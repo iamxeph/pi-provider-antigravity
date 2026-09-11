@@ -44,6 +44,107 @@ function parseWhole(rawSse) {
   return feed.close();
 }
 
+// Canonical form for fixture comparison: JSON object key order is a builder
+// detail (thought before text, functionResponse inner keys), never a wire fact.
+const canonical = (value) =>
+  Array.isArray(value)
+    ? value.map(canonical)
+    : value && typeof value === "object"
+      ? Object.fromEntries(Object.keys(value).sort().map((k) => [k, canonical(value[k])]))
+      : value;
+
+// Inverse of translateTurnTrace for one captured request: rebuilds the pi
+// messages that would produce these contents, so the builder can be handed the
+// history agy itself replayed.
+function piMessagesFromContents(contents, runtimeModelId) {
+  const messages = [];
+  for (const c of contents) {
+    if (c.role === "user") {
+      messages.push({
+        role: "user",
+        content: (c.parts ?? []).map((p) =>
+          p.text !== undefined
+            ? { type: "text", text: p.text }
+            : { type: "image", mimeType: p.inlineData?.mimeType, data: p.inlineData?.data },
+        ),
+      });
+      continue;
+    }
+    const response = (c.parts ?? []).find((p) => p.functionResponse);
+    if (response) {
+      messages.push({
+        role: "toolResult",
+        toolCallId: response.functionResponse.id,
+        toolName: response.functionResponse.name,
+        content: [{ type: "text", text: response.functionResponse.response?.output ?? "" }],
+      });
+      continue;
+    }
+    // Signature placement the parser produces: a turn's last signature rides its
+    // thinking block, else the text block it belongs to.
+    const lastSignature = (c.parts ?? []).map((p) => p.thoughtSignature).filter(Boolean).pop();
+    const blocks = [];
+    for (const p of c.parts ?? []) {
+      if (p.thought) {
+        blocks.push({
+          type: "thinking",
+          thinking: p.text ?? "",
+          thinkingSignature: p.thoughtSignature || lastSignature,
+        });
+      } else if (p.functionCall) {
+        blocks.push({
+          type: "toolCall",
+          id: p.functionCall.id,
+          name: p.functionCall.name,
+          arguments: p.functionCall.args ?? {},
+          thoughtSignature: p.thoughtSignature,
+        });
+      } else if (p.text !== undefined) {
+        blocks.push({ type: "text", text: p.text, ...(p.thoughtSignature ? { textSignature: p.thoughtSignature } : {}) });
+      }
+    }
+    messages.push({ role: "assistant", provider: "antigravity", model: runtimeModelId, content: blocks });
+  }
+  return messages;
+}
+
+// One assistant message assembled by the production parser from a captured
+// response: the parser→builder seam no test crossed before.
+function assistantMessageFromResponse(dir, name, runtimeModelId, expectedStopReason) {
+  const feed = createSseFeed();
+  feed.feed(fs.readFileSync(`captures/${dir}/${name}.resp.sse`, "utf-8"));
+  const out = feed.close();
+  assert.equal(out.stopReason, expectedStopReason, `${dir}/${name}: payload stop reason`);
+  return {
+    role: "assistant",
+    provider: "antigravity",
+    model: runtimeModelId,
+    stopReason: out.stopReason,
+    content: out.content,
+  };
+}
+
+// Rebuilds a captured request from reconstructed history, taking the capture's
+// own project/systemPrompt/session/trajectory/limits so everything except the
+// history stays comparable.
+function replayCapture(dir, name, messages) {
+  const { body } = load(dir, name);
+  return buildAntigravityRequestBody({
+    projectId: body.project,
+    plan: {
+      runtimeModelId: body.model,
+      modelEnum: body.request.labels.model_enum,
+      thinkingConfig: body.request.generationConfig.thinkingConfig,
+      isClaude: body.model.startsWith("claude-"),
+      isNonGemini: !body.model.startsWith("gemini-"),
+    },
+    context: { systemPrompt: body.request.systemInstruction?.parts?.[0]?.text, messages },
+    sessionId: body.request.sessionId,
+    trajectoryId: body.request.labels.trajectory_id,
+    maxOutputTokens: body.request.generationConfig.maxOutputTokens,
+  });
+}
+
 for (const dir of DIRS) {
   const turn1 = load(dir, "stream_turn1_initial");
   const turn2 = load(dir, "stream_turn2_toolresult");
@@ -276,7 +377,108 @@ for (const dir of DIRS) {
     assert.match(body.requestId, new RegExp(`/${traj}/${body.request.contents.length}$`));
     assert.equal(body.request.sessionId, turn1.body.request.sessionId, "sessionId byte parity");
   });
+
+  // Every captured turn must be reproducible from the history agy replayed. The
+  // envelope test above compares key sets and the generation config only, so
+  // `contents` itself was unpinned until now.
+  test(`Wire parity (${dir}): replaying a captured history reproduces its request`, () => {
+    for (const f of fs
+      .readdirSync(`captures/${dir}`)
+      .filter((x) => x.startsWith("stream_") && x.endsWith(".req.json"))) {
+      const name = f.replace(/\.req\.json$/, "");
+      const { body } = load(dir, name);
+      const built = replayCapture(dir, name, piMessagesFromContents(body.request.contents, body.model));
+      const at = `${dir}/${name}`;
+
+      assert.deepEqual(canonical(built.request.contents), canonical(body.request.contents), `${at}: contents`);
+      assert.deepEqual(built.request.systemInstruction, body.request.systemInstruction, `${at}: systemInstruction`);
+      assert.deepEqual(built.request.generationConfig, body.request.generationConfig, `${at}: generationConfig`);
+      assert.equal(built.request.sessionId, body.request.sessionId, `${at}: sessionId`);
+      assert.equal(built.project, body.project, `${at}: project`);
+      assert.equal(built.model, body.model, `${at}: model`);
+      assert.equal(built.userAgent, body.userAgent, `${at}: userAgent`);
+      assert.equal(built.requestType, body.requestType, `${at}: requestType`);
+      assert.equal(built.requestId.split("/").pop(), String(body.request.contents.length), `${at}: requestId step count`);
+
+      // last_execution_id is the one label agy sends that this provider cannot
+      // reproduce (no wire-visible source); everything else must match.
+      const labels = { ...body.request.labels };
+      delete labels.last_execution_id;
+      assert.deepEqual(built.request.labels, labels, `${at}: labels`);
+    }
+  });
 }
+
+// Seams where one captured response, parsed by the production feed, is the
+// assistant turn the next captured request replays: parser output → builder →
+// agy's own bytes. A parser change that moved a signature or a block shows up
+// here even though the reconstruction test above still passes.
+const PARSER_SEAMS = [
+  { dir: "agy_cli_1.1.27", from: "stream_turn4_thinking", to: "stream_turn5_multiturn", stopReason: "stop" },
+  { dir: "agy_cli_1.1.28", from: "stream_turn4_thinking", to: "stream_turn5_multiturn", stopReason: "stop" },
+  { dir: "agy_cli_1.1.28", from: "stream_turn8_claude_thinking", to: "stream_turn8b_claude_followup1", stopReason: "stop" },
+  { dir: "agy_cli_1.1.28", from: "stream_turn8b_claude_followup1", to: "stream_turn9_claude_followup", stopReason: "stop" },
+];
+
+for (const seam of PARSER_SEAMS) {
+  test(`Wire parity (${seam.dir}): ${seam.from} → ${seam.to} survives parser→builder replay`, () => {
+    const from = load(seam.dir, seam.from).body;
+    const to = load(seam.dir, seam.to).body;
+    assert.equal(from.request.labels.trajectory_id, to.request.labels.trajectory_id, `${seam.to}: same trajectory`);
+
+    // Seam premise: the later request is this history plus one replayed turn.
+    const tail = to.request.contents.slice(from.request.contents.length);
+    assert.deepEqual(
+      canonical(to.request.contents.slice(0, from.request.contents.length)),
+      canonical(from.request.contents),
+      `${seam.to}: prefix must be the previous request's history`,
+    );
+    assert.equal(tail[0]?.role, "model", `${seam.to}: first new content is the replayed model turn`);
+    assert.ok(!(tail[0].parts ?? []).some((p) => p.functionResponse), `${seam.to}: not a tool result`);
+
+    const built = replayCapture(seam.dir, seam.to, [
+      ...piMessagesFromContents(from.request.contents, from.model),
+      assistantMessageFromResponse(seam.dir, seam.from, from.model, seam.stopReason),
+      ...piMessagesFromContents(tail.slice(1), to.model),
+    ]);
+    assert.deepEqual(
+      canonical(built.request.contents),
+      canonical(to.request.contents),
+      `${seam.from} → ${seam.to}: contents`,
+    );
+  });
+}
+
+// Known divergence, pinned rather than guessed: when a turn ends in a tool call,
+// agy 1.1.26 replays the functionCall with its signature but omits the thinking
+// part, while this builder keeps it. 1.1.27/1.1.28 freeze no thinking+tools turn,
+// so resolving it needs a capture (captures/README.md §2, tool success + effort).
+test("Wire parity (agy_cli_1.1.26): the tool-turn seam omits only agy's dropped thinking part", () => {
+  const dir = "agy_cli_1.1.26";
+  const from = load(dir, "stream_turn1_initial").body;
+  const to = load(dir, "stream_turn2_toolresult").body;
+  const tail = to.request.contents.slice(from.request.contents.length);
+  assert.equal(tail[0]?.role, "model", "first new content is the replayed model turn");
+
+  const built = replayCapture(dir, "stream_turn2_toolresult", [
+    ...piMessagesFromContents(from.request.contents, from.model),
+    assistantMessageFromResponse(dir, "stream_turn1_initial", from.model, "toolUse"),
+    ...piMessagesFromContents(tail.slice(1), to.model),
+  ]);
+
+  const ours = built.request.contents;
+  assert.equal(ours.length, to.request.contents.length, "same step count");
+  assert.equal(
+    ours.flatMap((c) => c.parts ?? []).filter((p) => p.thought).length,
+    1,
+    "exactly one replayed thinking part is the whole difference",
+  );
+  assert.deepEqual(
+    canonical(ours.map((c) => ({ ...c, parts: (c.parts ?? []).filter((p) => !p.thought) }))),
+    canonical(to.request.contents),
+    "everything but the thinking part must match agy's replay",
+  );
+});
 
 for (const dir of DIRS) {
   test(`Wire parity (${dir}): Claude thinking replays part-split (counter-capture #14)`, (t) => {
