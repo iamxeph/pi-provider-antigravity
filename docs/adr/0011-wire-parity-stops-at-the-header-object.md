@@ -11,18 +11,20 @@ set comes in two shapes: `Host, User-Agent, Transfer-Encoding: chunked, Authoriz
 Content-Type, Accept-Encoding: gzip` for streamed turns, and `…, Content-Length, …` for the
 JSON calls (`retrieveUserQuotaSummary`, `loadCodeAssist`, `fetchAvailableModels`).
 
-Measured against a local HTTP/1.1 server (Node 24, undici), the same request goes out as
-`host` lowercased to the connection authority, `content-length`,
-`accept-encoding: gzip, deflate`, plus four headers `agy` never sends (`accept: */*`,
-`accept-language: *`, `sec-fetch-mode: cors`, `connection: keep-alive`). The explicit `Host`
-header is ignored in favour of the connection authority — a mismatching one is illegal.
+Measured on a plain-HTTP local origin (`http.createServer` + `req.rawHeaders`, no TLS, no proxy
+environment), the same header object goes out as `host` lowercased to the connection
+authority, `content-length`, `accept-encoding: gzip, deflate`, plus four headers `agy` never
+sends (`accept: */*`, `accept-language: *`, `sec-fetch-mode: cors`, `connection: keep-alive`).
+The explicit `Host` header is ignored in favour of the connection authority — a mismatching
+one is illegal.
 
 The set is not even stable across the client's own paths. The same request measured through
-`NODE_USE_ENV_PROXY=1` (mitmdump, HTTP/1.1, `pi` running against the live endpoint) carries
-eight headers — `Authorization, Content-Type, Host, User-Agent, Connection, Accept,
+`NODE_USE_ENV_PROXY=1` (mitmdump, `pi` running against the live endpoint) carries eight
+headers — `Authorization, Content-Type, Host, User-Agent, Connection, Accept,
 Accept-Encoding, Content-Length`, `Host` in the casing this provider sets — and neither
-`accept-language` nor `sec-fetch-mode`. Same client, same protocol, different tables; the
-connected transport decides.
+`accept-language` nor `sec-fetch-mode`. Protocol is not the variable: every leg was
+HTTP/1.1, and the backend chose HTTP/1.1 over TLS 1.3 even though h2 was offered upstream.
+The client's path decides, so no single measured set is "the" set.
 
 What closing each gap takes (all measured):
 
