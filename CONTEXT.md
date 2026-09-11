@@ -8,6 +8,7 @@ The domain model behind the Google Antigravity extension for Pi Coding Agent.
 
 **Wire Fingerprint**:
 The observable shape of requests and responses as they appear on the network while the official `agy` CLI talks to the backend (endpoints, HTTP headers, envelope structure).
+Parity covers the endpoint, the header object (names and casing as the provider sets them) and the envelope — not the bytes the HTTP client writes (ADR-0011).
 _Avoid_: Wire format, API schema, traffic dump
 
 **Capture Fixture**:
@@ -42,6 +43,10 @@ _Avoid_: Request serializer, payload generator, message mapper
 The intentional Wire Fingerprint exception that carries `skip_thought_signature_validator` on an unsigned `functionCall`, and only where `agy` cannot produce the situation (a tool call authored by another provider/model family). It is never applied to a lost signature from the same provider and family, so that failure stays visible (ADR-0007).
 _Avoid_: Sentinel injection, signature bypass, validation skip
 
+**Accepted Wire Deviation**:
+A Wire Fingerprint difference this provider deliberately does not reproduce, because `agy` traffic cannot produce it or because it lies outside the layer this provider controls, recorded in an ADR instead of being fixed — `last_execution_id` (ADR-0010) and transport-level headers (ADR-0011).
+_Avoid_: Known bug, TODO, exception
+
 ### Models & Routing
 
 **Public Model ID**:
@@ -57,7 +62,7 @@ The model set produced by querying the backend's `fetchAvailableModels` API dyna
 _Avoid_: Model registry, model list, model table
 
 **Catalog Persistence**:
-The standard local cache and offline-restore mechanism for the remote model catalog that Pi Core provides through `~/.config/pi/models-store.json`.
+The standard local cache and offline-restore mechanism for the remote model catalog that Pi Core provides through `~/.config/pi/models-store.json`. The Wire-side data a pi `Model` does not carry (model enums, per-Runtime-Model-ID thinking budgets, server-directed renames) travels inside the same entry under the provider's own private key, which Pi persists verbatim.
 _Avoid_: Model cache, local storage, custom catalog file
 
 **Catalog Generation**:
