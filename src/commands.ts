@@ -1,11 +1,7 @@
 import type { ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { parseStoredCredentials } from "./auth.ts";
 import { PROVIDER_ID } from "./protocol.ts";
-import {
-  formatQuotaSummary,
-  paintQuotaStatus,
-  type QuotaStatusCoordinator,
-} from "./quota-status.ts";
+import type { QuotaStatusCoordinator } from "./quota-status.ts";
 import type { ModelCatalog } from "./model-catalog.ts";
 
 import { emitOutput, openSettings } from "./settings.ts";
@@ -152,16 +148,8 @@ async function runUsageSubcommand(
   }
   try {
     if (ctx.hasUI) ctx.ui.notify("Fetching quota summary…", "info");
-    // Explicit look at quota: bypass the mode and model gates, but share the
-    // fetch, calibration, and persistence with the footer — no redundant
-    // fetch, no stale footer.
-    const summary = await quotaStatus.refresh(ctx, { force: true, ignoreMode: true, signal: ctx.signal });
-    if (!summary) {
-      emitOutput(ctx, "Failed to fetch usage.", "error");
-      return;
-    }
-    paintQuotaStatus(quotaStatus, ctx);
-    emitOutput(ctx, formatQuotaSummary(summary));
+    const text = await quotaStatus.inspectUsage(ctx);
+    emitOutput(ctx, text);
   } catch (err: any) {
     emitOutput(ctx, `Failed to fetch usage: ${err.message}`, "error");
   }

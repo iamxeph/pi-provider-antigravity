@@ -58,7 +58,7 @@ The internal model identifier the Google Antigravity backend API actually requir
 _Avoid_: Backend model, internal model, actual ID
 
 **Model Catalog**:
-The model set produced by querying the backend's `fetchAvailableModels` API dynamically and mapping it onto Pi's `Public Model ID` ↔ `Runtime Model ID` pairs.
+The deep module encapsulating wire fetching, snapshot generations, Catalog Persistence, and mapping onto Pi's `Public Model ID` ↔ `Runtime Model ID` pairs.
 _Avoid_: Model registry, model list, model table
 
 **Catalog Persistence**:
@@ -100,7 +100,7 @@ The usage limit a model group (Gemini pool, Claude/GPT-OSS pool, …) shares per
 _Avoid_: Rate limit, token bucket, credit
 
 **Quota Status**:
-The Quota Pool remaining summary shown in the footer slot, plus the refresh and correction responsibility behind it.
+The Quota Pool remaining summary shown in the footer slot, plus the refresh, painting, and correction responsibility behind it.
 _Avoid_: Quota widget
 
 ### Interface
