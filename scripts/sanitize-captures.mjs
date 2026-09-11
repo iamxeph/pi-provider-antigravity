@@ -24,6 +24,13 @@ function getAllFiles(dir) {
   return files;
 }
 
+const LOCAL_USER = process.env.USER ?? "";
+// Names that are placeholders in their own right: masking them would mangle
+// `/home/user` or an `owner user` column that is already normalized.
+const PLACEHOLDER_USERS = new Set(["", "user", "root", "runner", "node", "nobody"]);
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const LOCAL_USER_RE = PLACEHOLDER_USERS.has(LOCAL_USER) ? null : new RegExp(escapeRegex(LOCAL_USER), "g");
+
 function sanitizeString(str) {
   if (typeof str !== "string") return str;
   let text = str;
@@ -72,7 +79,21 @@ function sanitizeString(str) {
   // 5. Local home directories and usernames
   text = text.replace(/(file:\/\/\/|\/)(?:home|Users)\/(?!user[/\s"'\\])[a-zA-Z0-9_.-]+/g, "$1home/user");
 
-  // 6. User-defined custom rules inside systemInstruction prompt
+  // 6. Machine-derived identifiers: agy's unleash register sends an instanceId of
+  // the shape `<user>-<host>-<suffix>`, which would publish the maintainer's
+  // username and hostname in a fixture. Two wire shapes only — a quoted JSON key and
+  // a query parameter — so a local variable name never matches.
+  text = text.replace(
+    /(["']instanceId["']\s*:\s*["']?)(?!<REDACTED)[^"'&\s]*/gi,
+    "$1<REDACTED_INSTANCE_ID>",
+  );
+  text = text.replace(/([?&]instanceId=)(?!<REDACTED)[^&"'\s]*/gi, "$1<REDACTED_INSTANCE_ID>");
+
+  // 7. Local account name: agy tool output echoes `ls -l` owner columns and paths
+  // the home-directory rule above cannot cover (it only sees /home/<name>).
+  if (LOCAL_USER_RE) text = text.replace(LOCAL_USER_RE, "<REDACTED_USER>");
+
+  // 8. User-defined custom rules inside systemInstruction prompt
   text = text.replace(
     /<RULE\[user_global\]>[\s\S]*?<\/RULE\[user_global\]>/g,
     "<RULE[user_global]>\n# Standard instructions\n</RULE[user_global]>"
@@ -92,6 +113,11 @@ function sanitizeObject(obj) {
       // in sanitizeString can't see it — guard the key directly.
       if (k.toLowerCase() === "id_token" && typeof v === "string") {
         out[k] = "<REDACTED_ID_TOKEN>";
+        continue;
+      }
+      // Same for machine-derived ids: the key is the only reliable signal.
+      if (k.toLowerCase() === "instanceid" && typeof v === "string") {
+        out[k] = "<REDACTED_INSTANCE_ID>";
         continue;
       }
       out[k] = sanitizeObject(v);
