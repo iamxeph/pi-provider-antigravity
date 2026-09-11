@@ -337,6 +337,31 @@ test("Wire parity: every captured SSE parses with usage and stop reason", () => 
   }
 });
 
+test("Wire parity: the three counters follow what each request carries", () => {
+  // Every captured turn satisfies all three: the envelope counts steps, the step
+  // index is that count minus one, and the label counts model turns (a
+  // functionResponse-only step is a tool result, not a model turn).
+  for (const dir of DIRS) {
+    for (const f of fs
+      .readdirSync(`captures/${dir}`)
+      .filter((x) => x.startsWith("stream_") && x.endsWith(".req.json"))) {
+      const { body } = JSON.parse(fs.readFileSync(`captures/${dir}/${f}`, "utf-8"));
+      const contents = body.request.contents;
+      const modelTurns = contents.filter(
+        (c) => c.role === "model" && !(c.parts ?? []).some((p) => p.functionResponse),
+      ).length;
+      const at = `${dir}/${f}`;
+      assert.equal(body.request.labels.last_step_index, String(contents.length - 1), `${at}: last_step_index`);
+      assert.equal(body.requestId.split("/").pop(), String(contents.length), `${at}: requestId step count`);
+      assert.equal(
+        body.request.labels.request_id,
+        `${body.request.labels.trajectory_id}-${modelTurns}`,
+        `${at}: request_id model turns`,
+      );
+    }
+  }
+});
+
 test("Wire parity (agy_cli_1.1.27): thinkingBudget matrix low/medium/high", () => {
   // Medium effort had no 1.1.26 fixture; 1.1.27 pins it via stream_turn3_medium.
   const budgetOf = (dir, name) =>

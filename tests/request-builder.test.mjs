@@ -846,6 +846,52 @@ test("Seam 1 (Strict Wire Parity): buildAntigravityRequestBody reproduces Turn 4
   assert.equal(bodyTurn5.request.sessionId, sessId);
 });
 
+// The label counts the model turns a request actually carries, so any turn the
+// translation drops must not advance it: error/aborted skips (the everyday case
+// — aborted and errored assistant messages stay in pi's context), assistant
+// messages with no content blocks, and messages whose only part is empty text.
+test("Seam 1: labels.request_id counts replayed model turns, never dropped ones", () => {
+  const dropped = {
+    errorTurn: { role: "assistant", stopReason: "error", content: [{ type: "text", text: "partial" }] },
+    abortedTurn: { role: "assistant", stopReason: "aborted", content: [{ type: "text", text: "partial" }] },
+    emptyContent: { role: "assistant", stopReason: "stop", content: [] },
+    emptyTextOnly: { role: "assistant", stopReason: "stop", content: [{ type: "text", text: "" }] },
+  };
+  for (const [name, turn] of Object.entries(dropped)) {
+    const messages = [
+      { role: "user", content: "first" },
+      { role: "assistant", stopReason: "stop", content: [{ type: "text", text: "answer" }] },
+      { role: "user", content: "second" },
+      turn,
+      { role: "user", content: "third" },
+    ];
+    const body = buildAntigravityRequestBody({
+      projectId: "aicode-consumers",
+      plan: staticPlan("gemini-3.7-flash-high"),
+      context: { messages },
+    });
+    const modelTurns = body.request.contents.filter(
+      (c) => c.role === "model" && !(c.parts ?? []).some((p) => p.functionResponse),
+    ).length;
+    assert.equal(modelTurns, 1, `${name}: the dropped turn must not reach the wire`);
+    assert.equal(
+      body.request.labels.request_id,
+      `${body.request.labels.trajectory_id}-${modelTurns}`,
+      `${name}: label must count the model turns the request carries`,
+    );
+    assert.equal(
+      body.requestId.split("/").pop(),
+      String(body.request.contents.length),
+      `${name}: envelope counter stays contents-based`,
+    );
+    assert.equal(
+      body.request.labels.last_step_index,
+      String(body.request.contents.length - 1),
+      `${name}: last_step_index stays contents-based`,
+    );
+  }
+});
+
 test("Seam 1 (400 fix, agy 1.1.26 capture 2026-09-05): toolResult wire shape matches agy", () => {
   const context = {
     messages: [

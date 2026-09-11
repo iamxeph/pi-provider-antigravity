@@ -483,8 +483,13 @@ export function buildAntigravityRequestBody(params: BuildRequestBodyParams): Rec
       : resolveSessionTrajectory(sessionId);
   const contents = translateTurnTrace(context, runtimeModelId);
 
-  // Request ID sequence increments by completed assistant turns
-  const requestIndex = context.messages.filter((m) => m.role === "assistant").length;
+  // Request ID sequence increments by completed assistant turns **as carried by
+  // this request**: derive it from the payload, so a turn the translation drops
+  // (stopReason error/aborted, empty content, all-empty parts) can never desync
+  // the label from `contents` — matches all 26 captured agy turns.
+  const requestIndex = contents.filter(
+    (c) => c.role === "model" && !c.parts?.some((p: any) => p.functionResponse)
+  ).length;
   const requestId = `agent/${sessionId}/${Date.now()}/${trajectoryId}/${contents.length}`;
 
   const modelEnum = plan.modelEnum;
