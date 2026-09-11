@@ -65,6 +65,10 @@ _Avoid_: Model registry, model list, model table
 The standard local cache and offline-restore mechanism for the remote model catalog that Pi Core provides through `~/.config/pi/models-store.json`. The Wire-side data a pi `Model` does not carry (model enums, per-Runtime-Model-ID thinking budgets, server-directed renames) travels inside the same entry under the provider's own private key, which Pi persists verbatim.
 _Avoid_: Model cache, local storage, custom catalog file
 
+**Catalog Snapshot**:
+The per-Runtime-Model-ID facts one Catalog Generation holds — model enums, runtime-ID existence, thinking budgets, server-directed renames — and the only part Catalog Persistence keeps. A restart restores the snapshot, never the full item list, so a restored snapshot can resolve a Model Plan before any fetch succeeds.
+_Avoid_: Model cache, catalog state, persisted models
+
 **Catalog Generation**:
 The bundle one successful refresh leaves behind (snapshot + full items). fresh is the state after a new generation has landed, stale is showing a retained generation labelled as such after a fetch failure, and failed is having nothing retained either.
 _Avoid_: Catalog version, snapshot number
