@@ -17,7 +17,7 @@ import {
 } from "../src/model-catalog.ts";
 import { buildAntigravityRequestBody } from "../src/builder.ts";
 
-const modelsJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.1.26/models.resp.json", "utf-8"));
+const modelsJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.2.0/models.resp.json", "utf-8"));
 
 test("Seam 3: parseAvailableModels extracts models and model_enum", () => {
   const catalog = parseAvailableModels(modelsJson);
@@ -30,7 +30,7 @@ test("Seam 3: parseAvailableModels extracts models and model_enum", () => {
   assert.equal(flash37.supportsThinking, true);
 
   // thinkingBudget/minThinkingBudget ride the wire per Runtime Model ID
-  // (captures/agy_cli_1.1.26/models.resp.json) — parse must keep them.
+  // (captures/agy_cli_1.2.0/models.resp.json) — parse must keep them.
   assert.equal(flash37.thinkingBudget, -1);
   assert.equal(flash37.minThinkingBudget, 32);
 
@@ -51,10 +51,11 @@ test("Seam 3: parseAvailableModels extracts models and model_enum", () => {
   assert.ok(gpt);
   assert.equal(gpt.thinkingBudget, 8192);
 
-  // Models without thinking fields on the wire keep them undefined.
-  const lite = catalog.models.find((m) => m.id === "gemini-2.5-flash");
-  assert.ok(lite);
-  assert.equal(lite.thinkingBudget, undefined);
+  // Models the wire ships without thinking fields keep them undefined. Derived from the
+  // capture: which ids lack the field changes between agy releases (2.5-flash gained one),
+  // the rule does not.
+  const withoutThinking = catalog.models.filter((m) => m.thinkingBudget === undefined);
+  assert.ok(withoutThinking.length > 0, "the capture must contain a model without thinking fields");
 
   // modelEnums dictionary mapping
   assert.equal(catalog.modelEnums["gemini-3.7-flash-high"], "MODEL_PLACEHOLDER_M298");
@@ -62,7 +63,7 @@ test("Seam 3: parseAvailableModels extracts models and model_enum", () => {
 
 test("Seam 3: synthesizeDynamicModel static fallbacks match captured catalog (Claude 250000/64000)", () => {
   // Offline path (no maxTokens/maxOutputTokens): must mirror
-  // captures/agy_cli_1.1.27/models.resp.json, also seen on the wire (turn8/9).
+  // captures/agy_cli_1.2.0/models.resp.json, also seen on the wire (turn8/9).
   const claude = synthesizeDynamicModel("claude-sonnet-4-6", [{ id: "claude-sonnet-4-6" }]);
   assert.equal(claude.contextWindow, 250000);
   assert.equal(claude.maxTokens, 64000);
@@ -317,8 +318,11 @@ test("Seam 3: resolveModelPlan disables thoughts for wire-marked non-thinking mo
     thinking: buildThinkingMap(catalog.models),
     version: 1,
   };
-  // gemini-2.5-flash ships no thinking fields on the wire: absent means off.
-  const plan = resolveModelPlan("gemini-2.5-flash", undefined, snapshot);
+  // A wire-marked non-thinking model (no thinking fields at all): absent means off.
+  // Derived from the capture so a server-side change to one id cannot break the rule.
+  const plain = catalog.models.find((m) => m.thinkingBudget === undefined);
+  assert.ok(plain, "the capture must contain a model without thinking fields");
+  const plan = resolveModelPlan(plain.id, undefined, snapshot);
   assert.deepEqual(plan.thinkingConfig, { includeThoughts: false, thinkingBudget: 0 });
 });
 

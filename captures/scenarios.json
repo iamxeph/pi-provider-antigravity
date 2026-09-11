@@ -1,0 +1,405 @@
+{
+  "$comment": [
+    "Canonical capture scenario for agy wire fixtures. captures/README.md is the runbook; this file is the single source of truth.",
+    "Array order is CAPTURE ORDER: capture-flow.mjs plan prints it and extract() assigns flows in this order (ambiguous slots resolve to the earliest unconsumed flow).",
+    "Slot names are load-bearing: tests/wire-parity.test.mjs and every captures/agy_cli_<version>/ directory pin them.",
+    "A new agy release must reproduce every slot not listed under dirs.<id>.omit. Drift is a test failure, never a judgement call.",
+    "dirs.<id>.patch overrides canonical fields for captures frozen before this manifest existed. Reasons are recorded, not fixed retroactively.",
+    "dirs.<id>.models remaps a canonical base-model pin to the generation that directory froze (legacy dirs predate the newest generation); the gate and the extractor apply it before matching, so a directory still has to match what it actually captured.",
+    "Coverage is per wire BRANCH, not per model id: the provider branches on family (sentinel injection, labels, thinking replay shape, quota pool) and on catalog facts (runtime id, enum, budget). gemini/claude/gpt each need at least one chain; a new model id inside a family needs no slot — the captured catalog plus the gate's Model Plan check cover id/tier/budget churn. A fourth family (or a new part shape) is a new branch and needs new slots.",
+    "observedEndpoints freezes agy's own startup surface beyond the five endpoints this provider implements. They are reference-only: the extractor writes them when present, the gate only checks that a present fixture has its counterpart, and nothing fails when a version stops sending one. Deliberately not frozen: oauth2/v2/userinfo and the avatar fetch (account PII), play.googleapis.com/log (telemetry).",
+    "Retention: only the current capture lives in the tree. Adding a version means deleting the previous captures/agy_cli_<version>/ directory (git history keeps it); dirs.<id> stays empty for that reason and is only populated when a capture must deviate from the canonical slots."
+  ],
+  "policy": {
+    "streamEndpoint": "https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse",
+    "workdir": "/tmp/agy-capture",
+    "notesFile": "/tmp/agy-capture/notes.txt",
+    "missingFile": "/tmp/agy-no-such-file-xyz.txt",
+    "skipPermissions": "--dangerously-skip-permissions",
+    "rules": [
+      "Every `-c` run repeats --model: a bare -c silently resets to the default model (observed 1.1.28: a Claude session came back as gemini-3.7-flash-high).",
+      "One `agy -p <tool prompt>` yields a request chain (one request per tool round trip); the slots below name the ones to freeze.",
+      "Keep prompts trivial except where a slot says otherwise: quota is real and every extra turn costs it.",
+      "Never hand-edit a frozen fixture. Re-run the slot, or record the gap under dirs.<id> (omit/patch + reason)."
+    ]
+  },
+  "prompts": {
+    "ok": "reply with exactly this one word: ok",
+    "done": "reply with exactly this one word: done",
+    "tool": "Create the file /tmp/agy-capture/notes.txt with exactly this content: Hello Antigravity. Then confirm it in one sentence.",
+    "reason": "Think step by step, then answer in exactly one sentence: a train travels 120 km in 1.5 hours, what is its average speed in km/h?",
+    "readfail": "Read the file /tmp/agy-no-such-file-xyz.txt and tell me its exact contents"
+  },
+  "endpoints": [
+    {
+      "id": "auth_login_params",
+      "shape": "authorize-url",
+      "urlPrefix": "https://accounts.google.com/o/oauth2/auth",
+      "files": [
+        "auth_login_params.json"
+      ],
+      "why": "Browser-login authorize URL. Only appears when agy has no stored refresh token, so it needs a fresh login (README §2.1)."
+    },
+    {
+      "id": "auth_token_refresh",
+      "shape": "request-response",
+      "url": "https://oauth2.googleapis.com/token",
+      "files": [
+        "auth_token_refresh.req.json",
+        "auth_token_refresh.resp.json"
+      ],
+      "why": "POST /token with grant_type=refresh_token: captured when the stored access token has expired."
+    },
+    {
+      "id": "load_code_assist",
+      "shape": "request-response",
+      "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist",
+      "files": [
+        "load_code_assist.req.json",
+        "load_code_assist.resp.json"
+      ],
+      "why": "Tier/project discovery, sent on every agy startup."
+    },
+    {
+      "id": "models",
+      "shape": "request-response",
+      "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels",
+      "files": [
+        "models.req.json",
+        "models.resp.json"
+      ],
+      "why": "Model catalog snapshot the Model Plan resolves against (ADR-0008)."
+    },
+    {
+      "id": "quota",
+      "shape": "request-response",
+      "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary",
+      "files": [
+        "quota.req.json",
+        "quota.resp.json"
+      ],
+      "why": "Quota Pool shape for the footer status."
+    }
+  ],
+  "observedEndpoints": [
+    {
+      "id": "fetch_admin_controls",
+      "shape": "request-response",
+      "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAdminControls",
+      "files": [
+        "fetch_admin_controls.req.json",
+        "fetch_admin_controls.resp.json"
+      ],
+      "why": "agy startup (observed in 1.2.0): account-level admin gates. No provider counterpart — reference fixture."
+    },
+    {
+      "id": "fetch_user_info",
+      "shape": "request-response",
+      "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:fetchUserInfo",
+      "files": [
+        "fetch_user_info.req.json",
+        "fetch_user_info.resp.json"
+      ],
+      "why": "agy startup: region + user settings. Reference fixture."
+    },
+    {
+      "id": "list_experiments",
+      "shape": "request-response",
+      "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:listExperiments",
+      "files": [
+        "list_experiments.req.json",
+        "list_experiments.resp.json"
+      ],
+      "why": "agy startup: server-driven experiment flags. Reference fixture."
+    },
+    {
+      "id": "write_trajectory_acls",
+      "shape": "request-response",
+      "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:writeTrajectoryAcls",
+      "files": [
+        "write_trajectory_acls.req.json",
+        "write_trajectory_acls.resp.json"
+      ],
+      "why": "Posted per tool trajectory in 1.2.0 ({trajectoryId}); empty response body. Reference fixture."
+    },
+    {
+      "id": "unleash_register",
+      "shape": "request-response",
+      "url": "https://antigravity-unleash.goog/api/client/register",
+      "files": [
+        "unleash_register.req.json",
+        "unleash_register.resp.json"
+      ],
+      "why": "Third-party feature-flag client registration (POST, 202 with an empty body — the fixture's .resp.json is intentionally blank). Reference fixture; its machine-derived instanceId is redacted by the sanitizer."
+    },
+    {
+      "id": "unleash_features",
+      "shape": "request-response",
+      "url": "https://antigravity-unleash.goog/api/client/features",
+      "files": [
+        "unleash_features.req.json",
+        "unleash_features.resp.json"
+      ],
+      "why": "Third-party feature-flag payload (GET, ~360KB). Reference fixture frozen for shape: the flags churn with every rollout, so a diff here is expected, not a wire change."
+    }
+  ],
+  "stream": [
+    {
+      "slot": "stream_turn1_initial",
+      "session": "tooltrace",
+      "mode": "fresh",
+      "model": "gemini-3.8-flash",
+      "wireModel": "gemini-3.8-flash-high",
+      "effort": "high",
+      "prompt": "tool",
+      "expect": {
+        "responseStopReason": "toolUse",
+        "responseHas": [
+          "functionCall"
+        ],
+        "thinkingBudget": -1
+      },
+      "why": "Fresh tool turn. Its response (text + functionCall, ideally with a visible thought part: 1.1.26 showed 381 thoughts tokens) is the input to the turn2 divergence seam."
+    },
+    {
+      "slot": "stream_turn2_toolresult",
+      "session": "tooltrace",
+      "mode": "auto",
+      "after": "stream_turn1_initial",
+      "replays": "stream_turn1_initial",
+      "divergence": "agy drops the replayed thought part on a tool turn; this builder keeps it (wire-parity tool-turn seam test).",
+      "model": "gemini-3.8-flash",
+      "wireModel": "gemini-3.8-flash-high",
+      "effort": "high",
+      "prompt": "tool",
+      "expect": {
+        "requestHas": [
+          "functionResponse"
+        ],
+        "responseOutputKeys": [
+          "output"
+        ],
+        "thinkingBudget": -1
+      },
+      "why": "Second request of the same invocation: the functionResponse envelope ({output}, role model). Its own stop reason is not pinned: the tool loop may answer (stop) or call another tool (toolUse) depending on how the model plans the same prompt."
+    },
+    {
+      "slot": "stream_turn4_thinking",
+      "session": "tooltrace",
+      "mode": "continue",
+      "after": "stream_turn2_toolresult",
+      "model": "gemini-3.8-flash",
+      "wireModel": "gemini-3.8-flash-high",
+      "effort": "high",
+      "prompt": "reason",
+      "expect": {
+        "requestHas": [
+          "thoughtSignature"
+        ],
+        "responseStopReason": "stop",
+        "thinkingBudget": -1
+      },
+      "why": "Continuation of the tool session: replayed tool turns carry signatures, and a text-ending turn is what turn5 then replays."
+    },
+    {
+      "slot": "stream_turn5_multiturn",
+      "session": "tooltrace",
+      "mode": "continue",
+      "after": "stream_turn4_thinking",
+      "replays": "stream_turn4_thinking",
+      "model": "gemini-3.8-flash",
+      "wireModel": "gemini-3.8-flash-high",
+      "effort": "high",
+      "prompt": "done",
+      "expect": {
+        "requestHas": [
+          "thoughtSignature"
+        ],
+        "responseStopReason": "stop",
+        "thinkingBudget": -1
+      },
+      "why": "The Turn Trace pair (ADR-0003) whose parser→builder seam is asserted: turn4's response must replay byte-identically."
+    },
+    {
+      "slot": "stream_turn7_initial_low",
+      "session": "effort-matrix",
+      "mode": "fresh",
+      "model": "gemini-3.8-flash",
+      "wireModel": "gemini-3.8-flash-low",
+      "effort": "low",
+      "prompt": "ok",
+      "expect": {
+        "responseStopReason": "stop",
+        "thinkingBudget": 1000
+      },
+      "why": "Low leg of the effort matrix: runtime ID suffix + integer thinkingBudget (never -tiered/thinkingLevel)."
+    },
+    {
+      "slot": "stream_turn3_medium",
+      "session": "effort-matrix",
+      "mode": "fresh",
+      "model": "gemini-3.8-flash",
+      "wireModel": "gemini-3.8-flash-medium",
+      "effort": "medium",
+      "prompt": "ok",
+      "expect": {
+        "responseStopReason": "stop",
+        "thinkingBudget": 4000
+      },
+      "why": "Medium leg of the effort matrix."
+    },
+    {
+      "slot": "stream_turn6_toolerror",
+      "session": "toolerror",
+      "mode": "auto",
+      "model": "gemini-3.8-flash",
+      "wireModel": "gemini-3.8-flash-low",
+      "effort": "low",
+      "prompt": "readfail",
+      "expect": {
+        "requestHas": [
+          "functionResponse"
+        ],
+        "responseStopReason": "stop",
+        "responseOutputKeys": [
+          "output"
+        ],
+        "thinkingBudget": 1000
+      },
+      "why": "Failed tool result: 1.1.26 embeds `Encountered error in tool execution: ...` in response.output with no `error` key."
+    },
+    {
+      "slot": "stream_turn8_claude_thinking",
+      "session": "claude",
+      "mode": "fresh",
+      "model": "claude-sonnet-4-6",
+      "wireModel": "claude-sonnet-4-6",
+      "effort": null,
+      "prompt": "reason",
+      "expect": {
+        "responseStopReason": "stop",
+        "responseHas": [
+          "thought"
+        ],
+        "thinkingBudget": 1024
+      },
+      "why": "Claude counter-capture (#14): thoughts arrive as thought:true parts, no thoughtsTokenCount."
+    },
+    {
+      "slot": "stream_turn8b_claude_followup1",
+      "session": "claude",
+      "mode": "continue",
+      "after": "stream_turn8_claude_thinking",
+      "replays": "stream_turn8_claude_thinking",
+      "model": "claude-sonnet-4-6",
+      "wireModel": "claude-sonnet-4-6",
+      "effort": null,
+      "prompt": "done",
+      "expect": {
+        "requestHas": [
+          "thought",
+          "thoughtSignature"
+        ],
+        "responseStopReason": "stop",
+        "thinkingBudget": 1024
+      },
+      "why": "Proves the Claude family replays thoughtSignature part-split too (signature on the visible text part, never on the thought part)."
+    },
+    {
+      "slot": "stream_turn9_claude_followup",
+      "session": "claude",
+      "mode": "continue",
+      "after": "stream_turn8b_claude_followup1",
+      "replays": "stream_turn8b_claude_followup1",
+      "model": "claude-sonnet-4-6",
+      "wireModel": "claude-sonnet-4-6",
+      "effort": null,
+      "prompt": "done",
+      "expect": {
+        "requestHas": [
+          "thought",
+          "thoughtSignature"
+        ],
+        "responseStopReason": "stop",
+        "thinkingBudget": 1024
+      },
+      "why": "Second Claude continuation: used_claude/used_claude_conservative/used_non_gemini_model labels stay true across a chain."
+    },
+    {
+      "slot": "stream_turn10_pro_high",
+      "session": "pro",
+      "mode": "fresh",
+      "model": "gemini-3.1-pro",
+      "wireModel": "gemini-pro-agent",
+      "effort": "high",
+      "prompt": "ok",
+      "expect": {
+        "responseStopReason": "stop",
+        "thinkingBudget": 10001
+      },
+      "why": "Pro/agent runtime ID rename: the picker id gemini-3.1-pro must resolve to gemini-pro-agent + its enum and budget."
+    },
+    {
+      "slot": "stream_turn11_pro_followup",
+      "session": "pro",
+      "mode": "continue",
+      "after": "stream_turn10_pro_high",
+      "replays": "stream_turn10_pro_high",
+      "model": "gemini-3.1-pro",
+      "wireModel": "gemini-pro-agent",
+      "effort": "high",
+      "prompt": "done",
+      "expect": {
+        "requestHas": [
+          "thoughtSignature"
+        ],
+        "responseStopReason": "stop",
+        "thinkingBudget": 10001
+      },
+      "why": "Gemini-family thinking replay outside flash: 1.1.28 turn10 returned a thought part, so this turn pins whether it replays like Claude's."
+    },
+    {
+      "slot": "stream_turn12_gpt_initial",
+      "session": "gpt",
+      "mode": "fresh",
+      "model": "gpt-oss-120b",
+      "wireModel": "gpt-oss-120b-medium",
+      "effort": "medium",
+      "prompt": "reason",
+      "expect": {
+        "responseStopReason": "stop",
+        "thinkingBudget": 8192,
+        "labels": {
+          "used_claude": "false",
+          "used_non_gemini_model": "true"
+        }
+      },
+      "why": "Third wire family. gpt-oss-120b is listed by the backend under exactly one variant (-medium, ADR-0009); the catalog carries thinkingBudget 8192. The command uses the bare id + --effort medium like the other families — agy models prints the variant id (gpt-oss-120b-medium), so flip the model field if the bare id is rejected."
+    },
+    {
+      "slot": "stream_turn13_gpt_followup",
+      "session": "gpt",
+      "mode": "continue",
+      "after": "stream_turn12_gpt_initial",
+      "replays": "stream_turn12_gpt_initial",
+      "model": "gpt-oss-120b",
+      "wireModel": "gpt-oss-120b-medium",
+      "effort": "medium",
+      "prompt": "done",
+      "expect": {
+        "absent": [
+          "thought",
+          "thoughtSignature"
+        ],
+        "responseStopReason": "stop",
+        "thinkingBudget": 8192,
+        "labels": {
+          "used_claude": "false",
+          "used_non_gemini_model": "true"
+        }
+      },
+      "why": "The seam test turns this pair into strict evidence. 1.2.0 verdict: agy replays a gpt turn as plain text — turn12's 15 thought parts came back dropped, with no signature — so a gpt request has no reasoning history at all (unlike gemini and claude). src/builder.ts drops same-family gpt thinking to match. Probe E/F (pi_probe_sentinel) measured the other half on gpt-oss-120b-medium: an unsigned foreign functionCall is accepted (200) and the sentinel adds nothing (200), so this wire never needs ADR-0007's divergence."
+    }
+  ],
+  "dirs": {}
+}

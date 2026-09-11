@@ -12,7 +12,7 @@ import {
   buildThinkingMap,
 } from "../src/model-catalog.ts";
 
-const modelsJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.1.26/models.resp.json", "utf-8"));
+const modelsJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.2.0/models.resp.json", "utf-8"));
 const FIXTURE_CATALOG = parseAvailableModels(modelsJson);
 const FIXTURE_SNAPSHOT = {
   enums: FIXTURE_CATALOG.modelEnums,
@@ -25,19 +25,19 @@ const staticPlan = (runtimeModelId) =>
   resolveModelPlan(runtimeModelId, undefined, FIXTURE_SNAPSHOT);
 
 const fixtureTurn1 = JSON.parse(
-  fs.readFileSync("captures/agy_cli_1.1.26/stream_turn1_initial.req.json", "utf-8")
+  fs.readFileSync("captures/agy_cli_1.2.0/stream_turn1_initial.req.json", "utf-8")
 );
 const fixtureTurn2 = JSON.parse(
-  fs.readFileSync("captures/agy_cli_1.1.26/stream_turn2_toolresult.req.json", "utf-8")
+  fs.readFileSync("captures/agy_cli_1.2.0/stream_turn2_toolresult.req.json", "utf-8")
 );
 const fixtureTurn4 = JSON.parse(
-  fs.readFileSync("captures/agy_cli_1.1.26/stream_turn4_thinking.req.json", "utf-8")
+  fs.readFileSync("captures/agy_cli_1.2.0/stream_turn4_thinking.req.json", "utf-8")
 );
 const fixtureTurn5 = JSON.parse(
-  fs.readFileSync("captures/agy_cli_1.1.26/stream_turn5_multiturn.req.json", "utf-8")
+  fs.readFileSync("captures/agy_cli_1.2.0/stream_turn5_multiturn.req.json", "utf-8")
 );
 const fixtureTurn6 = JSON.parse(
-  fs.readFileSync("captures/agy_cli_1.1.26/stream_turn6_toolerror.req.json", "utf-8")
+  fs.readFileSync("captures/agy_cli_1.2.0/stream_turn6_toolerror.req.json", "utf-8")
 );
 
 test("Seam 1: buildAntigravityRequestBody creates strict envelope and PR #39 labels", () => {
@@ -182,6 +182,41 @@ test("Seam 1: assistant thinking blocks serialize as thought: true with text pro
   // it rides on the next visible-text part instead.
   assert.equal("thoughtSignature" in thinkingPart, false);
   assert.equal(assistantTurn.parts[1].thoughtSignature, "sig_12345");
+});
+
+test("Seam 1: a gpt reasoning turn replays as text only (agy 1.2.0 turn12 → turn13)", () => {
+  // The 1.2.0 capture froze a gpt-oss turn whose response carried 15 thought parts:
+  // agy's next request (stream_turn13_gpt_followup) replays the answer text alone —
+  // no thought part, no signature. Gemini/Claude both replay reasoning, so this is
+  // family-specific and the builder drops the block instead of serializing it.
+  const context = {
+    messages: [
+      { role: "user", content: "A train travels 120 km in 1.5 hours. What is its speed?" },
+      {
+        role: "assistant",
+        content: [
+          { type: "thinking", thinking: "The user wants a one-sentence answer: 120 / 1.5." },
+          { type: "text", text: "The train's average speed is 80 km/h." },
+        ],
+      },
+      { role: "user", content: "reply with exactly this one word: done" },
+    ],
+  };
+
+  const body = buildAntigravityRequestBody({
+    projectId: "aicode-consumers",
+    plan: staticPlan("gpt-oss-120b-medium"),
+    context,
+  });
+
+  const modelTurn = body.request.contents[1];
+  assert.equal(modelTurn.role, "model");
+  assert.deepEqual(
+    modelTurn.parts.map((p) => Object.keys(p)),
+    [["text"]],
+    "gpt replays text alone: no thought part, no signature",
+  );
+  assert.equal(modelTurn.parts[0].text, "The train's average speed is 80 km/h.");
 });
 
 test("Seam 1: toolResult role from pi-ai is properly formatted as functionResponse", () => {
@@ -779,18 +814,23 @@ test("Seam 1: multi-turn conversation maintains fixed trajectoryId/sessionId and
 });
 
 test("Seam 1 (Strict Wire Parity): All multi-turn capture fixtures (Turns 1, 2, 4, 5) share invariant session identities and proportional step indices", () => {
+  // The capture rotates with every agy release, so the numbers are read off each fixture
+  // and the laws between them are asserted: one session, growing step counts, and the
+  // three counters agreeing with the payload they describe.
   const turns = [
-    { name: "Turn 1", fixture: fixtureTurn1, expectedStepIndex: "0", expectedStepCount: 1, expectedReqIdSuffix: 0 },
-    { name: "Turn 2", fixture: fixtureTurn2, expectedStepIndex: "2", expectedStepCount: 3, expectedReqIdSuffix: 1 },
-    { name: "Turn 4", fixture: fixtureTurn4, expectedStepIndex: "20", expectedStepCount: 21, expectedReqIdSuffix: 9 },
-    { name: "Turn 5", fixture: fixtureTurn5, expectedStepIndex: "26", expectedStepCount: 27, expectedReqIdSuffix: 11 },
+    { name: "Turn 1", fixture: fixtureTurn1 },
+    { name: "Turn 2", fixture: fixtureTurn2 },
+    { name: "Turn 4", fixture: fixtureTurn4 },
+    { name: "Turn 5", fixture: fixtureTurn5 },
   ];
 
   const baseTrajId = fixtureTurn1.body.request.labels.trajectory_id;
   const baseSessionId = fixtureTurn1.body.request.sessionId;
+  let previousCount = 0;
 
   for (const t of turns) {
     const body = t.fixture.body;
+    const contents = body.request.contents;
     // 1. Session ID & Trajectory ID never mutate across turns
     assert.equal(body.request.labels.trajectory_id, baseTrajId, `${t.name} trajectory_id drifted`);
     assert.equal(body.request.sessionId, baseSessionId, `${t.name} sessionId drifted`);
@@ -798,11 +838,16 @@ test("Seam 1 (Strict Wire Parity): All multi-turn capture fixtures (Turns 1, 2, 
     assert.equal(body.userAgent, "antigravity");
     assert.equal(body.requestType, "agent");
 
-    // 2. Step index and step count match exactly
-    assert.equal(body.request.labels.last_step_index, t.expectedStepIndex, `${t.name} last_step_index mismatch`);
-    assert.equal(body.request.contents.length, t.expectedStepCount, `${t.name} contents.length mismatch`);
-    assert.match(body.requestId, new RegExp(`/${baseTrajId}/${t.expectedStepCount}$`), `${t.name} requestId count mismatch`);
-    assert.equal(body.request.labels.request_id, `${baseTrajId}-${t.expectedReqIdSuffix}`, `${t.name} request_id sequence mismatch`);
+    // 2. Step index, requestId step and the model-turn label all follow the payload
+    const stepCount = contents.length;
+    assert.ok(stepCount > previousCount, `${t.name} must grow the session`);
+    previousCount = stepCount;
+    assert.equal(body.request.labels.last_step_index, String(stepCount - 1), `${t.name} last_step_index mismatch`);
+    assert.match(body.requestId, new RegExp(`/${baseTrajId}/${stepCount}$`), `${t.name} requestId count mismatch`);
+    const modelTurns = contents.filter(
+      (c) => c.role === "model" && !(c.parts ?? []).some((p) => p.functionResponse),
+    ).length;
+    assert.equal(body.request.labels.request_id, `${baseTrajId}-${modelTurns}`, `${t.name} request_id sequence mismatch`);
   }
 });
 
@@ -844,6 +889,52 @@ test("Seam 1 (Strict Wire Parity): buildAntigravityRequestBody reproduces Turn 4
   assert.equal(bodyTurn5.request.labels.request_id, `${trajId}-11`);
   assert.equal(bodyTurn5.request.labels.trajectory_id, trajId);
   assert.equal(bodyTurn5.request.sessionId, sessId);
+});
+
+// The label counts the model turns a request actually carries, so any turn the
+// translation drops must not advance it: error/aborted skips (the everyday case
+// — aborted and errored assistant messages stay in pi's context), assistant
+// messages with no content blocks, and messages whose only part is empty text.
+test("Seam 1: labels.request_id counts replayed model turns, never dropped ones", () => {
+  const dropped = {
+    errorTurn: { role: "assistant", stopReason: "error", content: [{ type: "text", text: "partial" }] },
+    abortedTurn: { role: "assistant", stopReason: "aborted", content: [{ type: "text", text: "partial" }] },
+    emptyContent: { role: "assistant", stopReason: "stop", content: [] },
+    emptyTextOnly: { role: "assistant", stopReason: "stop", content: [{ type: "text", text: "" }] },
+  };
+  for (const [name, turn] of Object.entries(dropped)) {
+    const messages = [
+      { role: "user", content: "first" },
+      { role: "assistant", stopReason: "stop", content: [{ type: "text", text: "answer" }] },
+      { role: "user", content: "second" },
+      turn,
+      { role: "user", content: "third" },
+    ];
+    const body = buildAntigravityRequestBody({
+      projectId: "aicode-consumers",
+      plan: staticPlan("gemini-3.7-flash-high"),
+      context: { messages },
+    });
+    const modelTurns = body.request.contents.filter(
+      (c) => c.role === "model" && !(c.parts ?? []).some((p) => p.functionResponse),
+    ).length;
+    assert.equal(modelTurns, 1, `${name}: the dropped turn must not reach the wire`);
+    assert.equal(
+      body.request.labels.request_id,
+      `${body.request.labels.trajectory_id}-${modelTurns}`,
+      `${name}: label must count the model turns the request carries`,
+    );
+    assert.equal(
+      body.requestId.split("/").pop(),
+      String(body.request.contents.length),
+      `${name}: envelope counter stays contents-based`,
+    );
+    assert.equal(
+      body.request.labels.last_step_index,
+      String(body.request.contents.length - 1),
+      `${name}: last_step_index stays contents-based`,
+    );
+  }
 });
 
 test("Seam 1 (400 fix, agy 1.1.26 capture 2026-09-05): toolResult wire shape matches agy", () => {
@@ -1536,11 +1627,14 @@ test("Seam 1: buildAntigravityRequestBody skips aborted and errored assistant me
   assert.equal(body.request.contents[1].parts[0].text, "Query 2 (retried)");
 });
 
-test("Seam 1 (#15): thinking replay matches the agy CLI part-split byte-for-byte (1.1.27 turn4)", () => {
-  const turn4 = JSON.parse(
-    fs.readFileSync("captures/agy_cli_1.1.27/stream_turn4_thinking.req.json", "utf-8")
+test("Seam 1 (#15): thinking replay matches the agy CLI part-split byte-for-byte (1.2.0 pro turn11)", () => {
+  // agy replays a thinking turn as [{thought, text: ""}, {text, thoughtSignature}]: the
+  // signature never rides the thought part. The pro follow-up is the 1.2.0 instance of
+  // that shape (the tooltrace's first replay is a tool turn instead).
+  const turn11 = JSON.parse(
+    fs.readFileSync("captures/agy_cli_1.2.0/stream_turn11_pro_followup.req.json", "utf-8")
   );
-  const fixtureTurn = turn4.body.request.contents[1];
+  const fixtureTurn = turn11.body.request.contents[1];
   assert.equal(fixtureTurn.parts[0].thought, true);
   assert.equal("thoughtSignature" in fixtureTurn.parts[0], false);
 
@@ -1548,13 +1642,14 @@ test("Seam 1 (#15): thinking replay matches the agy CLI part-split byte-for-byte
   // block carries the closing signature in its canonical thinkingSignature,
   // the visible text carries none, and nothing rides message-level.
   const sig = fixtureTurn.parts[1].thoughtSignature;
+  assert.ok(sig, "the follow-up must replay the previous thinking signature");
   const context = {
     messages: [
-      { role: "user", content: "train problem" },
+      { role: "user", content: "reply with exactly this one word: ok" },
       {
         role: "assistant",
         provider: "antigravity",
-        model: "gemini-3.7-flash-high",
+        model: "gemini-pro-agent",
         content: [
           { type: "thinking", thinking: fixtureTurn.parts[0].text, thinkingSignature: sig },
           { type: "text", text: fixtureTurn.parts[1].text },
@@ -1566,7 +1661,7 @@ test("Seam 1 (#15): thinking replay matches the agy CLI part-split byte-for-byte
 
   const body = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.1-pro"),
     context,
   });
 
@@ -1579,7 +1674,7 @@ test("Seam 1 (#14): Claude thinking replay matches the agy CLI part-split byte-f
   // cross-family only. SSE carries the signature combined on the closing
   // thought part; history stores it on the thinking block, as the adapter leaves it.
   const turn9 = JSON.parse(
-    fs.readFileSync("captures/agy_cli_1.1.27/stream_turn9_claude_followup.req.json", "utf-8")
+    fs.readFileSync("captures/agy_cli_1.2.0/stream_turn9_claude_followup.req.json", "utf-8")
   );
   const fixtureTurn = turn9.body.request.contents[1];
   assert.equal(fixtureTurn.parts[0].thought, true);

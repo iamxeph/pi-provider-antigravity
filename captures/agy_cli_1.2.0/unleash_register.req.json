@@ -1,0 +1,38 @@
+{
+  "method": "POST",
+  "url": "https://antigravity-unleash.goog/api/client/register",
+  "headers": {
+    "authorization": "*:production.e44558998bfc35ea9584dc65858e4485fdaa5d7ef46903e0c67712d1",
+    "unleash-sdk": "unleash-client-go:4.5.0",
+    "unleash-connection-id": "16b49ad2-a45c-4373-ad05-76556f881f4e",
+    "content-type": "application/json",
+    "unleash-appname": "codeium-language-server",
+    "unleash-instanceid": "<REDACTED_USER>-t1",
+    "user-agent": "codeium-language-server",
+    "unleash-interval": "60000",
+    "content-length": "559",
+    "accept-encoding": "gzip"
+  },
+  "body": {
+    "appName": "codeium-language-server",
+    "instanceId": "<REDACTED_INSTANCE_ID>",
+    "connectionId": "16b49ad2-a45c-4373-ad05-76556f881f4e",
+    "sdkVersion": "unleash-client-go:4.5.0",
+    "strategies": [
+      "default",
+      "applicationHostname",
+      "gradualRolloutRandom",
+      "gradualRolloutSessionId",
+      "gradualRolloutUserId",
+      "remoteAddress",
+      "userWithId",
+      "flexibleRollout"
+    ],
+    "started": "2026-09-11T11:28:28.478904853+09:00",
+    "interval": 60,
+    "platformVersion": "go1.28-20260721-RC01 cl/951519500 +3ebc191975 X:fieldtrack,boringcrypto,simd,mapsplitgroup",
+    "platformName": "go",
+    "yggdrasilVersion": null,
+    "specVersion": "4.3.1"
+  }
+}

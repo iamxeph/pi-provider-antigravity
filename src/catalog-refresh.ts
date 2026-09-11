@@ -3,6 +3,40 @@ import { parseStoredCredentials } from "./auth.ts";
 import type { AvailableModelItem, AvailableModelsCatalog } from "./model-catalog.ts";
 import { buildDynamicPublicModels, getCatalogSnapshot, getStoredCatalog, ingestCatalog, updateCatalogStore } from "./model-catalog.ts";
 import type { Model } from "@earendil-works/pi-ai";
+import type { RefreshModelsContext } from "@earendil-works/pi-ai";
+import type { CatalogThinking } from "./model-catalog.ts";
+
+/**
+ * The provider-private snapshot kept inside this provider's own store entry.
+ * Pi persists unknown keys verbatim, and the canonical store entry carries only
+ * pi `Model`s — which do not hold the Wire-side data an offline restart needs
+ * (model enums, per-Runtime-ID thinking budgets, server-directed renames).
+ */
+const PRIVATE_SNAPSHOT_KEY = "pi-provider-antigravity";
+
+interface PrivateSnapshot {
+  modelEnums?: Record<string, string>;
+  runtimeIds?: string[];
+  thinking?: Record<string, CatalogThinking>;
+  deprecated?: Record<string, string>;
+}
+
+type StoreEntry = NonNullable<RefreshModelsContext["stored"]>;
+
+/**
+ * `RefreshModelsContext` plus the private key above: the canonical type covers
+ * pi's own fields (no `any`), this adds what this provider writes into the entry,
+ * so a rename on pi's side fails the typecheck instead of silently disabling the
+ * offline restore (every field below is read through optional chaining, so a
+ * vanished name would read as `undefined` and take the wrong branch).
+ */
+type RefreshContext = Omit<RefreshModelsContext, "stored" | "publish"> & {
+  stored?: Readonly<StoreEntry> & { [PRIVATE_SNAPSHOT_KEY]?: PrivateSnapshot };
+  publish(publication: {
+    persist?: (StoreEntry & { [PRIVATE_SNAPSHOT_KEY]?: PrivateSnapshot }) | null;
+    update?: () => void;
+  }): Promise<boolean>;
+};
 
 /**
  * Model Catalog refresh (wire, ports & adapters): fetchAvailableModels fetch,
@@ -10,26 +44,33 @@ import type { Model } from "@earendil-works/pi-ai";
  * Produces AvailableModelsCatalog values and records generations via
  * updateCatalogStore; all pure mapping and presentation lives in model-catalog.ts.
  */
-export async function refreshCatalog(context: any): Promise<Array<Model<any>>> {
+export async function refreshCatalog(context: RefreshContext): Promise<Array<Model<any>>> {
   // Restore from context.stored first for offline restart support,
   // but only into a pristine store: a failed refresh must not clobber a
   // fresher in-memory snapshot with older persisted data.
-  const storedEnums = context.stored?.["pi-provider-antigravity"]?.modelEnums;
-  const storedRuntimeIds = context.stored?.["pi-provider-antigravity"]?.runtimeIds;
-  const storedThinking = context.stored?.["pi-provider-antigravity"]?.thinking;
-  const storedDeprecated = context.stored?.["pi-provider-antigravity"]?.deprecated;
+  const storedSnapshot = context.stored?.[PRIVATE_SNAPSHOT_KEY];
+  const storedEnums = storedSnapshot?.modelEnums;
+  const storedRuntimeIds = storedSnapshot?.runtimeIds;
+  const storedThinking = storedSnapshot?.thinking;
+  const storedDeprecated = storedSnapshot?.deprecated;
   if ((storedEnums || storedRuntimeIds || storedThinking || storedDeprecated) && getCatalogSnapshot().version === 0) {
     updateCatalogStore(storedEnums || {}, storedRuntimeIds || [], storedThinking || {}, storedDeprecated || {});
   }
 
+  // The stored models are pi's own (readonly) array: hand the caller its own copy.
+  const storedModels = () => [...(context.stored?.models ?? [])];
+
   if (!context.allowNetwork) {
-    return context.stored?.models || [];
+    return storedModels();
   }
 
   try {
-    const apiKey = context.credential?.access;
+    // Pi hands one credential per provider: this provider's own flow stores an
+    // OAuth credential whose `access` is the JSON envelope with the project id.
+    const credential = context.credential;
+    const apiKey = credential?.type === "oauth" ? credential.access : undefined;
     if (!apiKey) {
-      return context.stored?.models || [];
+      return storedModels();
     }
 
     const { token, projectId } = parseStoredCredentials(apiKey);
@@ -46,7 +87,7 @@ export async function refreshCatalog(context: any): Promise<Array<Model<any>>> {
         persist: {
           models: dynamicModels,
           checkedAt: Date.now(),
-          "pi-provider-antigravity": {
+          [PRIVATE_SNAPSHOT_KEY]: {
             modelEnums: { ...snap.enums },
             runtimeIds: [...snap.runtimeIds],
             thinking: { ...(snap.thinking ?? {}) },
@@ -58,7 +99,7 @@ export async function refreshCatalog(context: any): Promise<Array<Model<any>>> {
 
     return dynamicModels;
   } catch {
-    return context.stored?.models || [];
+    return storedModels();
   }
 }
 

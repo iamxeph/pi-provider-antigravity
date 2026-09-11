@@ -33,7 +33,7 @@ export default function (pi: ExtensionAPI): void {
       getApiKey,
     },
     streamSimple: streamAntigravity,
-    refreshModels: async (context: any) => refreshCatalog(context),
+    refreshModels: async (context) => refreshCatalog(context),
   });
 
   pi.registerCommand("antigravity", {

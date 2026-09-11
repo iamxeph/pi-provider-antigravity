@@ -1,7 +1,0 @@
-data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": "[agy-capture-probe-127.txt](file:///tmp/agy-capture"}]}}],"usageMetadata": {"promptTokenCount": 15315,"candidatesTokenCount": 16,"totalTokenCount": 15331},"modelVersion": "gemini-3.7-flash","responseId": "G5ecap7yMeWu2roPqYiq8AE"},"traceId": "67c2822032806c11","metadata": {}}
-
-data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": "-probe-127.txt) 파일을 생성했습니다."}]}}],"usageMetadata": {"promptTokenCount": 15503,"candidatesTokenCount": 29,"totalTokenCount": 15532},"modelVersion": "gemini-3.7-flash","responseId": "G5ecap7yMeWu2roPqYiq8AE"},"traceId": "67c2822032806c11","metadata": {}}
-
-data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thoughtSignature": "EmcKZQERTTIP/jM0/HKZdWkTIaSdN2TxWA/hOS7Wb2JVZam/3prDQ/KDIFqYsBMtvKX321V5M4FNDITOxIuhxWgDpbMXDiegWSao46fvrqQkCkbSMiMnJDXkXZIwriDNo31hDQZ9L7HC","text": ""}]},"finishReason": "STOP"}],"usageMetadata": {"promptTokenCount": 15503,"candidatesTokenCount": 29,"totalTokenCount": 15532},"modelVersion": "gemini-3.7-flash","responseId": "G5ecap7yMeWu2roPqYiq8AE"},"traceId": "67c2822032806c11","metadata": {}}
-
-

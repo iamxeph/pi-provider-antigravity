@@ -114,7 +114,7 @@ function resolveSessionTrajectory(sessionId: string): string {
 }
 
 /**
- * Signed 64-bit `request.sessionId`. Constant in every captured agy turn (1.1.26-1.2.0) — no
+ * Signed 64-bit `request.sessionId`. Constant in every captured agy turn (1.1.26-1.1.28) — no
  * conversation/account input. Re-capture (captures/README.md) if a future agy changes it.
  */
 const AGY_SESSION_ID = "-3750763034362895579";
@@ -230,6 +230,11 @@ function translateTurnTrace(
   // accepts the same unsigned foreign functionCall with no sentinel at all (and merely
   // tolerates the sentinel), so Claude/GPT requests keep today's shape.
   const isGeminiRequest = classifyModelFamily(runtimeModelId) === "gemini";
+  // agy's gpt wire carries no reasoning history: the 1.2.0 capture (stream_turn12 →
+  // stream_turn13) replayed a 15-thought-part response as plain text only, no thought
+  // part and no signature. Gemini and Claude both replay reasoning, so a gpt request
+  // drops the block instead of serializing it.
+  const isGptRequest = classifyModelFamily(runtimeModelId) === "gpt";
 
   for (const msg of messages) {
     if (msg.role === "user") {
@@ -306,6 +311,11 @@ function translateTurnTrace(
             const isForeignReasoning =
               !isSameProviderAndModel ||
               (typeof candidateSig === "string" && candidateSig.trim().startsWith("{"));
+
+            // Same-family gpt reasoning is dropped, not serialized: the wire has no
+            // shape for it (1.2.0 capture above). Foreign reasoning keeps the
+            // context-preserving text fallback below, which has no agy counterpart.
+            if (isGptRequest && !isForeignReasoning) continue;
 
             if (!isForeignReasoning) {
               // No thoughtSignature here by design: it stays pending for the
@@ -483,8 +493,13 @@ export function buildAntigravityRequestBody(params: BuildRequestBodyParams): Rec
       : resolveSessionTrajectory(sessionId);
   const contents = translateTurnTrace(context, runtimeModelId);
 
-  // Request ID sequence increments by completed assistant turns
-  const requestIndex = context.messages.filter((m) => m.role === "assistant").length;
+  // Request ID sequence increments by completed assistant turns **as carried by
+  // this request**: derive it from the payload, so a turn the translation drops
+  // (stopReason error/aborted, empty content, all-empty parts) can never desync
+  // the label from `contents` — matches all 26 captured agy turns.
+  const requestIndex = contents.filter(
+    (c) => c.role === "model" && !c.parts?.some((p: any) => p.functionResponse)
+  ).length;
   const requestId = `agent/${sessionId}/${Date.now()}/${trajectoryId}/${contents.length}`;
 
   const modelEnum = plan.modelEnum;

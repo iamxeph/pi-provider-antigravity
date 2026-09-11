@@ -1,6 +1,6 @@
 export const DEFAULT_ENDPOINT = "https://daily-cloudcode-pa.googleapis.com";
 export const DEFAULT_USER_AGENT =
-  "antigravity/cli/1.1.28 (aidev_client; os_type=linux; arch=amd64; cl=978129418; auth_method=consumer)";
+  "antigravity/cli/1.2.0 (aidev_client; os_type=linux; arch=amd64; cl=978750357; auth_method=consumer)";
 
 export const PROVIDER_ID = "antigravity";
 

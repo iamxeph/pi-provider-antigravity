@@ -17,8 +17,11 @@ Evidence: `captures/pi_probe_sentinel/` (probe captures through `mitmdump`, 2026
 A/B on `gemini-3.8-flash-low`, where the only delta between A and B is that one field:
 unsigned pending foreign `functionCall` → 400 with the message above; the same body with
 the sentinel → 200. The same probe on `claude-sonnet-4-6`: unsigned → 200 (a signature is
-not required there) and sentinel → 200 (tolerated but pointless), so the Claude/GPT wire
-stays untouched.
+not required there) and sentinel → 200 (tolerated but pointless), so the Claude wire stays
+untouched. The gpt family is routed identically and measured too: on `gpt-oss-120b-medium`
+the same unsigned foreign `functionCall` → 200 and the sentinel → 200 (probe E/F,
+2026-09-11), and the 1.2.0 capture shows agy's own gpt turns replay no signature at all —
+so there is nothing there for the sentinel to replace either.
 
 Consequences:
 

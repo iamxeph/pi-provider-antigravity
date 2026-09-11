@@ -14,6 +14,13 @@ const SCAN_DIRS = process.env.CAPTURE_LINT_DIRS
   ? process.env.CAPTURE_LINT_DIRS.split(",")
   : ["captures", "tests"];
 
+const LOCAL_USER = process.env.USER ?? "";
+// Placeholder names would match their own normalization (see sanitize-captures.mjs).
+const PLACEHOLDER_USERS = new Set(["", "user", "root", "runner", "node", "nobody"]);
+const LOCAL_USER_RE = PLACEHOLDER_USERS.has(LOCAL_USER)
+  ? null
+  : new RegExp(LOCAL_USER.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g");
+
 const RULES = [
   {
     id: "unmasked-google-refresh-token",
@@ -45,6 +52,16 @@ const RULES = [
     id: "local-user-home-path",
     description: "Local home directory path (must be normalized to /home/user)",
     regex: /(?:file:\/\/\/|\/)(?:home|Users)\/(?!user(?:[/\\"'`]|$))[a-zA-Z0-9_.-]+/g,
+  },
+  {
+    id: "unmasked-machine-instance-id",
+    description: "Machine-derived instance id (embeds username/hostname) must be redacted",
+    regex: /(["']instanceId["']\s*[:=]\s*["']?|[?&]instanceId=)(?!<REDACTED)[^"'&\s]+/gi,
+  },
+  {
+    id: "local-username",
+    description: "Local account name leaked into a fixture (tool output owner column)",
+    regex: LOCAL_USER_RE ?? /(?!)/,
   },
   {
     id: "personal-global-rules",

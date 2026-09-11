@@ -7,7 +7,7 @@ import {
 } from "../src/catalog-refresh.ts";
 import { getCatalogSnapshot, getStoredCatalog } from "../src/model-catalog.ts";
 
-const modelsJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.1.26/models.resp.json", "utf-8"));
+const modelsJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.2.0/models.resp.json", "utf-8"));
 
 const storedModels = [{ id: "gemini-3.8-flash", name: "Cached" }];
 
@@ -69,7 +69,7 @@ test("Catalog refresh: fresh fetch builds dynamic models and publishes", async (
     const published = [];
     const models = await refreshCatalog({
       allowNetwork: true,
-      credential: { access: JSON.stringify({ token: "t", projectId: "p" }) },
+      credential: { type: "oauth", access: JSON.stringify({ token: "t", projectId: "p" }) },
       stored: {},
       publish: async (arg) => {
         published.push(arg);
@@ -105,7 +105,7 @@ test("Catalog refresh: fetch failure falls back to stored models", async () => {
   try {
     const models = await refreshCatalog({
       allowNetwork: true,
-      credential: { access: JSON.stringify({ token: "t", projectId: "p" }) },
+      credential: { type: "oauth", access: JSON.stringify({ token: "t", projectId: "p" }) },
       stored: { models: storedModels },
     });
     assert.deepEqual(models, storedModels);
@@ -123,7 +123,7 @@ test("Catalog refresh: sequential refreshes evict stale enums", async () => {
       "stale-model-high": { model: "MODEL_STALE", displayName: "Stale" },
     },
   };
-  const credential = { access: JSON.stringify({ token: "t", projectId: "p" }) };
+  const credential = { type: "oauth", access: JSON.stringify({ token: "t", projectId: "p" }) };
   try {
     globalThis.fetch = async () => ({ ok: true, json: async () => staleJson });
     await refreshCatalog({ allowNetwork: true, credential, stored: {} });
@@ -141,7 +141,7 @@ test("Catalog refresh: sequential refreshes evict stale enums", async () => {
 
 test("Catalog refresh: persisted state never clobbers a fresher snapshot", async () => {
   const realFetch = globalThis.fetch;
-  const credential = { access: JSON.stringify({ token: "t", projectId: "p" }) };
+  const credential = { type: "oauth", access: JSON.stringify({ token: "t", projectId: "p" }) };
   try {
     // Ensure the in-memory snapshot is non-pristine first (order-independent).
     globalThis.fetch = async () => ({ ok: true, json: async () => modelsJson });
@@ -173,7 +173,7 @@ test("Catalog refresh: server-removed models evict uniformly, no pinned fallback
     models: { ...modelsJson.models },
   };
   delete prunedJson.models["gemini-3.6-flash-high"];
-  const credential = { access: JSON.stringify({ token: "t", projectId: "p" }) };
+  const credential = { type: "oauth", access: JSON.stringify({ token: "t", projectId: "p" }) };
   try {
     globalThis.fetch = async () => ({ ok: true, json: async () => modelsJson });
     await refreshCatalog({ allowNetwork: true, credential, stored: {} });

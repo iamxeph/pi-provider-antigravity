@@ -1,0 +1,101 @@
+{
+  "method": "POST",
+  "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse",
+  "headers": {
+    "host": "daily-cloudcode-pa.googleapis.com",
+    "connection": "keep-alive",
+    "User-Agent": "antigravity/cli/1.2.0 (aidev_client; os_type=linux; arch=amd64; cl=978750357; auth_method=consumer)",
+    "Content-Type": "application/json",
+    "Authorization": "Bearer <REDACTED_ACCESS_TOKEN>",
+    "accept": "*/*",
+    "accept-language": "*",
+    "sec-fetch-mode": "cors",
+    "accept-encoding": "br, gzip, deflate",
+    "content-length": "1134"
+  },
+  "body": {
+    "project": "aicode-consumers",
+    "requestId": "agent/5539610016189382010/1789094012636/b31e42ce-6f87-5a5d-baef-a91d7c90e6cd/3",
+    "request": {
+      "contents": [
+        {
+          "role": "user",
+          "parts": [
+            {
+              "text": "Probe: continue."
+            }
+          ]
+        },
+        {
+          "role": "model",
+          "parts": [
+            {
+              "functionCall": {
+                "id": "call_probe0007_fc_probe0007",
+                "name": "bash",
+                "args": {
+                  "command": "true"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "role": "model",
+          "parts": [
+            {
+              "functionResponse": {
+                "name": "bash",
+                "response": {
+                  "output": "ok"
+                },
+                "id": "call_probe0007_fc_probe0007"
+              }
+            }
+          ]
+        }
+      ],
+      "tools": [
+        {
+          "functionDeclarations": [
+            {
+              "name": "bash",
+              "description": "Run a shell command",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "command": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "command"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "labels": {
+        "last_step_index": "2",
+        "model_enum": "MODEL_OPENAI_GPT_OSS_120B_MEDIUM",
+        "request_id": "b31e42ce-6f87-5a5d-baef-a91d7c90e6cd-1",
+        "trajectory_id": "b31e42ce-6f87-5a5d-baef-a91d7c90e6cd",
+        "used_claude": "false",
+        "used_claude_conservative": "false",
+        "used_non_gemini_model": "true"
+      },
+      "generationConfig": {
+        "maxOutputTokens": 32768,
+        "thinkingConfig": {
+          "includeThoughts": true,
+          "thinkingBudget": 8192
+        }
+      },
+      "sessionId": "5539610016189382010"
+    },
+    "model": "gpt-oss-120b-medium",
+    "userAgent": "antigravity",
+    "requestType": "agent"
+  }
+}

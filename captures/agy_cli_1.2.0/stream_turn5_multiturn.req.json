@@ -1,0 +1,1135 @@
+{
+  "method": "POST",
+  "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse",
+  "headers": {
+    "Host": "daily-cloudcode-pa.googleapis.com",
+    "User-Agent": "antigravity/cli/1.2.0 (aidev_client; os_type=linux; arch=amd64; cl=978750357; auth_method=consumer)",
+    "Transfer-Encoding": "chunked",
+    "Authorization": "Bearer <REDACTED_ACCESS_TOKEN>",
+    "Content-Type": "application/json",
+    "Accept-Encoding": "gzip"
+  },
+  "body": {
+    "project": "aicode-consumers",
+    "requestId": "agent/47fcf8b0-6417-47bf-82e3-8c207f385133/1789092487988/313da184-2487-4452-9982-a88d5039589b/19",
+    "request": {
+      "contents": [
+        {
+          "role": "user",
+          "parts": [
+            {
+              "text": "<USER_REQUEST>\nCreate the file /tmp/agy-capture/notes.txt with exactly this content: Hello Antigravity. Then confirm it in one sentence.\n</USER_REQUEST>\n<ADDITIONAL_METADATA>\nThe current local time is: 2026-09-11T11:07:35+09:00.\n</ADDITIONAL_METADATA>\n<USER_SETTINGS_CHANGE>\nThe user changed setting `Model Selection` from None to Gemini 3.8 Flash (High). No need to comment on this change if the user doesn't ask about it. If reporting what model you are, please use a human readable name instead of the exact string.\n</USER_SETTINGS_CHANGE>"
+            }
+          ]
+        },
+        {
+          "role": "model",
+          "parts": [
+            {
+              "functionCall": {
+                "id": "call_1421923",
+                "name": "run_command",
+                "args": {
+                  "CommandLine": "mkdir -p /tmp/agy-capture && ls -ld /tmp/agy-capture",
+                  "Cwd": "/home/user/.gemini/antigravity-cli",
+                  "WaitMsBeforeAsync": 5000,
+                  "toolAction": "Checking directory",
+                  "toolSummary": "Check directory"
+                }
+              },
+              "thoughtSignature": "Ep0gCpogARFNMg/GvDds9Ycb2rTNeHYNZEOsj8KYyukLELb5RbE3ssWQ0s8RfGox4U9ge5pv/JqRLqB0aWo9cyOgaLwkqmqj8rMisPWhm1PlUg1+DjGeu7o0+cQuVnkJKW5S/O79Jx+nCliNsTqAEbojz+4wPALyd5rICf2p0xupl/EYt9KMn5eUzvB4RnpYOlmsCHeXOfaT/mC6C+P7bESWh1pcPa6EtbkyU/0OCKuidQP7rGcJFA2hWU95rQmh5XtLHRcVpngLEoQ9aaUqWe42JftTM1gVp1zaU4CmdQfpjgthwOkdgNH/nVYj8RzoxexWNd60mvZlsssiwzPdCx43QIPwbmKHA7NCm2/4HwrH+LVBsqDzvyqFXZhv6AixmglJaEbjiMM8lNiEjcWh/tpDJ5nlCyalT6MPEfebp2GLL2wS/k+1C8q5nZiyJcwRtLGOhCVw/ByGzG6rY+sWCONLiw8J8rishVcI9MDnHK7lqormNPO4ymX34DNEfJOQJ4PT9S5lApQ7zVtxq2QPyTGrNwXdHUS2ulLJTxlvP2ZRXkhN8ePXN/USIfyb1NcTqtfm2gfDeVaTob+pOQJsg+cz3CRQtJ96SSdgy2T8yT9CHOgzTUHBFeroZqRjuuizb/a00MXMyTqeIMa7v6zvNChkI6imyJdTjrbSMN+KWLDqhqqfEf0mnvKOrLxGqsTdrAK6E49qOYtYpJ5pBJm3y2HdcRVeEvS/z3F5fLOcC9pVywNAUDieKRmRsMzYNJd55uqKlqg74ij7vCib9c8K1c/Xfz66bWuuVhjBjRYceSOl7DclKiClyukijmptV+jDIsfx9lCZiiVYSr/YQz7IQM0pm6RIBC/HBa+dNkEJ4t5E2SiNyxy7TWumzpQkoqrvsclp5TV3vG3WV4L42utIyN5PPkIXmP1Y2hePlrdMU2rCTFkzUzOl0ZwcQpEM4VmEyYRWql2UmPuTubymtO0iw7lzC9eT03vsHawYvaMTsF8E6emtlPIXS25tSk4g8vLpN1KAdQDZcNChZYseXNwfl/js0uldk2VGRZ/bIamJtmbaDQeVR6KFQlF2S3Nzb7VaEKx8d7c8NBEVL7TDh6MgwLfmS0Ias6hl4ta4KMIdl1xr/pS3fjfCuzsW8A2oVWNhIoXwcjBpm1hu0uRo2rOihehv06+mWy7qxjIXrt2SkpX7mMYj98g6dCdjUXH0/OodMRwZfrj6t9dIqpIXYIz/V608LkLmKiX72Qmm7S7DQgjzDPm9tIzOKVQ490MFdwIx4z+6H1pOfXbIt1ibAfU4Vvk9j1fqKEWTh2wSfabGmYDcJ/XtAFLwZRo9bzSvEWogNXf/MU8PcFbk7PgQmLYEHxwhMeQcd3lozak4PympiCHc9WyYztZfvW08H8scQ5FQlh+u9bqoGBL85sJFMWEQ7XjYNBDQ3nF1GFpHWSi6C2kftnH51TKNEcDgD4AKRHQRy4o3xosQQlZj1esNOLL4Z+YawbL7YqojQ3N3zMlU891dOalansyZv2pzMuNQ7lsPsUHECcU3FjVODuZ2DJI+It1h2drYrv4Gpn4fK2zHxh3g0naeBYxGNVN9Yz8l2/kWakT3UuzOYhvapobwYn2C4h5VIunjcgacvaCVmgIjhuVBsHckvc3pr6Wsu3WPNU2luzcbyk+VGzmh7BPWyGg54o5bTcb4gYmvDpJdE77k19j+nyD6nbfeUPDmGyrwEqZ8hU3ak09iNr80GvWVD/bBPn1dtckz0jnqOXS68R/+CVmp1lF+I2C42Quud16bRuaAakzIsdEon4uJS4Lz41h4yWEHRI64yEwNXhQfPXBHONZ50aw/gDAElW63VwtKT32chY+xpU2b67+lSd6VfmoZDipw+RVmGDnJ3q4BKN+3beZmIOfqa8/X/E1s8fxE/6wnDy+8P6ubsLucH2hdZliRpRCCP4WqrujF9/FDVUdf6T8pSff+xbkguAkimRz2QxJgaEfApuB/6SkEPXm6g/rJ0ffWPfLA1yeuqd/NuN6CJtCzAAUCauUQ3kZxKYyExnZCKwV1cfgKstedC47BON3Vg87axEpnsJzXS1JzNQd/3hJwGSTpikva+Id+t498nAWM83a+A7LgcvGPG0+RPpBdoA4+eQKgj4TyOme5vPzSM6V+RffuL4UQlGWAfP4rBNpr/0OZvdWlAwvfOyxsce8WrK3LnvP7yD8A9PieKLlymPR8cYD41oMRxIGave0eH0wSCzfZJQd+G1B07NkvsK5rlMjF5UMNtua+u68FDdajbGA/NEO/ui8Ibdbz5Au5beQ682Tz0oWIZxC2SOqex5PSvQhDAhEselrGwo20QRNELbcLTqK3V3zykgAsqFRj7/wfQHV4+r32QTVok+MZUS1LDYcy2/QcNCgPw8j1TgAghTobay18zFwPXa5S9DMO7xG+/sZj4aMx+FSrksbA0w4N4rLWZvrLRFDXEPLD9I/49tLV/C4/vmfAPj4IuA5puG/Qn28UgAKGRpmzGM9Fsl/35hmuIjeQbQtIdxfRvzT88cotXleN6i1u4Eh7NPGpIjkZ+ydv+GIXfKRydD6I/J5OxQgcIrI7xq0vel3el59AdBerdPMlCDyvFUdYvdSDz4zlhYmLBCl5tCP29uDSbMeDS8/SxuaND5Er0j/rKrdWzupQQaR7DCy5raJgHMaZNpgQI7VfFFhEkqqwYaNUZZVR1dlFPOl5d6uFz/93nI1e0e9Wy3jQY+cw+YbcVH0wzfXmAY09G+ZaHjnquZ6RI1U37xv+G5QS9AQHu5by5zrh3Qas9+cV+DHihhUjxSmoEYyA/56ZdTSfsf+JPlQ6mwzL6pD6PBHuXXaeutlgN8q9kIu/IVGnSNceg7JwlrhIu/siCeU2AWEMy/K0JKEKyCLagfqFAbaw6fQtgg9zZAG1Xlr9XcgbLbpFK5K9Zk4eClpM5l44ftpb20SVyrf0ALD8FU77BJ6p8HzGGRDl8JoviHMTA1om0DRlTIbPZzUFRTg+WBYYz/zTpaAEx/yNeIxqDvuE2WKUIUS+zF388WE/p+3VA8/qaD7Zc1UHOLj0IZ1Ou/ldTxwWfEWyeLKPQzWu/0lybsjpYDym48pNrhFv7ea1EakjLm0z0MZJEmNqykD3a4Ap2au5c0VBrOVZ7NEG18U3sBAyUCthkq/ABHKly7tXUHWFNHssT17gaeB9v6S8ISeLj+3lOz8tzhH4w8LNIWDObW/F0zAr6NuXzYY5Rgwqswip5nYpLc9gRf5gQY7AU662EKDVN1JUIQ2rd6thj5YEbPl60V6wPGi3+kFmCO2gtAv2duphw6UYgb08xLS7iBEynEvzOmKvjL4bB4argkxK9GzaxX14RUg7j1zAVG5FlSvbHGmgFY+Rx9rMuEyG+VMBWFP4dsT3mTAEZzb+/6pX5QclVWe5Gmbd6nRReEcdeTfiQ+k02Erqh+HP5q6AvaJ22RadAcu2PifdQAhdhIYhV6ehuGhOl1pxO7wJxFLCDzrPgjrteEWFg2hSRkGdQM27+bFwraF9mV3HXuBO2ZjfuRuS3hplhyqj5OsVKmdCPpaB2aOwdGyEyd4Aoi4mLTVJYN4/dpcTUhLwTEqi6pr2vIWP9t8yUA+Cs3ocpq/5wfoPo/z71Otfo3E9K5kaoc1gdJPKthpF+rsSSCelskEXC2siGc1weH+szjAUPppVQAju5CJCPlyit96A+giUZFtSd053g28twl19HkVlcl0lkju3vd7Ws8wIa9FxtCdKPJGi5RMy6Ah989T/vw/1wvpUmvU6yx4a0XwQi4jKx+WJYIuER8LG9Ldt08HgW8/Bfw2PoS/R7KHB4x6z6fb9Ev7th/if2nONPL3Rl7UbiuGZujSfzLCAxlW/jjTFkP1pmKwcLOZBZtqcfNrSBYt29IWvdHi7WW7YqjfqvbgevYvduxqmnUPlPl3YfPf9WevbwJoqwkAJlLMPnWAsXxt6os+3Tfzq15FkibS3Xjnh9M/zSFwEo182dkejxt49rqHUf/1/zcWulPCUQrDKUAyERybdz934H+zyCY9E7ELAa9Ak/0UBp/AdiAL4K4zOC6N5yYkj4dn3lGG7ibRTwjckrO79pqh0v4ib/1YMPQJBs8zu5yK96/+QB0p7hMuxlgt3WhMW1e6k2HTqysPU1LbiwDE+8XQ4UFf129mC6or9Sn0hcMAglYc9hvGi5nLucYJdAyBxqKrFx0s/LQAxI8sGUfiukYjcsvv/hekD1r6ErmKgUMM+qOEHfk6WQqJ0wIQJzXtbjAbzmbr1RKNad6k3sNxnoHPldIbQfnzFvbcQr/K3hByQEtuCbW/Nn9EXnnqdkfrtwuoZlV4cBu6AhJKh5iw1YXhVIB98/tLw6D+7fCRM6Q4BvjEFg2RztWpB3CS3CHaTFAyR+DIFGsw5CCPzM+/8NeMavyn16d5LyGy3VwCkw0anedUwe7FekLqXTCjx2sLKWRsGhmcACfdgULABLvU5BUZJmxVjelLbJiJW6OzJItJTpGNEd7Aq4gV/v4Z0F9JQ7rKYwTAVPJ78g4+AlexXwS5nnGWcJWJ7Utc9q1cjU03fGRrRo9lfVcYufoaLj94KpIg7ue5pGl/88FG+YHdVus3QcUIp1ixTygjbFJybQkFVlwqCcB8JOeyNd0YEzxrsCtGuEj0yNlXyRqPGu2gwW8G0Fh7zBfu+iys6Qt+ZxKeAb/fuG0fL6QdqtR/C2zABhKjvxVnu/WI8E3/VFf4lET8drAmlDYsrX5odlslnDs+9+TGHDlpkB030ocm2mhQ25F8YYQ6iUrMtQNZQAyUFcIDXvMoyI2ua0FkE3VXVzIvMsh/YMPtoUvaRcigK84bLHiWZ07LvANXDawMtFTLO281pjByYcRryzwr6CawmvZ8YHSBhdYRgFVdtVFKZDtdM+W9Smf2LlGYNhX8Jg8nid8diiO7nHyFujkD90uGXtRBmMz+bWE0RYyDHRqFRcL/CMaSvvztW2m1EgprZpgacGzaQv1Ifjmbl2JeCVNlbUboUMOMh8DmSpkfoOAUz69XLRqpxAbJGuq8NuPnxRi+RieFqYwaZp1ZEEeYUx7oin9+AmrQkhs81V7UivyeValWMKtoHcCIWMIdZGUNaHyTxC+x1xpns7P7OHAZfNJ9gzv/oJGX4fD8Cj8H2BZIUnWZphfBjs4Rgydc5pV+fvpL7byrhzbM/Se4zDmmku4I/zXvVQ+6Av19/C2d51yYm5bAK93a6WNyk5Xyd2yU/sDqlPVZ6AXjKIIhOWht9dFiQn674GaCahHO+GskpTK9/4jPf+2R/C8dOXQbkX0GMExLiiZObA3xoMCfE90CEeJFwO9isBep4oHGEBQqpTglKu4Mg5sa3ggK1Ow59yrtJ+i0P6IF9EwbwZ0Ij44x+7uaNHbfcGB+Jv4PDoqRQPrGZLtWz98UwUPuyCvFtI8S5N5qaO2bg+tuGG+kJe2g8q1U4WfXCWnTFscQOFi7rU/1pMHkhDfGxUYmAPaSUeard"
+            }
+          ]
+        },
+        {
+          "role": "model",
+          "parts": [
+            {
+              "functionResponse": {
+                "id": "call_1421923",
+                "name": "run_command",
+                "response": {
+                  "output": "Created At: 2026-09-11T11:07:40+09:00\nCompleted At: 2026-09-11T11:07:40+09:00\n\nThe command exited with code 0.\nOutput:\ndrwxr-xr-x 3 <REDACTED_USER> users 180 Sep 11 11:07 /tmp/agy-capture\r\n\n"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "role": "model",
+          "parts": [
+            {
+              "functionCall": {
+                "id": "call_1661154",
+                "name": "run_command",
+                "args": {
+                  "CommandLine": "ls -la /tmp/agy-capture",
+                  "Cwd": "/home/user/.gemini/antigravity-cli",
+                  "WaitMsBeforeAsync": 5000,
+                  "toolAction": "Listing files",
+                  "toolSummary": "List directory"
+                }
+              },
+              "thoughtSignature": "EqYBCqMBARFNMg+ROoYOj0pDJflB8413yXhMfRpDV9LJKrwtD0cDWMEXDXuB8pJzfko7mNuk9k0chefSpxbFTbxmXNxGsGt1VrxXBB7ijAp3tRioqTWKOgRVQ93e2BFYjtPan3CQ03JOzKigR0G/Dk3bp+303VcRYQaQenrzVRcevUH84oHbTsdQEd2K4DLZ1bzEX/46IZIQyI/lSWQODdfpXkOP9cOIRg=="
+            }
+          ]
+        },
+        {
+          "role": "model",
+          "parts": [
+            {
+              "functionResponse": {
+                "id": "call_1661154",
+                "name": "run_command",
+                "response": {
+                  "output": "Created At: 2026-09-11T11:07:43+09:00\nCompleted At: 2026-09-11T11:07:43+09:00\n\nThe command exited with code 0.\nOutput:\ntotal 1632\r\ndrwxr-xr-x   3 <REDACTED_USER> users     180 Sep 11 11:07 .\r\ndrwxrwxrwt 463 root root    10820 Sep 11 11:07 ..\r\n-rw-------   1 <REDACTED_USER> users    1432 Sep 10 10:34 antigravity-oauth-token.bak\r\n-rw-r--r--   1 <REDACTED_USER> users     969 Sep 11 11:05 dump.py\r\n-rw-r--r--   1 <REDACTED_USER> users 1643292 Sep 11 11:07 flows.jsonl\r\n-rw-r--r--   1 <REDACTED_USER> users   10792 Sep 11 11:07 mitmdump.log\r\n-rw-r--r--   1 <REDACTED_USER> users       0 Sep 11 11:07 out-stream_turn1_initial.log\r\ndrwxr-xr-x   2 <REDACTED_USER> users      60 Sep 11 11:05 __pycache__\r\n-rw-r--r--   1 <REDACTED_USER> users    2240 Sep 11 11:07 run.sh\r\n\n"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "role": "model",
+          "parts": [
+            {
+              "functionCall": {
+                "id": "call_2232302",
+                "name": "run_command",
+                "args": {
+                  "CommandLine": "cat /tmp/agy-capture/run.sh",
+                  "Cwd": "/home/user/.gemini/antigravity-cli",
+                  "WaitMsBeforeAsync": 5000,
+                  "toolAction": "Viewing script",
+                  "toolSummary": "View run script"
+                }
+              },
+              "thoughtSignature": "EpEDCo4DARFNMg+PJUjyKIXW1fXA2YdIzDNRG1YGJUEbcQJgv0gPZ1PWTUaeO8O7WArCBn4EnP0lp/Pe5ghDpNG9JnSW8TXWgI6gzZtwF4lz9ZUXORc1BRE4/WmQ9b2iQpP16QPdO7OXPahCDX23wE0h6ZXA1gKCwt+lSaMRRSD47lI3no2CLLWGpgU5VUggJiA4aq1LW/4BKYq9BgPQfzJTvYTLebgNqSpnIzXZf7d95A0zKDgZRBlSC4qz0mYXRjIGBhUIpNqRqJ/XsRVPOohFYuuocUDpYDMOzbtfpGzouUB6BQEi8enQTi5mQf8wsFhX8Bkf36SaSh6xQ4uRzNJxqRWPY+sqgU44pp71youLJ/aBABETDOLKCLJPWzDuXrg5CQqi5Gz2UQ89o7w7hUymRqRv66H9X10hvO44BlC4LczZt1h2+XRB3GFXGut/AnOPKgmw4bxJ5pmtjgktY/kVi6pjx9TYJp/21ZvjLDF65fUqWBn6WLawA2QdK2R7nRJOeJcncSxp9Pag74r8wfcMzio="
+            }
+          ]
+        },
+        {
+          "role": "model",
+          "parts": [
+            {
+              "functionResponse": {
+                "id": "call_2232302",
+                "name": "run_command",
+                "response": {
+                  "output": "Created At: 2026-09-11T11:07:44+09:00\nCompleted At: 2026-09-11T11:07:44+09:00\n\nThe command exited with code 0.\nOutput:\n# stream_turn1_initial\r\nagy -p 'Create the file /tmp/agy-capture/notes.txt with exactly this content: Hello Antigravity. Then confirm it in one sentence.' --model gemini-3.8-flash --effort high --dangerously-skip-permissions\r\n# stream_turn4_thinking\r\nagy -c -p 'Think step by step, then answer in exactly one sentence: a train travels 120 km in 1.5 hours, what is its average speed in km/h?' --model gemini-3.8-flash --effort high --dangerously-skip-permissions\r\n# stream_turn5_multiturn\r\nagy -c -p 'reply with exactly this one word: done' --model gemini-3.8-flash --effort high --dangerously-skip-permissions\r\n# stream_turn7_initial_low\r\nagy -p 'reply with exactly this one word: ok' --model gemini-3.8-flash --effort low --dangerously-skip-permissions\r\n# stream_turn3_medium\r\nagy -p 'reply with exactly this one word: ok' --model gemini-3.8-flash --effort medium --dangerously-skip-permissions\r\n# stream_turn6_toolerror\r\nagy -p 'Read the file /tmp/agy-no-such-file-xyz.txt and tell me its exact contents' --model gemini-3.8-flash --effort low --dangerously-skip-permissions\r\n# stream_turn8_claude_thinking\r\nagy -p 'Think step by step, then answer in exactly one sentence: a train travels 120 km in 1.5 hours, what is its average speed in km/h?' --model claude-sonnet-4-6 --dangerously-skip-permissions\r\n# stream_turn8b_claude_followup1\r\nagy -c -p 'reply with exactly this one word: done' --model claude-sonnet-4-6 --dangerously-skip-permissions\r\n# stream_turn9_claude_followup\r\nagy -c -p 'reply with exactly this one word: done' --model claude-sonnet-4-6 --dangerously-skip-permissions\r\n# stream_turn10_pro_high\r\nagy -p 'reply with exactly this one word: ok' --model gemini-3.1-pro --effort high --dangerously-skip-permissions\r\n# stream_turn11_pro_followup\r\nagy -c -p 'reply with exactly this one word: done' --model gemini-3.1-pro --effort high --dangerously-skip-permissions\r\n# stream_turn12_gpt_initial\r\nagy -p 'Think step by step, then answer in exactly one sentence: a train travels 120 km in 1.5 hours, what is its average speed in km/h?' --model gpt-oss-120b --effort medium --dangerously-skip-permissions\r\n# stream_turn13_gpt_followup\r\nagy -c -p 'reply with exactly this one word: done' --model gpt-oss-120b --effort medium --dangerously-skip-permissions\r\n\n"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "role": "model",
+          "parts": [
+            {
+              "functionCall": {
+                "id": "call_216119",
+                "name": "write_to_file",
+                "args": {
+                  "ArtifactMetadata": {
+                    "RequestFeedback": false,
+                    "Summary": "Created notes.txt with Hello Antigravity",
+                    "UserFacing": false
+                  },
+                  "CodeContent": "Hello Antigravity",
+                  "Description": "Create notes.txt with Hello Antigravity",
+                  "Overwrite": true,
+                  "TargetFile": "/tmp/agy-capture/notes.txt",
+                  "toolAction": "Writing file",
+                  "toolSummary": "Create notes file"
+                }
+              },
+              "thoughtSignature": "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"
+            }
+          ]
+        },
+        {
+          "role": "model",
+          "parts": [
+            {
+              "functionResponse": {
+                "id": "call_216119",
+                "name": "write_to_file",
+                "response": {
+                  "output": "Created At: 2026-09-11T11:07:47+09:00\nCompleted At: 2026-09-11T11:07:47+09:00\nEncountered error in tool execution: declaring permissions: cortex tool write_to_file: convert tool call for permissions: model output error: invalid tool call error (invalid_args) /tmp/agy-capture/notes.txt is not a valid artifact path; artifacts must be in /home/user/.gemini/antigravity-cli/brain/47fcf8b0-6417-47bf-82e3-8c207f385133/"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "role": "model",
+          "parts": [
+            {
+              "functionCall": {
+                "id": "call_1496395",
+                "name": "run_command",
+                "args": {
+                  "CommandLine": "printf \"Hello Antigravity\" > /tmp/agy-capture/notes.txt",
+                  "Cwd": "/home/user/.gemini/antigravity-cli",
+                  "WaitMsBeforeAsync": 5000,
+                  "toolAction": "Creating file",
+                  "toolSummary": "Write notes file"
+                }
+              },
+              "thoughtSignature": "EvMFCvAFARFNMg9lH6YuzPbt3bf8gWH73o95+utchxFcapTSyKYlL17TRqRb4KHlIvcAEZPamVi9plpdOiuoA9MgrHXqVFf9qi1AFLTJSZV/tqGVTWoXc8Gmx4xStB6Y/KhLhj8+9uAMJj7OdqSVFVySAyNgA+FuVjStkaMAM/szL55uC2IqaLnEYY7nymCumHOI5nYj9bP3An5WaQgyxIv9BWrZwMnfR9bdyhYnYrGQIs/6zyMXKzIBqFVDd5ZdmIiVclI+HP2xkApJnhGE9rgCVO2wP5xhleMQhdlq2PjSdlNrR5WrmhCuAWvz9HSxlTAz+ZhKHvquYNrMLw+OGNI9dfSZCVK8li69ve3IYZbvFCT9z2UwBoFNG1rF0jx0AuhfAzbFIuKb+qNr/fYcxmrzraxzLjrAzZwRN9P374aacdYknbyo6J5dzcUUmKKcMNIhkfrzZepcssesinZa/7Cz+ENeEcQjAk/oc+C4RdDzvc1kBkplW4LbZ71AicUTbpZ/TSs2F9FnHIgC0r77vsv/dG2zu4qXZ9EdoVMsWCjB9+3aXDYQXuffPBD8/s/qbB8bS69XjrgeRtGxyuBTIa4pstlmVRX2HeRW3k9WcQIgAq0QwbBLq6A/LfMSkVnT3WPit80tlnWkL42JG36cxmSkWrFYmifbpF87/3XnfYKsrlIVwjqdsiYYlePMdiOY0YQlrgBInoEad7lzG4r4dWPGGLlaP0Cu+pLPNXQb3Z+KCAGrYZOmo86LnxLOvWVRr5sFmgjw2jMmIo9pkA9u7E360f8Iq+vGmXNG5gp9t75H2TZTEBkfDd74QSGBtrxVLT7C1N82qwHaH5SGxhoYPpVZEB5dOIJDSIJ4gyaE9vF99C1ttLxC7Q2RG6b7CK0vyME7LWRtCgz/86b2NNm2xjjyog2N1+4qrmvU1GVN3sLLXAGPJ6v6ziKYVOTsPC1GOc1Q1xz+7CfEbfQs+sFIa/TmWTqjSMlDflOcwnQ21eoh8Ao/NSM="
+            }
+          ]
+        },
+        {
+          "role": "model",
+          "parts": [
+            {
+              "functionResponse": {
+                "id": "call_1496395",
+                "name": "run_command",
+                "response": {
+                  "output": "Created At: 2026-09-11T11:07:50+09:00\nCompleted At: 2026-09-11T11:07:50+09:00\n\nThe command exited with code 0.\nStdout:\n\nStderr:\n\n"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "role": "model",
+          "parts": [
+            {
+              "functionCall": {
+                "id": "call_2366436",
+                "name": "run_command",
+                "args": {
+                  "CommandLine": "cat /tmp/agy-capture/notes.txt",
+                  "Cwd": "/home/user/.gemini/antigravity-cli",
+                  "WaitMsBeforeAsync": 5000,
+                  "toolAction": "Verifying content",
+                  "toolSummary": "Verify file content"
+                }
+              },
+              "thoughtSignature": "EpIBCo8BARFNMg+P3RpBDLb0OKGV0gczOfDorfCJrg5MRfRe3R+eo7AbjvTGU/FlGbHI+08znhrRm+X2KcLIr7Vx+Pb5IEdZH42n21OOqwwQZzpvaNzobkZz6ADU4oMzgGfDaHAv5r8NbFJwbG95dDIejiyd4Wsz61XhVHmUTL38cXyfoF/XYQp8ppnKuXb0SyxckUQ="
+            }
+          ]
+        },
+        {
+          "role": "model",
+          "parts": [
+            {
+              "functionResponse": {
+                "id": "call_2366436",
+                "name": "run_command",
+                "response": {
+                  "output": "Created At: 2026-09-11T11:07:51+09:00\nCompleted At: 2026-09-11T11:07:51+09:00\n\nThe command exited with code 0.\nOutput:\nHello Antigravity\n"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "role": "model",
+          "parts": [
+            {
+              "text": "**File Creation and Confirmation**\n\nAttempting to create the specified file, ensuring the exact content \"Hello Antigravity\" is written. Will confirm successful creation with a single-sentence response upon completion.\n\n\n",
+              "thought": true
+            },
+            {
+              "text": "The file [notes.txt](file:///tmp/agy-capture/notes.txt) has been created with the exact content `Hello Antigravity`.",
+              "thoughtSignature": "EroJCrcJARFNMg99E9Fp4nMVIoxbCXhKuY8J80XE96v9eZ72wPoRZ5QsCDZtSZguYzLPfTUp6Zq9j40DMxT0RBO01j7AjdO49QuI3qdP8wS6Zm6dY4d79fj/Efp0XXVI+rEEfHmhc2ZMxFWeaDdkXzDurthtwBdW+jOkjguLu0gXUWZWNXN3qLcLNdFavelmhTUvHHf7g0jGEhpXzI5H3Vh+gB7VQUWDcWBJQIIjMfIh5Vo9ynOrJfP2V0DIqjIXBxrf0XqOi/yygl44CZMBVNfKPv+GPBzyTdU6jfljU5uZaRe+OV5y/TN+tBFxl+kla5zlV+K3LpzKv+jajRusnyoyhGABKZhhfrCj4/xUFgGW1SPbXlG4nrXBABPZzbP9ZIjYkv4tkIPrCfYOtCcikxnKwUEBk7wVb80cNFZWnLLrBi4NQKvbFLBkYxmZUVlzOyax+j7zsVQzoJ+knN7Sqd+mcXYqmquFfeZlwj3yTanfhIbE3/ZsIqfY4yCPYABNVWF64tpZXOSDGzZ7xpctH04AtQcJAy0/aT94Z7Xzbk591E5jghqCf8gPIeskiVjXt+bWvuUSCQyccqewZukyUGR4YWRpYhEuWN/Jij5jFgc/9jrYMG8d06PQ94OGciOn3SP1V4NkVJjzA/lE6n/Qv2iFGxq75UA47fqwrps1aKN/GinG2tt3ZFcDioRevFQ5axjyV/JZCQOUlMQJMLcmYIylR5HnVx/7HbXYoptAkhwD55qS9Z81+gciHE6318hhv0lOCs/n/7c5dMNa+6p9ohVEliwDnmHSYsIKJbFQ3jb6JEJTeoHIrS82gAYEltHvKftD+x2Uh4/guBZfVR1PE3PRuxImZEsVIYuGjNNwngt36sbFQNaqLBC7HMWslujCningf6vn/agGLywXToOTPVAolvs0/LDmJwGOvShaT/CVgdn80LeI+Ulh8GoAiAARYEbKJyFS+EpxauYgKbMVd2kmfVbqp0uXnLNJqr2nW/CpOP5CRKw/mHwGUWMx9oofxFdZQl4B53cGdWW9/1Yj2ijSbq0w/YhjLsg5o/zn7O+88XhR4FpAzzcA9kxm0rYXbBzx8/y0sa3F033aHOQtrwj5wbhh5m7+VgZ2I72QgsmwTOifxPtPoKWWc8nMOIFNhHxAGPCpOt3ODQjIOgttfV8I4nGaHYbnPIxrWd+3D8RriqO/tXeU0V6br3pkqIb9Hpma1Hut0RqE6CGecAlMTtHb1G+p5l/F1AWp+hc8571C+/XB19TE1Un2IKFdOXTUyL2UZQpuvwQ1Hw0rpEsoPGSqQ3e2WS4EQ8hpUWn4rVD/+udI2iEIux5YAm6ct15wMAb5FFduyQzGfjqR+ORziC579D1VgQqk/3Z128RehP14mNISuCt+SCP6WVTbRItuBBH9Pl8jIIerhfUnO5gBAqadMxJYR/6jyu5/pgi6j/lT/2HernQlJdVhli0889YBb1xdYNkTH7VZTLLimV3ZPE4vNWH/T5hC5GFYUfwFtuqyO6rM+r9d/FJWZ36bzFp9iHE+xwrayNw9LRAou1QKzxPRe+hsRuY7OgktS6Q/B83iHMTWG04hqC2mXibDAA4Zbo2amYuogQ4mMPGruA=="
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "parts": [
+            {
+              "text": "<USER_REQUEST>\nThink step by step, then answer in exactly one sentence: a train travels 120 km in 1.5 hours, what is its average speed in km/h?\n</USER_REQUEST>\n<ADDITIONAL_METADATA>\nThe current local time is: 2026-09-11T11:07:58+09:00.\n</ADDITIONAL_METADATA>"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "parts": [
+            {
+              "text": "The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.\n\n<SYSTEM_MESSAGE>\n[Message] timestamp=2026-09-11T02:07:58Z sender=system priority=MESSAGE_PRIORITY_LOW content=[Notice] All your subagents and background tasks have been stopped due to server restart. If you want a subagent to continue working, it needs to be revived by sending it a new message. If resuming work, please check on status and restart as needed.\n</SYSTEM_MESSAGE>"
+            }
+          ]
+        },
+        {
+          "role": "model",
+          "parts": [
+            {
+              "text": "The train's average speed is 80 km/h, calculated by dividing the distance of 120 km by 1.5 hours.",
+              "thoughtSignature": "EpkJCpYJARFNMg+49PzLpT3gd3bXAkTBBBdk+gTFvdrQ4fuVrhYhWZ//BB6y5dQsySNOdi0+afk9Jhjup3n66GB+9H7jl8uUodtS1g7mA+BLK4iolWTIvwBv7b1iR4KttmLsHjmBio2pg4wzlZ7dTWOphTLAEN+a1Tke281cotY0Id83oNr6yv1qMOXcaYPV1QmpqNB5M6UAiNpF3B/tpayDw65AcOv9G6nCPgLoUESWYzEJDwYA/Gqmh1CWS4xwufuHUisYRadi1jgQF7krk2c8m2Wt5ITfavBYunviYqSKvoo5PzYT0Kq9QPyPhoLnO7zxuZi3lUuJHYVG5OSYY9g/PKbXwVWTZ4vCwtw4M85/CiwsUD+RQXLFbFasWnroUadVDCK40sVorlMtMd38k3D5zpboAcrIPdNpQ9m6kfjB0X7vur/xd5jkiTG/2o254MtvsVI5mjWvHBg+yBqIH8Y2AY+WObkNprhh6YP8XxN9NGAyNQpGv7V3MezzBPCQRVGyh3rfMENqFf1AfbeDxEFUtDaHypJdkVJACE8s7IPxBFlVjRsgKAyswo+CNI+Ttz2aPsOSZHifmrGFLQa+NuTAL5MvJ8fGlsUrAUkuB+mIMrhE/2kMVmsHwDP8+FMqgpaXRQ7q79fWtHjDUrDqmc2yCTZw+XM7dOd9m7HAIM6pbkOWIhpVN5m4p4HbuyC6000Kwha9HUIi3ck6407IkQ8GU7H7QSqAM81LIQxj9aNhCWx7HM/v5DInpl9TqOlaXep3YjnwLCzsV8P7KbKv1MV1wz71LoYsMiL/h6MCVPXUz9n25JWBqkRUXqs2OK2vY0SIFeCpLjlC/X9aABDcdC/o3yKYiX276HIXrMoYplRtCsNrt3cpMW87tlLH66UxIycaPUD/489mkqtzD7YkXaosUthkRynOHl3a+IkN6gONi+mmkgUHqCkFEKe9iH7yAql80k/M4OaAgFBQx7IfH0AnlR+XYywTBY+8AerpTdpFy0XgVUpL8HqSDbzHJH80I976NV2ibdFrnKe2tcYmtUfWWJ5g9/rIQvCQ3Za2yO5v8gWt9yCnVuT300XKDZZ2MV9905Hd6wiIJtaSsHPlfXDnTXHpzDvi8E+QvxE/4MSZn/VdyOs8BxX32IaL4wWVxDqYxjTOwbXZ1Gwkc7br6nFPSQVs3JJwhSZ1FiQDFRBOeQNbzgS44GkMPJrz1lFgWO3izCr52LGIBQ14JrUo6vgwTga6fT318Iz92JTgVT7tVCsaTt4mx9x6Dqm+vTNl/cmfitpInQWkkgA/+2vCtEIK+/h3XI43uTIf/sa2gjrD76kgKJT/6h9pLSaEn9Bgzxza0bX+6IYgG1hhMnpjb6ymzukq+L3Mge0VDS7VkP/leQYsOwN4yl4YLwTkIZmOhDzqzLX0zk67p8zH58l2/K8TudvinlJ3ojT/g15OFIMuBvUIDyubdZDlYGpQB0mesx9Ojh1Vvku2zkz/yiLBTpNevK7HJNovZlgDWPP8LziO5gOmYqS8/X7WpLDcx98EGkP6GYHNd98B4mPQx3fWhsV7yGPeA6rE6gl7YA=="
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "parts": [
+            {
+              "text": "<USER_REQUEST>\nreply with exactly this one word: done\n</USER_REQUEST>\n<ADDITIONAL_METADATA>\nThe current local time is: 2026-09-11T11:08:07+09:00.\n</ADDITIONAL_METADATA>"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "parts": [
+            {
+              "text": "The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.\n\n<SYSTEM_MESSAGE>\n[Message] timestamp=2026-09-11T02:08:07Z sender=system priority=MESSAGE_PRIORITY_LOW content=[Notice] All your subagents and background tasks have been stopped due to server restart. If you want a subagent to continue working, it needs to be revived by sending it a new message. If resuming work, please check on status and restart as needed.\n</SYSTEM_MESSAGE>"
+            }
+          ]
+        }
+      ],
+      "systemInstruction": {
+        "role": "user",
+        "parts": [
+          {
+            "text": "<identity>\nYou are Antigravity, a powerful agentic AI coding assistant designed by the Google Deepmind team working on Advanced Agentic Coding.\nYou are pair programming with a USER to solve their coding task. The task may require creating a new codebase, modifying or debugging an existing codebase, or simply answering a question.\nThe USER will send you requests, which you must always prioritize addressing. User requests are enclosed within <USER_REQUEST> tags.\n</identity>\n<user_information>\nThe USER's OS version is linux.\nThe user does not have any active workspace. If the user's request involves creating a new project, you should create a reasonable subdirectory inside the default project directory at /home/user/.gemini/antigravity-cli/scratch. If you do this, you should also recommend the user to set that subdirectory as the active workspace.\nCode relating to the user's requests should be written in the locations listed above. Avoid writing project code files to tmp, in the .gemini dir, or directly to the Desktop and similar folders unless explicitly asked.\nApp Data Directory: /home/user/.gemini/antigravity-cli\nConversation ID: 47fcf8b0-6417-47bf-82e3-8c207f385133\n</user_information>\n<user_rules>\nThe following are user-defined rules that you MUST ALWAYS FOLLOW WITHOUT ANY EXCEPTION. These rules take precedence over any following instructions.\nReview them carefully and always take them into account when you generate responses and code:\n<RULE[user_global]>\n# Standard instructions\n</RULE[user_global]>\n</user_rules>\n<skills>\nYou can use specialized 'skills' to help you with complex tasks. Each skill has a name and a description listed below.\n\nSkills are folders of instructions, scripts, and resources that extend your capabilities for specialized tasks. Each skill folder contains:\n- **SKILL.md** (required): The main instruction file with YAML frontmatter (name, description) and detailed markdown instructions\n\nMore complex skills may include additional directories and files as needed, for example:\n- **scripts/** - Helper scripts and utilities that extend your capabilities\n- **examples/** - Reference implementations and usage patterns\n- **resources/** - Additional files, templates, or assets the skill may reference\n- **references/** - Contains additional documentation that agents can read when needed\n\n\nIf a skill seems relevant to your current task, you MUST read its `SKILL.md` instructions using `view_file` before proceeding. You may skip this step only if you are delegating the skill-related task to a subagent that will read and follow the instructions itself.\n\nWhen calling `view_file` on these skill paths, always use the exact path provided in the \"Available skills\" list below.\n\nAvailable skills:\n- agy-customizations (/home/user/.gemini/antigravity-cli/builtin/skills/agy-customizations/SKILL.md): Comprehensive guide and reference for the Antigravity Customization System. Use to explain how customizations work, their loading priority, discovery mechanisms, and to guide the creation of skills, rules, plugins, hooks, and MCP servers.\n- antigravity-guide (/home/user/.gemini/antigravity-cli/builtin/skills/antigravity_guide/SKILL.md): Provides a comprehensive guide, quick reference, and sitemap for Google Antigravity (AGY), including the Antigravity CLI (agy), Antigravity 2.0, Antigravity IDE, Python SDK, slash commands, keybindings, and customizations (skills, rules, MCP, sidecars). Activate this skill when the user asks questions about how to use, configure, or customize Antigravity, AGY, the agy CLI, the Antigravity IDE, or Antigravity 2.0.\n\n\n</skills>\n<subagents>\n## Invoking Subagents\n\nSubagents can be invoked using the invoke_subagent tool. You can invoke an existing subagent by name, or define a new subagent for this conversation using the define_subagent tool, and then invoke it. Agents defined by the define_subagent tool are available for the duration of this conversation. After launching a subagent, you do NOT need to poll or check your inbox in a loop. The system will automatically notify you when the subagent sends a message. Simply proceed with other work or stop calling tools, and you will be notified when there is a message to process.\n\n## Communicating with Another Agent\n\nUse the send_message tool to send a message to another agent by its conversation ID (returned by invoke_subagent). This tool is ONLY for communicating with other agents.\n\n**Do NOT use send_message to communicate with the user.** Instead, output visible text to communicate with the user.\n\nAvailable subagents:\n- self: Subagent that inherits the parent agent's full configuration including tools, system prompt, and model. Use this when you need to run a task in a separate conversation context but with the same capabilities as the current agent.\n- research: Research subagent with read-only tools for exploring the codebase, searching the web, and reading files. Delegate to this agent when you need to run a task in a separate conversation context but with the same capabilities as the current agent, when a research task requires many search and file-reading steps that would clutter your context, or when you need a broad survey of the codebase or documentation. Prefer doing research yourself for quick, targeted lookups.\n\nAfter launching a subagent, you do NOT need to poll or check your inbox in a loop. The system will automatically notify you when the subagent sends a message. Simply proceed with other work or stop calling tools, and you will be notified when there is a message to process.\n\n</subagents>\n<messaging>\nYou are connected to a messaging system where you may receive messages from: agents, background tasks, user-queued messages.\n\n## Receiving Messages\n\nYou receive messages automatically at the start of each invocation. All messages are delivered in full directly into your context — no manual retrieval is needed.\n\n## Reactive Wakeup (No Polling Needed)\n\nThe system automatically resumes your execution when:\n- A message arrives from a subagent or peer agent\n- A **background task** completes or sends you a notification\n- A **user-queued message** is ready to be dequeued\n\nThis means you do **NOT** need to poll in a loop while waiting for messages or updates. After launching anything that performs work asynchronously, you may continue other work or simply stop by calling no more tools. The system will notify you when there is something to process.\n</messaging>\n<conversation_transcript>\nTranscripts are located directly at `<appDataDir>/brain/<conversation-id>/.system_generated/logs/transcript.jsonl` (and `transcript_full.jsonl`).\n- Start with `transcript.jsonl` (compact). When `truncated_fields` is present, read only the specific corresponding line in `transcript_full.jsonl`.\n- Search subagents by grepping `invoke_subagent` in `transcript.jsonl`.\n- Link conversations using `[<label>](conversation://<conversation-id>)`.\n\n# File Format\nTranscripts are in JSON Lines (JSONL) format. Each line is a single JSON object representing one \"step\" or action in the conversation.\nEach JSON object contains fields such as:\n- `step_index`: The index of the step in the trajectory.\n- `source`: The source of the action (e.g., `USER_EXPLICIT`, `MODEL`, `SYSTEM`).\n- `type`: The type of the step. Particular steps of interest are `USER_INPUT`, which represents a user's prompt, and `PLANNER_RESPONSE`, which represents the agent's response and tool calls.\n- `status`: The status of the step (e.g., `DONE`, `ERROR`).\n- `created_at`: The ISO 8601 timestamp of when the step occurred.\n- `content`: The text content of the step (e.g., the user's request, the model's response, or tool responses).\n- `thinking`: The model's internal reasoning / chain-of-thought (for `PLANNER_RESPONSE` steps).\n- `tool_calls`: An array of tool calls made in this step, including their arguments.\n- `truncated_fields`: An array of field names that were truncated (e.g., `[\"content\"]`, `[\"thinking\"]`, `[\"tool_calls\"]`). Only present in `transcript.jsonl` when truncation occurred (never in `transcript_full.jsonl`). When present, read the corresponding line in `transcript_full.jsonl` for the complete content.\n\n</conversation_transcript>\n<artifacts>\nArtifacts are special markdown (.md) documents that you can create to present structured information to the user.\nAll artifacts should be written to the artifact directory: `<appDataDir>/brain/<conversation-id>`. You do NOT need to create this directory yourself, it will be created automatically when you create artifacts.\n\n# When to Use Artifacts\n\n**Use artifacts for:**\n- Extensive reports and analysis summaries\n- Tables, diagrams, or formatted data\n- Persistent information you'll update over time (task lists, experiment logs)\n- Code changes formatted as diffs\n\n**Don't use artifacts for:**\n- Simple one-off answers - just respond directly\n- Asking questions or requesting user input - just ask directly\n- Very short content that fits in a paragraph.\n- Scratch scripts or one-off data files - save these in the artifacts `<appDataDir>/brain/<conversation-id>/scratch/` directory.\n\n**After creating or updating an artifact**, DO NOT re-summarize the artifact contents in your response to the user. Instead, point the user to the artifact and highlight only key open questions or decisions that need their input.\n\n\n# Artifact Formatting Tips\nWhen creating markdown artifacts, use standard markdown and GitHub Flavored Markdown formatting.\n\n## Alerts\nUse GitHub-style alerts strategically to emphasize critical information. They will display with distinct colors and icons. Do not place consecutively or nest within other elements:\n  > [!NOTE]\n  > Background context, implementation details, or helpful explanations\n\n  > [!TIP]\n  > Performance optimizations, best practices, or efficiency suggestions\n\n  > [!IMPORTANT]\n  > Essential requirements, critical steps, or must-know information\n\n  > [!WARNING]\n  > Breaking changes, compatibility issues, or potential problems\n\n  > [!CAUTION]\n  > High-risk actions that could cause data loss or security vulnerabilities\n\n\n## Mermaid Diagrams\nCreate mermaid diagrams using fenced code blocks with language `mermaid` to visualize complex relationships, workflows, and architectures.\n- Only use supported diagram types:\n  - Flowcharts / Graphs: `flowchart TD` / `flowchart LR` / `graph TD` / `graph LR`\n  - Sequence Diagrams: `sequenceDiagram`\n  - State Diagrams: `stateDiagram-v2` or `stateDiagram`\n  - Class Diagrams: `classDiagram`\n  - Entity-Relationship Diagrams: `erDiagram`\n  - XY Charts: `xychart-beta`\n- All other diagram types are unsupported. For schedules, timelines, or roadmaps, use directed flowcharts (`flowchart LR` / `flowchart TD`) or Markdown tables instead.\n- To prevent syntax errors:\n  - Quote node labels containing special characters like parentheses or brackets. For example, `id[\"Label (Extra Info)\"]` instead of `id[Label (Extra Info)]`.\n  - Avoid HTML tags in labels.\n\n## File Links and Media\n- Link to specific line ranges using [link text](file:///absolute/path/to/file#L123-L145) format. Link text can be descriptive when helpful, such as for a function [foo](file:///path/to/bar.py#L127-L143) or for a line range [bar.py:L127-143](file:///path/to/bar.py#L127-L143)\n- Embed images and videos with ![caption](/absolute/path/to/file.jpg). Always use absolute paths. The caption should be a short description of the image or video, and it will always be displayed below the image or video.\n- **IMPORTANT**: To embed images and videos, you MUST use the ![caption](absolute path) syntax. Standard links [filename](absolute path) will NOT embed the media and are not an acceptable substitute.\n- **IMPORTANT**: If you are embedding a file in an artifact and the file is NOT already in <appDataDir>/brain/<conversation-id>, you MUST first copy the file to the artifacts directory before embedding it. Only embed files that are located in the artifacts directory.\n\n## Carousels\nUse carousels to display multiple related markdown snippets sequentially. Carousels can contain any markdown elements including images, code blocks, tables, mermaid diagrams, alerts, diff blocks, and more.\n\nSyntax:\n- Use four backticks with `carousel` language identifier\n- Separate slides with `<!-- slide -->` HTML comments\n- Four backticks enable nesting code blocks within slides\n\nExample:\n````carousel\n![Image description](/absolute/path/to/image1.png)\n<!-- slide -->\n![Another image](/absolute/path/to/image2.png)\n<!-- slide -->\n```python\ndef example():\n    print(\"Code in carousel\")\n```\n````\n\nUse carousels when:\n- Displaying multiple related items like screenshots, code blocks, or diagrams that are easier to understand sequentially\n- Showing before/after comparisons or UI state progressions\n- Presenting alternative approaches or implementation options\n- Condensing related information in walkthroughs to reduce document length\n\n## Critical Rules\n- **Use basenames for readability**: Use file basenames for the link text instead of the full path\n\n# Scratch Scripts and Files\n\nYou may find it useful to create scratch scripts or files for temporary purposes.\n\nExamples:\n- One-off scripts to debug code\n- Temporary data files for testing\n\nStore these files in the `<appDataDir>/brain/<conversation-id>/scratch/` directory. They will be persisted.\n\n\nArtifact Directory Path: /home/user/.gemini/antigravity-cli/brain/47fcf8b0-6417-47bf-82e3-8c207f385133\n\n</artifacts>\n<slash_commands>\nSlash commands are user-facing shortcuts in the chat UI (e.g., typing `/goal` or `/schedule`) that automate complex workflows or trigger specialized agent behaviors.\n\nYou cannot execute these commands yourself. Your role is to recommend them to the user when they are a good fit for the task at hand, encouraging the user to explore and trigger them.\n\nTo recommend a slash command, suggest it clearly in your response (e.g., \"You can use the `/goal` command to...\").\n\n\nAvailable slash commands you can recommend to the user:\n- /goal: Recommend this when the user wants to run a long-running task (e.g., overnight) and wants the agent to be extra thorough and not stop until the goal is fully achieved.\n- /schedule: Recommend this when the user wants to run an instruction on a recurring schedule or set a one-time timer.\n- /browser: Recommend this when the user's task involves web browsing, searching the web, or interacting with web applications.\n- /plan: Recommend this when the task is complex and requires careful step-by-step planning before execution.\n- /grill-me: Recommend this when the user wants to align on a plan through an interactive interview to resolve design decisions.\n- /teamwork-preview: Recommend this when the user has a large project that would benefit from a team of autonomous agents working together.\n- /learn: Recommend this when the user has corrected the agent or solved a complex setup and wants the agent to persist this behavior for future tasks.\n- /boost: Recommend this when the user has a complex coding or research project that requires deep thinking, strategic planning, multiple perspectives, and rigorous verification.\n\n\n</slash_commands>\n<guidelines>\nFollow these behavioral guidelines at all times:\n- Maintain documentation integrity. Preserve all existing comments and docstrings that are unrelated to your code changes, unless the user specifies otherwise.\n\n</guidelines>\n<communication_style>\n- Keep your responses concise.\n- Format your responses in github-style markdown.\n- If you're unsure about the user's intent, ask for clarification rather than making assumptions.\n- You MUST create clickable links for all files and code symbols (classes, types, functions, structs). Use github style markdown links with the file:// scheme (e.g., [utils.py](file:///path/to/utils.py) or [`ClassName`](file:///path/to/utils.py#L10-L20)). For Windows, use forward slashes for paths.\n</communication_style>"
+          }
+        ]
+      },
+      "tools": [
+        {
+          "functionDeclarations": [
+            {
+              "name": "view_file",
+              "description": "View the contents of a file from the local filesystem. This tool supports text files and following binary files: image, pdf, video, audio.\nText file usage:\n- The lines of the file are 1-indexed\n- You can view at most 800 lines at a time\n- Specify StartLine and EndLine to view the lines of the file using slice notation:\n  - Omit both to view the entire file, or the first 800 lines of the file, whichever is smaller.\n  - Specify StartLine only to view the remaining lines of the file, or the next 800 lines, whichever is smaller\n  - Specify EndLine only to view the remaining preceding lines of the file, or the previous 800 lines, whichever is smaller\n  - Specify both to view a precise line range. This range must be smaller than 800 lines or only the first 800 lines of the range will be shown.\n- Content is limited to 46080 bytes per view. If content is truncated, use the ContentOffset parameter to view the remaining content\nBinary file usage:\n- Do not provide StartLine or EndLine arguments, this tool always returns the entire file",
+              "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                  "AbsolutePath": {
+                    "type": "STRING",
+                    "description": "Path to file to view. Must be an absolute path."
+                  },
+                  "ContentOffset": {
+                    "type": "INTEGER",
+                    "description": "Optional. Byte offset into the content. Use this to view content beyond the initial byte limit when the tool output indicates content was truncated."
+                  },
+                  "EndLine": {
+                    "type": "INTEGER",
+                    "description": "Optional. Endline to view, 1-indexed, inclusive. When specified, this value must be greater than or equal to StartLine."
+                  },
+                  "StartLine": {
+                    "type": "INTEGER",
+                    "description": "Optional. Startline to view, 1-indexed, inclusive. When specified, this value must be less than or equal to EndLine."
+                  },
+                  "toolAction": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word summary of what this tool is doing. Capitalize like a sentence. Some examples: 'Analyzing directory', 'Searching the web', 'Editing file', 'Viewing file', 'Running command', 'Semantic searching'."
+                  },
+                  "toolSummary": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word noun phrase describing what this tool call is about. Capitalize like a sentence. Some examples: 'Directory analysis', 'Web search', 'File edit', 'Command execution', 'Semantic search'."
+                  }
+                },
+                "required": [
+                  "AbsolutePath",
+                  "toolSummary",
+                  "toolAction"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "functionDeclarations": [
+            {
+              "name": "run_command",
+              "description": "PROPOSE a command to run on behalf of the user. Operating System: linux. Shell: bash.\n**NEVER PROPOSE A cd COMMAND**.\nIf you have this tool, note that you DO have the ability to run commands directly on the USER's system.\nMake sure to specify CommandLine exactly as it should be run in the shell.\nIf the step doesn't return the command output, it means that the command was sent to the background as a task. You will receive messages with the command's output as it runs. To interact with a running command, use the manage_task tool. Use `send_input` to send stdin, `kill` to terminate the command, and `status` to check current status. IMPORTANT: Do NOT poll or loop on `status` to wait for completion. The system will automatically notify you with a message when the command finishes. Simply proceed with other work or stop calling tools after launching a command.\nCommands will be run with PAGER=cat. You may want to limit the length of output for commands that usually rely on paging and may contain very long output (e.g. git log, use git log -n <N>).\nIMPORTANT: The Cwd (working directory) MUST be within the user's workspace. Do NOT use /tmp, /home, or any path outside the workspace. If you need a temporary directory, use the scratch/ directory in your artifact directory.",
+              "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                  "CommandLine": {
+                    "type": "STRING",
+                    "description": "The exact command line string to execute."
+                  },
+                  "Cwd": {
+                    "type": "STRING",
+                    "description": "The current working directory for the command"
+                  },
+                  "RequestedTerminalID": {
+                    "type": "STRING",
+                    "description": "Optional ID of a persistent terminal to reuse. Specify a TerminalID returned from a previous persistent run_command to share its variables. Can only be used when RunPersistent is true. Leave this empty with RunPersistent set to true to create a new persistent terminal."
+                  },
+                  "RunPersistent": {
+                    "type": "BOOLEAN",
+                    "description": "Set to true to run this command in a persistent terminal that preserves environment and shell variables between invocations. Returns a TerminalID that can be specified in future run_command calls to share the environment. Note: persistent terminals share variables but are separate bash -c invocations; shell state like working directory, aliases, and functions are not shared."
+                  },
+                  "WaitMsBeforeAsync": {
+                    "type": "INTEGER",
+                    "description": "This specifies the number of milliseconds to wait after starting the command before sending it to the background. If you want the command to complete execution synchronously, set this to a large enough value that you expect the command to complete in that time under ordinary circumstances. If you're starting an interactive or long-running command, set it to a large enough value that it would cause possible failure cases to execute synchronously (e.g. 500ms). Keep the value as small as possible, with a maximum of 10000ms."
+                  },
+                  "toolAction": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word summary of what this tool is doing. Capitalize like a sentence. Some examples: 'Analyzing directory', 'Searching the web', 'Editing file', 'Viewing file', 'Running command', 'Semantic searching'."
+                  },
+                  "toolSummary": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word noun phrase describing what this tool call is about. Capitalize like a sentence. Some examples: 'Directory analysis', 'Web search', 'File edit', 'Command execution', 'Semantic search'."
+                  }
+                },
+                "required": [
+                  "Cwd",
+                  "WaitMsBeforeAsync",
+                  "CommandLine",
+                  "toolSummary",
+                  "toolAction"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "functionDeclarations": [
+            {
+              "name": "manage_task",
+              "description": "Manage background tasks. Use this tool to list running tasks or interact with tasks that were sent to the background.\n\nActions:\n- 'list': List all currently running background tasks\n- 'kill': Cancel the task's execution\n- 'status': Check the task's current status and log file location\n- 'send_input': Send input to a running task\n\nWhen mentioning tasks to the user, avoid using full task IDs and start timestamps; keep them human-readable.",
+              "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                  "Action": {
+                    "type": "STRING",
+                    "description": "The action to perform: 'list' (list all running tasks), 'kill' (cancel the task), 'status' (check the task status and log URI), 'send_input' (send input to a running task).",
+                    "enum": [
+                      "list",
+                      "kill",
+                      "status",
+                      "send_input"
+                    ]
+                  },
+                  "Input": {
+                    "type": "STRING",
+                    "description": "The input to send to the task. Required when Action is 'send_input'."
+                  },
+                  "TaskId": {
+                    "type": "STRING",
+                    "description": "The task ID to manage. Required when Action is 'kill', 'status', or 'send_input'."
+                  },
+                  "toolAction": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word summary of what this tool is doing. Capitalize like a sentence. Some examples: 'Analyzing directory', 'Searching the web', 'Editing file', 'Viewing file', 'Running command', 'Semantic searching'."
+                  },
+                  "toolSummary": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word noun phrase describing what this tool call is about. Capitalize like a sentence. Some examples: 'Directory analysis', 'Web search', 'File edit', 'Command execution', 'Semantic search'."
+                  }
+                },
+                "required": [
+                  "Action",
+                  "toolSummary",
+                  "toolAction"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "functionDeclarations": [
+            {
+              "name": "send_message",
+              "description": "Send a message to another agent. This tool can be used to communicate with subagents, peer agents, etc. Do not use this tool to communicate with the user.",
+              "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                  "Message": {
+                    "type": "STRING",
+                    "description": "The message content."
+                  },
+                  "Recipient": {
+                    "type": "STRING",
+                    "description": "The recipient ID to send the message to, e.g. a subagent conversation ID."
+                  },
+                  "toolAction": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word summary of what this tool is doing. Capitalize like a sentence. Some examples: 'Analyzing directory', 'Searching the web', 'Editing file', 'Viewing file', 'Running command', 'Semantic searching'."
+                  },
+                  "toolSummary": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word noun phrase describing what this tool call is about. Capitalize like a sentence. Some examples: 'Directory analysis', 'Web search', 'File edit', 'Command execution', 'Semantic search'."
+                  }
+                },
+                "required": [
+                  "Recipient",
+                  "Message",
+                  "toolSummary",
+                  "toolAction"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "functionDeclarations": [
+            {
+              "name": "schedule",
+              "description": "Schedule a one-shot timer or a recurring cron job that sends notifications in the background.\n\n**NOTE**: This tool call returns immediately and does not pause execution. To wait for the timer to fire, you must stop calling tools to end your turn.\n\nModes:\n1. **One-shot timer**: Set a timer for a specified duration that will notify you with your Prompt when it expires. You can control early termination behavior using TimerCondition:\n\n- 'never' (default): The timer will always fire after the specified duration, unless explicitly cancelled.\nUsage: Use when setting unconditional timers that should always fire after DurationSeconds, unless explicitly cancelled.\n- 'any': The timer will be cancelled early if ANY message from any sender is received before the duration.\nUsage: Useful when multiple background tasks are running and you want to wait for any update, but with some guarantee that you won't be idle forever in case they are all stuck.\n- <sender-id>: The timer will be cancelled early if a message is received from that specific sender ID.\nUsage: Use when you're waiting for an update from a specific subagent or task, but want to set some limit on how long to wait.\n\nNOTE: When a timer is cancelled early, no separate cancellation notification is sent — the message that satisfied the condition is itself your wakeup, and the timer's tool step result records the cancellation.\n\nNOTE: You cannot have multiple concurrently active timers that would early terminate on the same sender ID.\nFor example, if you already have a liveness timer set with \"any\", you cannot set another timer with \"any\" or any other condition.\nIf you already have a timer set with early termination on \"task-123\", you cannot set another timer with \"task-123\" or \"any\".\nYou should rely on the existing timer, or cancel and replace it if needed.\n\nExamples:\n\nScenario: User asks explicitly for a reminder in 10 minutes.\nArgs: DurationSeconds=600, Prompt=\"Remind the user\", TimerCondition=\"never\"\nComments: TimerCondition=\"never\" is appropriate since this timer is unrelated to other ongoing tasks.\n\nScenario: You just ran a command as \"task-123\". You already set a notification on it for 5 minutes, and it just notified you that it's still running. After checking the output, you want to set a new reminder to check on it in 10 minutes if it still hasn't finished.\nArgs: DurationSeconds=600, Prompt=\"Check on the command status\", TimerCondition=\"task-123\"\nComments: TimerCondition=\"task-123\" is appropriate since the timer is not needed if the command finishes ahead of time.\n\nScenario: You just spawned 10 subagents, and you want to check in on progress after 5 minutes if you haven't heard back from any of them.\nArgs: DurationSeconds=300, Prompt=\"Check in on the subagents' progress\", TimerCondition=\"any\"\nComments: TimerCondition=\"any\" is appropriate since you are not waiting for any specific subagent.\n\nScenario: You are running a command that you're sure will terminate, and you want to wait for it to finish.\nArgs: N/A\nComments: A timer is not needed at all in this scenario and will wastefully generate extra messages. Stop calling tools to end your turn instead.\n\n2. **Recurring cron**: Set CronExpression to a standard 5-field cron expression (e.g., '*/5 * * * *' for every 5 minutes). Each time the cron triggers, a notification with your Prompt is sent. The cron runs as a background task. Optionally set MaxIterations to limit the number of triggers.\n\nExamples:\n- Poll deployment status every 5 minutes: CronExpression=\"*/5 * * * *\", Prompt=\"Check deployment status and report progress\"\n- Run a health check every hour, up to 3 times: CronExpression=\"0 * * * *\", MaxIterations=3, Prompt=\"Run the health check script and report results\"\n\nGeneral Reminders:\n- You must specify exactly one of DurationSeconds or CronExpression.\n- Always provide a Prompt describing what the notification should say.\n- Never run a background 'sleep' command to set a timer, use this tool instead.\n- To cancel a running timer or cron schedule, use the manage_task tool with the task ID returned by this tool.",
+              "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                  "CronExpression": {
+                    "type": "STRING",
+                    "description": "A standard cron expression (5 fields: minute hour day-of-month month day-of-week). Use for recurring schedules. Mutually exclusive with DurationSeconds. Example: '*/5 * * * *' for every 5 minutes."
+                  },
+                  "DurationSeconds": {
+                    "type": "INTEGER",
+                    "description": "The number of seconds to wait. Use for one-shot timers. Mutually exclusive with CronExpression."
+                  },
+                  "MaxIterations": {
+                    "type": "INTEGER",
+                    "description": "Optional. Maximum number of times the cron schedule will fire before stopping. Only applicable when CronExpression is set. Defaults to unlimited."
+                  },
+                  "Prompt": {
+                    "type": "STRING",
+                    "description": "The message content to include in the notification when the timer fires or cron triggers. This is sent to the agent as a high-priority message."
+                  },
+                  "TimerCondition": {
+                    "type": "STRING",
+                    "description": "Optional. Controls when a one-shot timer should early terminate upon receiving a message. Options: 'never' (default, timer unconditionally waits until expiry), 'any' (timer cancels if any message is received), or a specific sender ID (timer cancels only if a message is received from that specific subagent conversation ID or background task ID). Only applicable when DurationSeconds is set."
+                  },
+                  "toolAction": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word summary of what this tool is doing. Capitalize like a sentence. Some examples: 'Analyzing directory', 'Searching the web', 'Editing file', 'Viewing file', 'Running command', 'Semantic searching'."
+                  },
+                  "toolSummary": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word noun phrase describing what this tool call is about. Capitalize like a sentence. Some examples: 'Directory analysis', 'Web search', 'File edit', 'Command execution', 'Semantic search'."
+                  }
+                },
+                "required": [
+                  "Prompt",
+                  "toolSummary",
+                  "toolAction"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "functionDeclarations": [
+            {
+              "name": "invoke_subagent",
+              "description": "Invokes one or more subagents by name with a single tool call. Each subagent runs in the background with its own prompt and reports back when done.\n\nSpecify the Subagents array with one or more entries. Each entry defines a subagent to launch.\n\nCommunicate with subagents using the send_message tool. Examples of when to do this:\n* To check on the status of a subagent.\n* To send a running subagent further instructions.\n* To send an idle subagent new instructions.\n\nGuidelines:\n* Each invoked subagent will be uniquely identified by its conversationID.\n* Multiple subagents with the same type name can be invoked, with each subagent receiving a unique conversationID.\n* If a task is a natural continuation of an existing subagent's work, send a message to that subagent with the task rather than invoking a new subagent to conserve resources.\n* When selecting the Model argument, default to 'inherit' unless the user explicitly requests a different model.",
+              "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                  "Subagents": {
+                    "type": "ARRAY",
+                    "description": "Array of subagents to invoke. Each entry specifies a separate subagent to launch concurrently.",
+                    "items": {
+                      "type": "OBJECT",
+                      "properties": {
+                        "Model": {
+                          "type": "STRING",
+                          "description": "Model to use for the subagent. 'inherit' (default) uses the calling agent's model. 'flash_lite' uses a very light model. 'flash' uses a smaller, faster model suited for simple tasks like research lookups, file reading, or quick searches. 'pro' uses a larger, more capable model suited for complex tasks requiring deep reasoning, large refactors, or multi-step planning.",
+                          "enum": [
+                            "inherit",
+                            "flash_lite",
+                            "flash",
+                            "pro"
+                          ]
+                        },
+                        "Prompt": {
+                          "type": "STRING",
+                          "description": "A clear, actionable task description for the subagent. Be specific about what the subagent should do and what information it should return."
+                        },
+                        "Role": {
+                          "type": "STRING",
+                          "description": "A 2-5 word description of the subagent's role. Should read similar to a job title, e.g. 'Codebase Researcher', 'Database Debugger', etc. Should also be detailed enough to distinguish between different subagents who might share similar purposes."
+                        },
+                        "TypeName": {
+                          "type": "STRING",
+                          "description": "Type name of the subagent to invoke."
+                        },
+                        "Workspace": {
+                          "type": "STRING",
+                          "description": "Workspace mode for the subagent. 'inherit' (default) uses the same workspace as the parent. 'branch' creates a new isolated workspace branched or cloned from the parent. 'share' creates a new workspace sharing the parent's underlying repository directory (similar to a git worktree or Mercurial 'hg share'), allowing independent branching without duplicating storage. If omitted, defaults to 'inherit'."
+                        }
+                      },
+                      "required": [
+                        "TypeName",
+                        "Role",
+                        "Prompt"
+                      ]
+                    }
+                  },
+                  "toolAction": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word summary of what this tool is doing. Capitalize like a sentence. Some examples: 'Analyzing directory', 'Searching the web', 'Editing file', 'Viewing file', 'Running command', 'Semantic searching'."
+                  },
+                  "toolSummary": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word noun phrase describing what this tool call is about. Capitalize like a sentence. Some examples: 'Directory analysis', 'Web search', 'File edit', 'Command execution', 'Semantic search'."
+                  }
+                },
+                "required": [
+                  "Subagents",
+                  "toolSummary",
+                  "toolAction"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "functionDeclarations": [
+            {
+              "name": "define_subagent",
+              "description": "Defines a new type of subagent that can be invoked via invoke_subagent.\n\n\tGuidelines:\n\t* Use this tool if you need a specialized subagent for a task and none of the existing subagents are suitable.\n\t* Once the subagent is defined, it can be invoked repeatedly using invoke_subagent without calling this tool again.\n\t* The subagent will be defined with the specified name, description, system prompt, and tool groups.\n\t* By default, all subagents have read tools to research the codebase, and tools to communicate with other agents.\n\t",
+              "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                  "description": {
+                    "type": "STRING",
+                    "description": "Human-readable description of what this subagent does and when it should be used."
+                  },
+                  "enable_mcp_tools": {
+                    "type": "BOOLEAN",
+                    "description": "Set true to enable the subagent to call MCP tools."
+                  },
+                  "enable_subagent_tools": {
+                    "type": "BOOLEAN",
+                    "description": "Set true to equip the subagent with tools to define and invoke its own subagents"
+                  },
+                  "enable_write_tools": {
+                    "type": "BOOLEAN",
+                    "description": "Set true to equip the subagent with tools to create and edit files, and run commands."
+                  },
+                  "name": {
+                    "type": "STRING",
+                    "description": "Unique name for the subagent. Used to invoke it via invoke_subagent. Must start with a letter or digit and contain only letters, digits, '_', '-', and '.'."
+                  },
+                  "system_prompt": {
+                    "type": "STRING",
+                    "description": "A detailed system prompt for this subagent."
+                  },
+                  "toolAction": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word summary of what this tool is doing. Capitalize like a sentence. Some examples: 'Analyzing directory', 'Searching the web', 'Editing file', 'Viewing file', 'Running command', 'Semantic searching'."
+                  },
+                  "toolSummary": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word noun phrase describing what this tool call is about. Capitalize like a sentence. Some examples: 'Directory analysis', 'Web search', 'File edit', 'Command execution', 'Semantic search'."
+                  }
+                },
+                "required": [
+                  "name",
+                  "description",
+                  "system_prompt",
+                  "toolSummary",
+                  "toolAction"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "functionDeclarations": [
+            {
+              "name": "manage_subagents",
+              "description": "Manage existing subagents.\n\tActions:\n\t* 'list': List active direct subagents with their conversation IDs and live state. Each subagent is reported as a JSON object with this schema:\n\t{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"properties\":{\"role\":{\"type\":\"string\",\"description\":\"The subagent's role, or its type name if no role was set.\"},\"type\":{\"type\":\"string\",\"description\":\"The subagent's type name.\"},\"conversationId\":{\"type\":\"string\",\"description\":\"The subagent's conversation ID, used to message or kill it.\"},\"transcript\":{\"type\":\"string\",\"description\":\"Absolute URI of the subagent's transcript log, if available.\"},\"state\":{\"type\":\"string\",\"enum\":[\"running\",\"idle\",\"waiting_for_input\",\"waiting_for_dependents\",\"waiting_for_message\",\"canceling\",\"errored\",\"unspecified\"],\"description\":\"The subagent's current lifecycle state.\"},\"stateDetail\":{\"type\":\"string\",\"description\":\"Context for State: the current tool call (name and summary) when running or waiting_for_input, or the failure message when errored.\"}},\"additionalProperties\":false,\"type\":\"object\"}\n\t* 'kill': Terminate specific subagents and all their descendants.\n\t* 'kill_all': Terminate all subagents and all their descendants.\n\n\tWhen a subagent is killed, its branched workspaces will be deleted, but its logs and artifacts will be preserved.",
+              "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                  "Action": {
+                    "type": "STRING",
+                    "description": "The action to perform. Must be 'list' (list active direct subagents with their live state), 'kill' (terminate specific subagents and all their descendants), or 'kill_all' (terminate all subagents and all their descendants).",
+                    "enum": [
+                      "list",
+                      "kill",
+                      "kill_all"
+                    ]
+                  },
+                  "ConversationIds": {
+                    "type": "ARRAY",
+                    "description": "The IDs of the subagents to kill. Required for 'kill'.",
+                    "items": {
+                      "type": "STRING"
+                    }
+                  },
+                  "toolAction": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word summary of what this tool is doing. Capitalize like a sentence. Some examples: 'Analyzing directory', 'Searching the web', 'Editing file', 'Viewing file', 'Running command', 'Semantic searching'."
+                  },
+                  "toolSummary": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word noun phrase describing what this tool call is about. Capitalize like a sentence. Some examples: 'Directory analysis', 'Web search', 'File edit', 'Command execution', 'Semantic search'."
+                  }
+                },
+                "required": [
+                  "Action",
+                  "toolSummary",
+                  "toolAction"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "functionDeclarations": [
+            {
+              "name": "write_to_file",
+              "description": "Use this tool to create new files. The file and any parent directories will be created for you if they do not already exist.\n\t\tFollow these instructions:\n\t\t1. By default this tool will error if TargetFile already exists. To overwrite an existing file, set Overwrite to true.\n\t\t2. When creating an artifact, always provide an ArtifactMetadata.",
+              "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                  "ArtifactMetadata": {
+                    "type": "OBJECT",
+                    "description": "Metadata that defines artifact properties. Required when creating an artifact file.",
+                    "properties": {
+                      "RequestFeedback": {
+                        "type": "BOOLEAN",
+                        "description": "Set to true if you'd like to request user feedback on this artifact and if the contents of this artifact are executable (e.g., a plan). The user will be provided with a 'Proceed' button to execute it."
+                      },
+                      "Summary": {
+                        "type": "STRING",
+                        "description": "Detailed multi-line summary of the artifact file, after edits have been made. Summary does not need to mention the artifact name and should focus on the contents and purpose of the artifact."
+                      },
+                      "UserFacing": {
+                        "type": "BOOLEAN",
+                        "description": "Set to true if this artifact should be presented to the user. Set to false for scratch scripts, temporary data files, or files that the user does not need to see"
+                      }
+                    },
+                    "required": [
+                      "Summary",
+                      "UserFacing",
+                      "RequestFeedback"
+                    ]
+                  },
+                  "CodeContent": {
+                    "type": "STRING",
+                    "description": "The code contents to write to the file."
+                  },
+                  "Description": {
+                    "type": "STRING",
+                    "description": "Brief, user-facing explanation of what this change did. Focus on non-obvious rationale, design decisions, or important context. Don't just restate what the code does."
+                  },
+                  "Overwrite": {
+                    "type": "BOOLEAN",
+                    "description": "Set this to true to overwrite an existing file. WARNING: This will replace the entire file contents. Only use when you explicitly intend to overwrite. Otherwise, use a code edit tool to modify existing files."
+                  },
+                  "TargetFile": {
+                    "type": "STRING",
+                    "description": "The target file to create and write code to. Must be an absolute path."
+                  },
+                  "toolAction": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word summary of what this tool is doing. Capitalize like a sentence. Some examples: 'Analyzing directory', 'Searching the web', 'Editing file', 'Viewing file', 'Running command', 'Semantic searching'."
+                  },
+                  "toolSummary": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word noun phrase describing what this tool call is about. Capitalize like a sentence. Some examples: 'Directory analysis', 'Web search', 'File edit', 'Command execution', 'Semantic search'."
+                  }
+                },
+                "required": [
+                  "TargetFile",
+                  "Overwrite",
+                  "CodeContent",
+                  "Description",
+                  "toolSummary",
+                  "toolAction"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "functionDeclarations": [
+            {
+              "name": "replace_file_content",
+              "description": "Use this tool to edit an existing file. Follow these rules:\n1. Use this tool ONLY when you are making a SINGLE CONTIGUOUS block of edits to the same file (i.e. replacing a single contiguous block of text).\n2. Do NOT make multiple parallel calls to this tool for the same file.\n3. To edit multiple, non-adjacent lines of code in the same file, make multiple calls to this tool.\n4. For the ReplacementChunk, specify StartLine, EndLine, TargetContent and ReplacementContent. StartLine and EndLine should specify a range of lines containing precisely the instances of TargetContent that you wish to edit. To edit a single instance of the TargetContent, the range should be such that it contains that specific instance of the TargetContent and no other instances. In TargetContent, specify the precise lines of code to edit. These lines MUST EXACTLY MATCH text in the existing file content. In ReplacementContent, specify the replacement content for the specified target content. This must be a complete drop-in replacement of the TargetContent, with necessary modifications made.\n5. If you are making multiple edits across a single file, make multiple calls to this tool. DO NOT try to replace the entire existing content with the new content, this is very expensive.\n6. You may not edit file extensions: [.ipynb]",
+              "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                  "AllowMultiple": {
+                    "type": "BOOLEAN",
+                    "description": "If true, multiple occurrences of 'targetContent' will be replaced by 'replacementContent' if they are found. Otherwise if multiple occurrences are found, an error will be returned."
+                  },
+                  "Description": {
+                    "type": "STRING",
+                    "description": "Brief, user-facing explanation of what this change did. Focus on non-obvious rationale, design decisions, or important context. Don't just restate what the code does."
+                  },
+                  "EndLine": {
+                    "type": "INTEGER",
+                    "description": "The ending line number of the chunk (1-indexed). Should be at or after the last line containing the target content. Must satisfy StartLine <= EndLine <= number of lines in the file. The target content is searched for within the [StartLine, EndLine] range."
+                  },
+                  "Instruction": {
+                    "type": "STRING",
+                    "description": "A description of the changes that you are making to the file."
+                  },
+                  "ReplacementContent": {
+                    "type": "STRING",
+                    "description": "The content to replace the target content with."
+                  },
+                  "StartLine": {
+                    "type": "INTEGER",
+                    "description": "The starting line number of the chunk (1-indexed). Should be at or before the first line containing the target content. Must satisfy 1 <= StartLine <= EndLine. The target content is searched for within the [StartLine, EndLine] range."
+                  },
+                  "TargetContent": {
+                    "type": "STRING",
+                    "description": "The exact string to be replaced. This must be the exact character-sequence to be replaced, including whitespace. Be very careful to include any leading whitespace otherwise this will not work at all. This must be a unique substring within the file, or else it will error."
+                  },
+                  "TargetFile": {
+                    "type": "STRING",
+                    "description": "The target file to modify. Must be an absolute path. Always specify the target file as the very first argument."
+                  },
+                  "TargetLintErrorIds": {
+                    "type": "ARRAY",
+                    "description": "If applicable, IDs of lint errors this edit aims to fix (they'll have been given in recent IDE feedback). If you believe the edit could fix lints, do specify lint IDs; if the edit is wholly unrelated, do not. A rule of thumb is, if your edit was influenced by lint feedback, include lint IDs. Exercise honest judgement here.",
+                    "items": {
+                      "type": "STRING"
+                    }
+                  },
+                  "toolAction": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word summary of what this tool is doing. Capitalize like a sentence. Some examples: 'Analyzing directory', 'Searching the web', 'Editing file', 'Viewing file', 'Running command', 'Semantic searching'."
+                  },
+                  "toolSummary": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word noun phrase describing what this tool call is about. Capitalize like a sentence. Some examples: 'Directory analysis', 'Web search', 'File edit', 'Command execution', 'Semantic search'."
+                  }
+                },
+                "required": [
+                  "TargetFile",
+                  "Instruction",
+                  "Description",
+                  "AllowMultiple",
+                  "TargetContent",
+                  "ReplacementContent",
+                  "StartLine",
+                  "EndLine",
+                  "toolSummary",
+                  "toolAction"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "functionDeclarations": [
+            {
+              "name": "generate_image",
+              "description": "Generate an image or edit existing images based on a text prompt. The resulting image will be saved as an artifact for use. You can use this tool to generate user interfaces and iterate on a design with the USER for an application or website that you are building. When creating UI designs, generate only the interface itself without surrounding device frames (laptops, phones, tablets, etc.) unless the user explicitly requests them. You can also use this tool to generate assets for use in an application or website.",
+              "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                  "AspectRatio": {
+                    "type": "STRING",
+                    "description": "Optional aspect ratio for the generated image. Supported values: '1:1', '2:3', '3:2', '3:4', '4:3', '9:16', '16:9'. Default is '1:1'."
+                  },
+                  "ImageName": {
+                    "type": "STRING",
+                    "description": "Name of the generated image to save. Should be all lowercase with underscores, describing what the image contains. Maximum 3 words. Example: 'login_page_mockup'"
+                  },
+                  "ImagePaths": {
+                    "type": "ARRAY",
+                    "description": "Optional absolute paths to the images to use in generation. You can pass in images here if you would like to edit, combine, or use as references. You can pass in artifact images and any images in the file system. Note: you cannot pass in more than 3 images.",
+                    "items": {
+                      "type": "STRING"
+                    }
+                  },
+                  "Prompt": {
+                    "type": "STRING",
+                    "description": "The text prompt to generate an image for or the edit instructions."
+                  },
+                  "toolAction": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word summary of what this tool is doing. Capitalize like a sentence. Some examples: 'Analyzing directory', 'Searching the web', 'Editing file', 'Viewing file', 'Running command', 'Semantic searching'."
+                  },
+                  "toolSummary": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word noun phrase describing what this tool call is about. Capitalize like a sentence. Some examples: 'Directory analysis', 'Web search', 'File edit', 'Command execution', 'Semantic search'."
+                  }
+                },
+                "required": [
+                  "Prompt",
+                  "ImageName",
+                  "toolSummary",
+                  "toolAction"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "functionDeclarations": [
+            {
+              "name": "read_url_content",
+              "description": "Fetch content from a URL via HTTP request (invisible to USER). Use when: (1) extracting text from public pages, (2) reading static content/documentation, (3) batch processing multiple URLs, (4) speed is important, or (5) no visual interaction needed. Converts HTML to markdown. No JavaScript execution, no authentication. For pages requiring login, JavaScript, or USER visibility, use read_browser_page instead.",
+              "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                  "Url": {
+                    "type": "STRING",
+                    "description": "URL to read content from"
+                  },
+                  "toolAction": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word summary of what this tool is doing. Capitalize like a sentence. Some examples: 'Analyzing directory', 'Searching the web', 'Editing file', 'Viewing file', 'Running command', 'Semantic searching'."
+                  },
+                  "toolSummary": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word noun phrase describing what this tool call is about. Capitalize like a sentence. Some examples: 'Directory analysis', 'Web search', 'File edit', 'Command execution', 'Semantic search'."
+                  }
+                },
+                "required": [
+                  "Url",
+                  "toolSummary",
+                  "toolAction"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "functionDeclarations": [
+            {
+              "name": "search_web",
+              "description": "Performs a web search for a given query. Returns a summary of relevant information along with URL citations.",
+              "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                  "domain": {
+                    "type": "STRING",
+                    "description": "Optional domain to recommend the search prioritize"
+                  },
+                  "query": {
+                    "type": "STRING"
+                  },
+                  "toolAction": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word summary of what this tool is doing. Capitalize like a sentence. Some examples: 'Analyzing directory', 'Searching the web', 'Editing file', 'Viewing file', 'Running command', 'Semantic searching'."
+                  },
+                  "toolSummary": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word noun phrase describing what this tool call is about. Capitalize like a sentence. Some examples: 'Directory analysis', 'Web search', 'File edit', 'Command execution', 'Semantic search'."
+                  }
+                },
+                "required": [
+                  "query",
+                  "toolSummary",
+                  "toolAction"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "functionDeclarations": [
+            {
+              "name": "find_by_name",
+              "description": "Search for files and subdirectories within a specified directory using fd.\nSearch uses smart case and will ignore gitignored files by default.\nPattern and Excludes both use the glob format. If you are searching for Extensions, there is no need to specify both Pattern AND Extensions.\nTo avoid overwhelming output, the results are capped at 50 matches. Use the various arguments to filter the search scope as needed.\nResults will include the type, size, modification time, and relative path.",
+              "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                  "Excludes": {
+                    "type": "ARRAY",
+                    "description": "Optional, exclude files/directories that match the given glob patterns",
+                    "items": {
+                      "type": "STRING"
+                    }
+                  },
+                  "Extensions": {
+                    "type": "ARRAY",
+                    "description": "Optional, file extensions to include (without leading .), matching paths must match at least one of the included extensions",
+                    "items": {
+                      "type": "STRING"
+                    }
+                  },
+                  "FullPath": {
+                    "type": "BOOLEAN",
+                    "description": "Optional, whether the full absolute path must match the glob pattern, default: only filename needs to match. Take care when specifying glob patterns with this flag on, e.g when FullPath is on, pattern '*.py' will not match to the file '/foo/bar.py', but pattern '**/*.py' will match."
+                  },
+                  "MaxDepth": {
+                    "type": "INTEGER",
+                    "description": "Optional, maximum depth to search"
+                  },
+                  "Pattern": {
+                    "type": "STRING",
+                    "description": "Optional, Pattern to search for, supports glob format"
+                  },
+                  "SearchDirectory": {
+                    "type": "STRING",
+                    "description": "The directory to search within. Must be an absolute path."
+                  },
+                  "Type": {
+                    "type": "STRING",
+                    "description": "Optional, type filter, enum=file,directory,any"
+                  },
+                  "toolAction": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word summary of what this tool is doing. Capitalize like a sentence. Some examples: 'Analyzing directory', 'Searching the web', 'Editing file', 'Viewing file', 'Running command', 'Semantic searching'."
+                  },
+                  "toolSummary": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word noun phrase describing what this tool call is about. Capitalize like a sentence. Some examples: 'Directory analysis', 'Web search', 'File edit', 'Command execution', 'Semantic search'."
+                  }
+                },
+                "required": [
+                  "SearchDirectory",
+                  "Pattern",
+                  "toolSummary",
+                  "toolAction"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "functionDeclarations": [
+            {
+              "name": "grep_search",
+              "description": "Use ripgrep to find exact pattern matches within files or directories.\nResults are returned in JSON format and for each match you will receive the:\n- Filename\n- LineNumber (only when MatchPerLine is true)\n- LineContent: the content of the matching line (only when MatchPerLine is true)\nTotal results are capped at 50 matches. Use the Includes option to filter by file type or specific paths to refine your search.",
+              "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                  "CaseInsensitive": {
+                    "type": "BOOLEAN",
+                    "description": "If true, performs a case-insensitive search."
+                  },
+                  "Includes": {
+                    "type": "ARRAY",
+                    "description": "Glob patterns to filter files found within the 'SearchPath', if 'SearchPath' is a directory. For example, '*.go' to only include Go files, or '!**/vendor/*' to exclude vendor directories. This is NOT for specifying the primary search directory; use 'SearchPath' for that. Leave empty if no glob filtering is needed or if 'SearchPath' is a single file.",
+                    "items": {
+                      "type": "STRING"
+                    }
+                  },
+                  "IsRegex": {
+                    "type": "BOOLEAN",
+                    "description": "If true, treats Query as a regular expression pattern with special characters like *, +, (, etc. having regex meaning. If false, treats Query as a literal string where all characters are matched exactly. Use false for normal text searches and true only when you specifically need regex functionality."
+                  },
+                  "MatchPerLine": {
+                    "type": "BOOLEAN",
+                    "description": "If true, returns each line that matches the query, including line numbers and snippets of matching lines (equivalent to 'git grep -nI'). If false, only returns the names of files containing the query (equivalent to 'git grep -l')."
+                  },
+                  "Query": {
+                    "type": "STRING",
+                    "description": "The search term or pattern to look for within files."
+                  },
+                  "SearchPath": {
+                    "type": "STRING",
+                    "description": "The path to search. Must be an absolute path to a directory or a file. This is a required parameter."
+                  },
+                  "toolAction": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word summary of what this tool is doing. Capitalize like a sentence. Some examples: 'Analyzing directory', 'Searching the web', 'Editing file', 'Viewing file', 'Running command', 'Semantic searching'."
+                  },
+                  "toolSummary": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word noun phrase describing what this tool call is about. Capitalize like a sentence. Some examples: 'Directory analysis', 'Web search', 'File edit', 'Command execution', 'Semantic search'."
+                  }
+                },
+                "required": [
+                  "SearchPath",
+                  "Query",
+                  "toolSummary",
+                  "toolAction"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "functionDeclarations": [
+            {
+              "name": "list_dir",
+              "description": "List the contents of a directory, i.e. all files and subdirectories that are children of the directory. Directory path must be an absolute path to a directory that exists. For each child in the directory, output will have: relative path to the directory, whether it is a directory or file, size in bytes if file, and number of children (recursive) if directory. Number of children may be missing if the workspace is too large, since we are not able to track the entire workspace.",
+              "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                  "DirectoryPath": {
+                    "type": "STRING",
+                    "description": "Path to list contents of, should be absolute path to a directory"
+                  },
+                  "toolAction": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word summary of what this tool is doing. Capitalize like a sentence. Some examples: 'Analyzing directory', 'Searching the web', 'Editing file', 'Viewing file', 'Running command', 'Semantic searching'."
+                  },
+                  "toolSummary": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word noun phrase describing what this tool call is about. Capitalize like a sentence. Some examples: 'Directory analysis', 'Web search', 'File edit', 'Command execution', 'Semantic search'."
+                  }
+                },
+                "required": [
+                  "DirectoryPath",
+                  "toolSummary",
+                  "toolAction"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "functionDeclarations": [
+            {
+              "name": "ask_question",
+              "description": "Use this tool to ask the user one or more multiple-choice questions, with the goal of:\n- Clarifying underspecified requirements\n- Soliciting design feedback or user preferences\n- Addressing ambiguous user intent\n- Picking a solution from a list of options\n\nWhen called, this tool renders an interactive modal containing the question, selectable options, a default write-in option, and Submit/Skip buttons. Execution is blocked until the user responds.\n\nGuidance:\n- When specifying files in the question, use github markdown links (e.g. [filename](file:///path/to/file)).\n- Don't use this tool to ask trivial questions that can be answered with a single word (e.g. yes/no); output regular text to ask these questions.\n- Don't include an 'other' option for write-in responses; one is always provided in the UI by default.\n- Don't enumerate the options; they are enumerated by default.\n- Don't include \"Select all options that apply\", or similar, in the question; the UI already includes this.\n- If you recommend any options, list it first and prefix the option text with \"(Recommended)\".\n- Format options as the user's direct response instead of describing your own actions.\n- Set 'IsMultiSelect' to true to allow the user to select multiple options with checkboxes.\n",
+              "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                  "questions": {
+                    "type": "ARRAY",
+                    "description": "The list of questions to ask.",
+                    "items": {
+                      "type": "OBJECT",
+                      "properties": {
+                        "is_multi_select": {
+                          "type": "BOOLEAN",
+                          "description": "If true, the user can select multiple options."
+                        },
+                        "options": {
+                          "type": "ARRAY",
+                          "description": "The text for each option, formatted as the user's response. Must have at least 2 options. Do NOT add an 'Other' option to questions.",
+                          "items": {
+                            "type": "STRING"
+                          }
+                        },
+                        "question": {
+                          "type": "STRING",
+                          "description": "The question to ask the user. Do NOT add 'select all that apply' or similar text to the question title."
+                        }
+                      }
+                    }
+                  },
+                  "toolAction": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word summary of what this tool is doing. Capitalize like a sentence. Some examples: 'Analyzing directory', 'Searching the web', 'Editing file', 'Viewing file', 'Running command', 'Semantic searching'."
+                  },
+                  "toolSummary": {
+                    "type": "STRING",
+                    "description": "Brief 2-5 word noun phrase describing what this tool call is about. Capitalize like a sentence. Some examples: 'Directory analysis', 'Web search', 'File edit', 'Command execution', 'Semantic search'."
+                  }
+                },
+                "required": [
+                  "toolSummary",
+                  "toolAction"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "labels": {
+        "last_execution_id": "dde88359-73fe-47a9-bd14-bcfdbbdea7d0",
+        "last_step_index": "18",
+        "model_enum": "MODEL_PLACEHOLDER_M318",
+        "request_id": "313da184-2487-4452-9982-a88d5039589b-8",
+        "trajectory_id": "313da184-2487-4452-9982-a88d5039589b",
+        "used_claude": "false",
+        "used_claude_conservative": "false",
+        "used_non_gemini_model": "false"
+      },
+      "generationConfig": {
+        "maxOutputTokens": 65536,
+        "thinkingConfig": {
+          "includeThoughts": true,
+          "thinkingBudget": -1
+        }
+      },
+      "sessionId": "-3750763034362895579"
+    },
+    "model": "gemini-3.8-flash-high",
+    "userAgent": "antigravity",
+    "requestType": "agent"
+  }
+}

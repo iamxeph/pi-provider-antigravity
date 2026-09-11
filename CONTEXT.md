@@ -14,6 +14,18 @@ _Avoid_: Wire format, API schema, traffic dump
 Raw request/response data extracted from a specific version of the official `agy` CLI with `mitmproxy` and frozen under `captures/agy_cli_{version}/`.
 _Avoid_: Mock data, dummy payload, test sample
 
+**Capture Scenario**:
+The canonical, version-independent capture plan declared once in `captures/scenarios.json`: the ordered Capture Slots, the sessions and exact commands that produce them, the replay chains between slots, and what each slot must prove.
+_Avoid_: Test plan, capture checklist, scenario matrix
+
+**Capture Slot**:
+One frozen fixture pair (`<slot>.req.json` + `<slot>.resp.sse`) declared by the Capture Scenario, carrying its session, mode (fresh / same invocation / `-c` continuation) and expected request and response shapes.
+_Avoid_: Fixture name, capture step, turn number
+
+**Capture Deviation**:
+A declared and reasoned exception (omit or patch) that a version directory records in the Capture Scenario when its capture could not follow the canonical slots.
+_Avoid_: Exception, override, legacy special case
+
 **Turn Trace**:
 Captured data of one consecutive conversation of at least 5 turns, used to verify how `thoughtSignature` and tool-call state (`functionCall`/`functionResponse`) propagate.
 _Avoid_: Chat history, message log, turn dump

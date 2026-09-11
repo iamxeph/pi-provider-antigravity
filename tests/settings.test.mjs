@@ -15,14 +15,27 @@ function makeConf(settings) {
   return file;
 }
 
-function stubFetchRouter(quotaJson) {
+function stubFetchRouter(payload) {
   return async (url) => {
     assert.match(String(url), /retrieveUserQuotaSummary/);
-    return { ok: true, json: async () => quotaJson };
+    return { ok: true, json: async () => payload };
   };
 }
 
-const quotaJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.1.26/quota.resp.json", "utf-8"));
+const quotaJson = JSON.parse(fs.readFileSync("captures/agy_cli_1.2.0/quota.resp.json", "utf-8"));
+// Preview and threshold tests need a deterministic low window: the live capture holds
+// whatever the account happened to have that day (99% here, which renders plain — no
+// threshold color to assert). Clone the capture's shape and pin the numbers the sample
+// logic is about.
+const lowQuotaJson = structuredClone(quotaJson);
+const setBucket = (group, bucketId, fraction) => {
+  lowQuotaJson.groups
+    .find((g) => g.displayName === group)
+    .buckets.find((b) => b.bucketId === bucketId).remainingFraction = fraction;
+};
+setBucket("Gemini Models", "gemini-5h", 0.22);
+setBucket("Gemini Models", "gemini-weekly", 0.87);
+setBucket("Claude and GPT models", "3p-5h", 0.84);
 
 function makeCtx(outputs, { authed = true } = {}) {
   return {
@@ -110,7 +123,7 @@ test("Settings items carry current values and options", () => {
 
 test("Preview renders the footer sample per mode", async () => {
   const realFetch = globalThis.fetch;
-  globalThis.fetch = stubFetchRouter(quotaJson);
+  globalThis.fetch = stubFetchRouter(lowQuotaJson);
   try {
     const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(makeConf({ quotaFooter: "smart" })));
     await coord.ensurePreview(makeCtx([]));
@@ -128,7 +141,7 @@ test("Preview renders the footer sample per mode", async () => {
 
 test("TUI dialog cycles the value with the real SettingsList", async () => {
   const realFetch = globalThis.fetch;
-  globalThis.fetch = stubFetchRouter(quotaJson);
+  globalThis.fetch = stubFetchRouter(lowQuotaJson);
   try {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agy-agent-"));
     const prev = process.env.PI_CODING_AGENT_DIR;
@@ -208,7 +221,7 @@ test("Settings preview samples quota while another provider's model is selected"
   globalThis.fetch = async (url) => {
     counter.calls++;
     assert.match(String(url), /retrieveUserQuotaSummary/);
-    return { ok: true, json: async () => quotaJson };
+    return { ok: true, json: async () => lowQuotaJson };
   };
   try {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agy-agent-"));
@@ -254,7 +267,7 @@ test("Settings rows follow the field definitions", async () => {
 
 test("TUI dialog frames the list with border lines like /settings", async () => {
   const realFetch = globalThis.fetch;
-  globalThis.fetch = stubFetchRouter(quotaJson);
+  globalThis.fetch = stubFetchRouter(lowQuotaJson);
   try {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agy-agent-"));
     const prev = process.env.PI_CODING_AGENT_DIR;

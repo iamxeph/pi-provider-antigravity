@@ -102,6 +102,7 @@ export function streamAntigravity(
         output.usage.input = fed.usage.input;
         output.usage.cacheRead = fed.usage.cacheRead;
         output.usage.output = fed.usage.output;
+        output.usage.reasoning = fed.usage.reasoning;
         output.usage.totalTokens = fed.usage.total;
 
         if (model.cost) {

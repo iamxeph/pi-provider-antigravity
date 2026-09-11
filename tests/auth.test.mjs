@@ -6,8 +6,8 @@ import initExtension from "../src/index.ts";
 import { resolveToken } from "../src/commands.ts";
 import { refreshCatalog } from "../src/catalog-refresh.ts";
 
-const loginFixture = JSON.parse(fs.readFileSync("captures/agy_cli_1.1.26/auth_login_params.json", "utf-8"));
-const refreshFixture = JSON.parse(fs.readFileSync("captures/agy_cli_1.1.26/auth_token_refresh.req.json", "utf-8"));
+const loginFixture = JSON.parse(fs.readFileSync("captures/agy_cli_1.2.0/auth_login_params.json", "utf-8"));
+const refreshFixture = JSON.parse(fs.readFileSync("captures/agy_cli_1.2.0/auth_token_refresh.req.json", "utf-8"));
 
 test("Seam Auth: OAuth client ID matches agy CLI wire traffic", () => {
   assert.equal(CLIENT_ID, loginFixture.params.client_id);
@@ -175,7 +175,7 @@ test("Seam Auth: /antigravity model is an alias of models", async () => {
         refresh: async () =>
           refreshCatalog({
             allowNetwork: true,
-            credential: { access: "fake-token" },
+            credential: { type: "oauth", access: "fake-token" },
             stored: {},
           }),
       },

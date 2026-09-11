@@ -1,0 +1,15 @@
+{
+  "method": "POST",
+  "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAdminControls",
+  "headers": {
+    "Host": "daily-cloudcode-pa.googleapis.com",
+    "User-Agent": "antigravity/cli/1.2.0 (aidev_client; os_type=linux; arch=amd64; cl=978750357; auth_method=consumer)",
+    "Content-Length": "30",
+    "Authorization": "Bearer <REDACTED_ACCESS_TOKEN>",
+    "Content-Type": "application/json",
+    "Accept-Encoding": "gzip"
+  },
+  "body": {
+    "project": "aicode-consumers"
+  }
+}

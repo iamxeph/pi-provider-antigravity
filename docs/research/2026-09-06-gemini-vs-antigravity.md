@@ -1,5 +1,9 @@
 # Gemini API vs Antigravity API — Are the Specs Different, and Why?
 
+> Dated research note (2026-09-06, agy 1.1.27 era). Version capture directories rotate:
+> only the newest stays in the tree, so the `captures/agy_cli_1.1.27/...` citations below
+> refer to that version's fixtures as they were — git history keeps them.
+
 ## TL;DR
 
 - Yes: different hosts, auth, envelope, model IDs, and auxiliary APIs — same Gemini content-part vocabulary underneath. [1][2]
