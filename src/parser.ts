@@ -95,6 +95,20 @@ export function createSseFeed(): {
   // placement policy instead of every caller re-deriving it.
   const attachLoneSignature = (): void => {
     if (!lastThoughtSignature) return;
+    // Not lone: a block already carries it. agy 1.2.0 sends
+    // `{thoughtSignature, functionCall}`, whose signature the toolCall branch
+    // attaches itself — pushing a carrier on top of that put an empty text
+    // block on a turn that never had one.
+    const attached = content.some((b) =>
+      b.type === "thinking"
+        ? Boolean(b.thinkingSignature)
+        : b.type === "toolCall"
+          ? Boolean(b.thoughtSignature)
+          : b.type === "text"
+            ? Boolean(b.textSignature)
+            : false,
+    );
+    if (attached) return;
     const thinking = content.find((b): b is ThinkingContent => b.type === "thinking");
     if (thinking) {
       // The thinking block wins (never a second carrier), and one that already
