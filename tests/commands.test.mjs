@@ -73,7 +73,7 @@ test("Subcommand: models without a cached generation reports fetch failure", asy
       refresh: async () =>
         refreshCatalog({
           allowNetwork: true,
-          credential: { access: JSON.stringify({ token: "t", projectId: "p" }) },
+          credential: { type: "oauth", access: JSON.stringify({ token: "t", projectId: "p" }) },
           stored: {},
         }),
     });
@@ -95,7 +95,7 @@ test("Subcommand: models prints Model Catalog", async () => {
         refreshCalls.push(opts);
         await refreshCatalog({
           allowNetwork: true,
-          credential: { access: JSON.stringify({ token: "t", projectId: "p" }) },
+          credential: { type: "oauth", access: JSON.stringify({ token: "t", projectId: "p" }) },
           stored: {},
         });
       },
@@ -111,7 +111,7 @@ test("Subcommand: models prints Model Catalog", async () => {
 
 test("Subcommand: models shows the retained list with a warning when refresh fails", async () => {
   const realFetch = globalThis.fetch;
-  const credential = { access: JSON.stringify({ token: "t", projectId: "p" }) };
+  const credential = { type: "oauth", access: JSON.stringify({ token: "t", projectId: "p" }) };
   try {
     // Prime one generation through the real refresh path first (self-contained:
     // does not rely on other tests having ingested anything).
@@ -148,7 +148,7 @@ test("Subcommand: refresh delegates to the model registry", async () => {
         calls.push(opts);
         await refreshCatalog({
           allowNetwork: true,
-          credential: { access: JSON.stringify({ token: "t", projectId: "p" }) },
+          credential: { type: "oauth", access: JSON.stringify({ token: "t", projectId: "p" }) },
           stored: {},
         });
       },
@@ -164,7 +164,7 @@ test("Subcommand: refresh delegates to the model registry", async () => {
 
 test("Subcommand: refresh warns but keeps the retained list when refresh fails", async () => {
   const realFetch = globalThis.fetch;
-  const credential = { access: JSON.stringify({ token: "t", projectId: "p" }) };
+  const credential = { type: "oauth", access: JSON.stringify({ token: "t", projectId: "p" }) };
   try {
     // Prime one generation through the real refresh path first.
     globalThis.fetch = stubFetchRouter();

@@ -175,7 +175,7 @@ test("Seam Auth: /antigravity model is an alias of models", async () => {
         refresh: async () =>
           refreshCatalog({
             allowNetwork: true,
-            credential: { access: "fake-token" },
+            credential: { type: "oauth", access: "fake-token" },
             stored: {},
           }),
       },
