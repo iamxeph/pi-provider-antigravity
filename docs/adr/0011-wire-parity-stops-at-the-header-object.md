@@ -17,6 +17,13 @@ Measured against a local HTTP/1.1 server (Node 24, undici), the same request goe
 `accept-language: *`, `sec-fetch-mode: cors`, `connection: keep-alive`). The explicit `Host`
 header is ignored in favour of the connection authority — a mismatching one is illegal.
 
+The set is not even stable across the client's own paths. The same request measured through
+`NODE_USE_ENV_PROXY=1` (mitmdump, HTTP/1.1, `pi` running against the live endpoint) carries
+eight headers — `Authorization, Content-Type, Host, User-Agent, Connection, Accept,
+Accept-Encoding, Content-Length`, `Host` in the casing this provider sets — and neither
+`accept-language` nor `sec-fetch-mode`. Same client, same protocol, different tables; the
+connected transport decides.
+
 What closing each gap takes (all measured):
 
 | Gap | With `fetch` today | With `node:https` + `setHost: false` |
@@ -32,6 +39,9 @@ Consequences:
 - Parity tests assert the header object and the URL; "header casing" in the capture README
   means this object, not the bytes. Values `fetch` computes (`Content-Length`,
   `Accept-Encoding`, framing) are not pinned anywhere.
+- A capture taken through `mitmdump` therefore shows a different header set than production
+  traffic: read those headers as `agy`'s fingerprint, never as the set this provider must
+  emit on a given path.
 - We stay on `fetch` for the seam, not for the transport. A `node:https` client would keep
   working through the capture runbook — `NODE_USE_ENV_PROXY` and `NODE_EXTRA_CA_CERTS` apply
   to the core HTTP/HTTPS clients too (verified against `mitmdump`: both `fetch` and
