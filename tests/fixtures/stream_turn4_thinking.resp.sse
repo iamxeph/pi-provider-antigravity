@@ -1,0 +1,4 @@
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": "The average speed of the train is 80 km/h."}]}}],"usageMetadata": {"promptTokenCount": 15925,"candidatesTokenCount": 14,"totalTokenCount": 16042,"thoughtsTokenCount": 103},"modelVersion": "gemini-3.8-flash","responseId": "sQKoaoqDHYT32roP9Mqs6Q8"},"traceId": "d7d219f5dfb47b7","metadata": {}}
+
+data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thoughtSignature": "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDAz","text": ""}]},"finishReason": "STOP"}],"usageMetadata": {"promptTokenCount": 16631,"candidatesTokenCount": 14,"totalTokenCount": 16748,"cachedContentTokenCount": 12223,"thoughtsTokenCount": 103},"modelVersion": "gemini-3.8-flash","responseId": "sQKoaoqDHYT32roP9Mqs6Q8"},"traceId": "d7d219f5dfb47b7","metadata": {}}
+

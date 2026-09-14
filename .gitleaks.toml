@@ -1,0 +1,23 @@
+title = "pi-provider-antigravity gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allowlist public Cloud Code Assist (agy) CLI client credentials and test fixtures"
+stopwords = [
+    "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",
+    "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com",
+    "REDACTED",
+]
+regexes = [
+    '''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''',
+    '''1071006060591-tmhssin2h21lcre235vtolojh4g403ep''',
+    '''_REDACTED_MOCK_REFRESH_TOKEN''',
+    '''<REDACTED_ACCESS_TOKEN>''',
+    '''<REDACTED_ID_TOKEN>''',
+]
+paths = [
+    '''node_modules''',
+    '''dist''',
+]

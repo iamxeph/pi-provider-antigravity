@@ -1,0 +1,31 @@
+name: Security
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  gitleaks:
+    name: Gitleaks Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # gitleaks-action scans `git log <PR-head>^..<PR-head>` on pull_request
+      # events, but checkout lands on the merge ref where that SHA can be
+      # missing ("ambiguous argument ... unknown revision"). Fetch the head
+      # explicitly so the range always resolves; no-op when already present.
+      - name: Fetch PR head for gitleaks range
+        if: github.event_name == 'pull_request'
+        run: git fetch --no-tags origin ${{ github.event.pull_request.head.sha }}
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml

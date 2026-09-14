@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  # Manual re-run of the release flow (e.g. after a transient failure); safe to run any time —
+  # with no unreleased `feat`/`fix` commits release-please has nothing to open a PR for.
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    name: Release Please
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      # Mirrored into env because `secrets` is not available in a step-level `if`.
+      RELEASE_PLEASE_APP_CLIENT_ID: ${{ secrets.RELEASE_PLEASE_APP_CLIENT_ID }}
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+    steps:
+      # A GitHub App installation token authors the release PR as `<app>[bot]` and lets
+      # `pull_request` workflows run automatically, while a `GITHUB_TOKEN`-authored PR is
+      # parked in `action_required` until a maintainer approves it. Skipped until the app
+      # secrets exist, which leaves the run on the default token.
+      - uses: actions/create-github-app-token@v3
+        id: app-token
+        if: env.RELEASE_PLEASE_APP_CLIENT_ID != ''
+        with:
+          client-id: ${{ env.RELEASE_PLEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_PLEASE_APP_PRIVATE_KEY }}
+      - uses: googleapis/release-please-action@v5
+        id: release
+        with:
+          token: ${{ steps.app-token.outputs.token || github.token }}
+
+  publish:
+    name: Publish to npm
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Publish to npm
+        run: npm publish --access public
