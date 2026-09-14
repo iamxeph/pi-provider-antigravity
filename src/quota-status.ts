@@ -338,6 +338,20 @@ function validPairs(raw: unknown): Record<string, WindowFractionPair> | undefine
 
 export type QuotaStatusCtx = Pick<ExtensionContext, "ui" | "modelRegistry" | "model">;
 
+// Pi binds every ExtensionContext property read to a liveness assertion, so a
+// ctx captured before a session replacement or reload throws on any read once
+// the runtime is invalidated. A turn aborted by teardown still emits
+// agent_settled from that invalidated runtime, so handlers receive a dead ctx.
+// Probe once before touching it — painting a dead session's footer is meaningless.
+function isLiveCtx(ctx: QuotaStatusCtx): boolean {
+  try {
+    void ctx.ui;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export type QuotaFooterMode = "off" | "smart" | "all";
 
 export interface FooterModeDef {
@@ -765,6 +779,7 @@ export class QuotaStatusCoordinator {
   }
 
   refresh(ctx: QuotaStatusCtx, opts: RefreshOptions = {}): Promise<QuotaSummary | undefined> {
+    if (!isLiveCtx(ctx)) return Promise.resolve(undefined);
     if (!opts.ignoreMode && (this.mode() === "off" || !isAntigravityModel(ctx.model))) {
       return Promise.resolve(undefined);
     }
@@ -784,6 +799,7 @@ export class QuotaStatusCoordinator {
 
   // Paints current cached quota status to the footer slot.
   paint(ctx: QuotaStatusCtx): void {
+    if (!isLiveCtx(ctx)) return;
     const mode = this.mode();
     if (mode === "off" || !isAntigravityModel(ctx.model)) {
       ctx.ui.setStatus(QUOTA_STATUS_KEY, undefined);
