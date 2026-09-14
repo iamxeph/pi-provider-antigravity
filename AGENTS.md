@@ -38,7 +38,7 @@ This is an open-source project: everything GitHub-facing must be in English — 
 
 ## 6. Issue Batch Workflow
 
-- Never work on `main`. One `feat/<batch>` worktree per batch (`git worktree add ~/Projects/<repo>-<batch> -b feat/<batch> main`), issues implemented inside it in dependency order, one commit per issue. Remove the worktree when the batch squash-merges to `main`.
+- Never work on `main`. One `feat/<batch>` worktree per batch, created as a sibling of this checkout — outside the clone, never inside it: `git worktree add ../<batch> -b feat/<batch> main` (e.g. `../issue-42`). Issues are implemented inside it in dependency order, one commit per issue. Remove the worktree when the batch squash-merges to `main`.
 - One worktree per batch, not per issue: per-issue worktrees only pay off for disjoint files. Shared hotspots: `protocol.ts`, `stream.ts`, `catalog.ts` (check overlap before parallelizing).
 - Sequential by default. Dependent issues (e.g. error-mapping before retry) chain on the same branch in order.
 - Light direct edits by the maintainer may use a plain branch instead.
