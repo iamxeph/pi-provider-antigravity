@@ -354,6 +354,37 @@ test("Coordinator: foreign model fetches nothing and clears the slot", async () 
   }
 });
 
+test("Coordinator: a dead session ctx is ignored instead of throwing", async () => {
+  const realFetch = globalThis.fetch;
+  const counter = { calls: 0 };
+  globalThis.fetch = stubQuotaFetch(quotaJson, counter);
+  try {
+    const coord = new QuotaStatusCoordinator(memStore("smart").store);
+    const statuses = [];
+    // Mirrors the ctx Pi hands an event handler after teardown invalidated the
+    // runtime: every property read asserts liveness and throws.
+    const stale = new Proxy({}, {
+      get: () => {
+        throw new Error("This extension ctx is stale after session replacement or reload.");
+      },
+    });
+
+    assert.equal(await coord.refresh(stale), undefined);
+    coord.paint(stale);
+    await coord.refreshAndPaint(stale);
+    assert.equal(counter.calls, 0);
+    assert.deepEqual(statuses, []);
+
+    // Same coordinator keeps working once a live ctx arrives.
+    const live = makeCtx(statuses);
+    await coord.refreshAndPaint(live);
+    assert.equal(counter.calls, 1);
+    assert.deepEqual(statuses.at(-1), [QUOTA_STATUS_KEY, colorizeQuotaFooter(coord.footerFor(live.model.id))]);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
 test("isAntigravityModel: provider field only", () => {
   assert.equal(isAntigravityModel({ provider: "antigravity" }), true);
   assert.equal(isAntigravityModel({ provider: "opencode-go" }), false);
