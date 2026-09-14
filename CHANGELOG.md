@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.8.0...v0.8.1) (2026-09-14)
+
+
+### Bug Fixes
+
+* **quota-status:** ignore a dead session ctx in footer paint and refresh ([#1](https://github.com/iamxeph/pi-provider-antigravity/issues/1)) ([e0626c0](https://github.com/iamxeph/pi-provider-antigravity/commit/e0626c0ccc15056472c39a66d6445881c136e0d6))
+
 ## 0.8.0 (2026-09-15)
 
 ### Features
