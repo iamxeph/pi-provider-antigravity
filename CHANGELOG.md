@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.8.1...v0.9.0) (2026-09-15)
+
+
+### Features
+
+* **search:** add Google search grounding and deepen model catalog ([#3](https://github.com/iamxeph/pi-provider-antigravity/issues/3)) ([8d63900](https://github.com/iamxeph/pi-provider-antigravity/commit/8d639003ff9814ddb9833b7090c56ed0b46813d3))
+
 ## [0.8.1](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.8.0...v0.8.1) (2026-09-14)
 
 
