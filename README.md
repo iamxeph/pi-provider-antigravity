@@ -9,16 +9,16 @@ Use Google Antigravity models directly in [Pi](https://pi.dev).
 
 ## Features
 
-- **Verified wire compatibility**: headers, request envelopes, and tier/thinking mapping
-  strictly validated against the Antigravity protocol specification — not guessed.
+- **Wire parity**: headers, request envelopes, and thinking/tier mapping
+  matched to the official Antigravity client.
 - **Dynamic model catalog**: exposes exactly the models your account can use,
   synthesized from the live catalog and cached for offline startup.
   Newly released models are usable immediately without waiting for an extension update.
 - **OAuth with auto-refresh**: log in once via `/login antigravity`; tokens refresh silently.
 - **Quota visibility**: 5-hour and weekly remaining quota per model pool, with reset times
   and a live footer slot. See [Quota footer](#quota-footer).
-- **Web search grounding**: built-in `search_web` agent tool and `/antigravity search` command
-  for real-time web search with verified URL citations — zero extra API keys or configuration needed.
+- **Search grounding**: built-in `search_web` tool and `/antigravity search` command
+  with source citations (no extra API keys required).
 
 ## Requirements
 
