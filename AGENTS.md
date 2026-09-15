@@ -31,10 +31,8 @@ npm run prepublishOnly # tsc --noEmit && npm test && build
 ## 4. English on GitHub
 This is an open-source project: everything GitHub-facing must be in English — issue titles and bodies, PR titles and descriptions, review/discussion comments, and commit messages. Code, code comments, and docs in the repo are English too. (Direct conversation with the maintainer may be in Korean; translate before posting anything to GitHub.)
 
-## 5. Agent Docs
-
-- Issues live in GitHub Issues (via the `gh` CLI) — see `docs/agents/issue-tracker.md`.
-- Triage labels: default five canonical labels used as-is — see `docs/agents/triage-labels.md`.
+## 5. Issue Tracking
+Issues live in GitHub Issues (via the `gh` CLI).
 
 ## 6. Issue Batch Workflow
 
