@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.9.0...v0.10.0) (2026-09-15)
+
+
+### Features
+
+* **search:** rename search_web tool to antigravity_search ([#6](https://github.com/iamxeph/pi-provider-antigravity/issues/6)) ([b379f76](https://github.com/iamxeph/pi-provider-antigravity/commit/b379f7600df9c203f159e1b7cfbd92d5f2bebb2c))
+
 ## [0.9.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.8.1...v0.9.0) (2026-09-15)
 
 
