@@ -4,7 +4,7 @@ import * as path from "node:path";
 import type { ExtensionCommandContext, ExtensionContext, Theme } from "@earendil-works/pi-coding-agent";
 import { SettingsList, type SettingItem, type SettingsListTheme } from "@earendil-works/pi-tui";
 import { resolveCredentials } from "./auth.ts";
-import { classifyModelFamily } from "./model-catalog.ts";
+import { classifyModelFamily } from "./models.ts";
 import { postAntigravityJson, PROVIDER_ID } from "./protocol.ts";
 
 /**

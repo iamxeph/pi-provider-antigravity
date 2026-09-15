@@ -4,7 +4,7 @@ import fs from "node:fs";
 import { newestCapture } from "./fixtures.mjs";
 import { streamAntigravity } from "../src/stream.ts";
 import { buildAntigravityRequestBody } from "../src/builder.ts";
-import { resolveModelPlan, createCatalogStore, parseAvailableModels } from "../src/model-catalog.ts";
+import { createModelCatalog } from "../src/model-catalog.ts";
 
 const sseTurn5 = fs.readFileSync(newestCapture("stream_turn5_multiturn.resp.sse"), "utf-8");
 // A lone-signature turn: visible text plus a signature carrier, nothing else.
@@ -20,14 +20,12 @@ const usageOf = (sse) => JSON.parse([...sse.matchAll(/"usageMetadata": (\{[^}]*\
 const loneSig = sseLoneSig.match(/"thoughtSignature":\s*"([^"]+)"/)[1];
 const loneText = textOf(sseLoneSig);
 
-const FIXTURE_CATALOG = parseAvailableModels(
-  JSON.parse(fs.readFileSync(newestCapture("models.resp.json"), "utf-8"))
-);
+const RAW_MODELS_JSON = JSON.parse(fs.readFileSync(newestCapture("models.resp.json"), "utf-8"));
 // streamAntigravity resolves against the store the extension wires up: record
 // one generation into a local store, as a completed refresh would, so these
 // adapter tests exercise parsing — not catalog misses.
-const store = createCatalogStore();
-store.record(FIXTURE_CATALOG);
+const store = createModelCatalog();
+store.record(RAW_MODELS_JSON);
 
 function stubFetchWithSse(rawSse, chunkBytes = 4096) {
   const bytes = new TextEncoder().encode(rawSse);
@@ -113,7 +111,7 @@ test("Seam 2 (#16): lone thoughtSignature surfaces on the message and replays in
   // Builder continuation replays it as [{text, thoughtSignature}] (agy CLI shape).
   const body = buildAntigravityRequestBody({
     projectId: "test-project",
-    plan: resolveModelPlan("gemini-3.8-flash-high", undefined, store.generation().snapshot),
+    plan: store.resolvePlan("gemini-3.8-flash-high"),
     context: {
       messages: [{ role: "user", content: "hi" }, message, { role: "user", content: "next" }],
     },

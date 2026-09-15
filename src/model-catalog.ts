@@ -1,21 +1,29 @@
 import type { Model, RefreshModelsContext } from "@earendil-works/pi-ai";
-import { DEFAULT_ENDPOINT, PROVIDER_ID, postAntigravityJson } from "./protocol.ts";
 import { resolveCredentials, type AntigravityCredentials } from "./auth.ts";
+import { DEFAULT_ENDPOINT, postAntigravityJson, PROVIDER_ID } from "./protocol.ts";
+import {
+  ALL_TIER_SUFFIXES,
+  CANONICAL_TIER_SUFFIXES,
+  type CanonicalTier,
+  classifyModelFamily,
+  extractBaseModelId,
+  SPECIAL_TIER_SUFFIXES,
+  TIER_ALIASES,
+  tierCandidateOrder,
+  tierSpellings,
+} from "./models.ts";
 
-/**
- * Model Catalog module (deep, ports & adapters): wire fetch/parse, Pi Catalog
- * Persistence codec, snapshot generations, Public Model ID ↔ Runtime Model ID
- * mapping, Model Plan resolution, Pi Model synthesis, and CLI table formatting.
- * Owns the full lifecycle of models: offline restore, live network refresh,
- * snapshot management, and tier resolution.
- */
 export const PRIVATE_SNAPSHOT_KEY = "pi-provider-antigravity";
 
 type StoreEntry = NonNullable<RefreshModelsContext["stored"]>;
 
+/**
+ * Context passed to refreshModels by Pi Core, minus internal fields the
+ * extension does not touch.
+ */
 export type RefreshContext = Omit<RefreshModelsContext, "stored" | "publish"> & {
   stored?: Readonly<StoreEntry> & { [PRIVATE_SNAPSHOT_KEY]?: PersistedSnapshot };
-  publish(publication: {
+  publish?(publication: {
     persist?: (StoreEntry & { [PRIVATE_SNAPSHOT_KEY]?: PersistedSnapshot }) | null;
     update?: () => void;
   }): Promise<boolean>;
@@ -24,105 +32,6 @@ export type RefreshContext = Omit<RefreshModelsContext, "stored" | "publish"> & 
 export interface CatalogRefreshOutcome {
   status: "fresh" | "stale" | "failed";
   catalog?: AvailableModelsCatalog;
-}
-
-export type CanonicalTier = "low" | "medium" | "high";
-
-/**
- * Canonical Tier Suffix: The wire suffix that mirrors the user-requested thinking
- * effort by name (-low, -medium, -high), attempted first when resolving a Runtime Model ID.
- */
-export const CANONICAL_TIER_SUFFIXES: Record<CanonicalTier, string> = Object.freeze({
-  low: "-low",
-  medium: "-medium",
-  high: "-high",
-});
-
-/**
- * Tier Alias: Alternative wire spellings representing the same thinking effort tier
- * (-thinking or -agent for high, -extra-low for low, or an unsuffixed base identifier
- * for the default tier), resolved when the canonical suffix is absent.
- */
-export const TIER_ALIASES: Record<CanonicalTier, readonly string[]> = Object.freeze({
-  low: Object.freeze(["-extra-low"]),
-  medium: Object.freeze([]),
-  high: Object.freeze(["-thinking", "-agent"]),
-});
-
-/**
- * Special suffixes in the catalog that designate non-effort variant types (e.g. server-directed
- * dynamic thinking selection). Stripped for base model grouping and recognized as runtime IDs,
- * but not selectable as a user thinking effort tier.
- */
-export const SPECIAL_TIER_SUFFIXES: readonly string[] = Object.freeze(["-tiered"]);
-
-/**
- * Union of all known model ID tier suffixes (canonical, aliases, and special tokens).
- */
-export const ALL_TIER_SUFFIXES: readonly string[] = Object.freeze([
-  ...new Set([
-    ...Object.values(CANONICAL_TIER_SUFFIXES),
-    ...Object.values(TIER_ALIASES).flat(),
-    ...SPECIAL_TIER_SUFFIXES,
-  ]),
-]);
-
-/**
- * Strips any known tier suffix from a model ID for grouping.
- */
-const TIER_SUFFIX_PATTERN = new RegExp(
-  `-(?:${ALL_TIER_SUFFIXES.map((s) => s.replace(/^-/, "")).join("|")})$`,
-);
-
-/**
- * Suffixes (canonical + aliases) that count toward a specific tier when advertising
- * available effort levels in the model picker.
- */
-export function tierSpellings(tier: CanonicalTier): readonly string[] {
-  return [CANONICAL_TIER_SUFFIXES[tier], ...TIER_ALIASES[tier]];
-}
-
-export function extractBaseModelId(runtimeId: string): string {
-  if (runtimeId === "gemini-pro-agent") return "gemini-3.1-pro";
-  if (runtimeId.startsWith("gemini-3.1-pro-")) return "gemini-3.1-pro";
-
-  return runtimeId.replace(TIER_SUFFIX_PATTERN, "");
-}
-
-/**
- * Checks Model Family compatibility for thoughtSignature replay.
- * Protocol specifications demonstrate that:
- * - Gemini models (gemini-3.7, gemini-3.8, etc.) share thoughtSignatures seamlessly.
- * - Claude models replay thoughtSignatures within the Claude family, part-split
- *   like Gemini.
- * - Non-Gemini models (Claude, GPT-OSS) do NOT share signatures with Gemini models.
- */
-export type ModelFamily = "gemini" | "claude" | "gpt" | "unknown";
-
-/**
- * The single model-identity predicate: which
- * family a model ID belongs to. Accepts any ID space — Public or Runtime
- * Model ID, with or without a `provider/` prefix — by stripping the prefix
- * before the prefix match, so every caller classifies identically. Unknown
- * (including missing) IDs report "unknown"; mapping that onto a Quota Pool
- * or plan flags stays with the consumer, preserving each caller's default.
- */
-export function classifyModelFamily(modelId?: string): ModelFamily {
-  const bare = ((modelId || "").split("/").pop() || "").toLowerCase();
-  if (bare.startsWith("gemini-")) return "gemini";
-  if (bare.startsWith("claude-")) return "claude";
-  if (bare.startsWith("gpt-")) return "gpt";
-  return "unknown";
-}
-
-export function isCompatibleFamily(msgModel?: string, targetModelId?: string): boolean {
-  if (!msgModel || !targetModelId) return true;
-  if (msgModel === targetModelId) return true;
-
-  const msgFamily = classifyModelFamily(msgModel);
-  if (msgFamily !== "unknown" && msgFamily === classifyModelFamily(targetModelId)) return true;
-
-  return extractBaseModelId(msgModel) === extractBaseModelId(targetModelId);
 }
 
 export interface AvailableModelItem {
@@ -143,22 +52,15 @@ export interface AvailableModelsCatalog {
   models: AvailableModelItem[];
   modelEnums: Record<string, string>;
   agentModelSorts?: string[];
+  /** Server-directed renames: old Runtime Model ID → current Runtime Model ID. */
   deprecated?: Record<string, string>;
 }
 
-// The catalog seam's types: what a request path reads (CatalogSnapshot), the
-// generation a store holds (CatalogGeneration), and the store that owns the
-// writes. Request paths take one snapshot per call so enums, runtime IDs, and
-// thinking configs always come from the same refresh generation.
 export interface CatalogThinking {
   budget?: number;
-  supportsThinking?: boolean;
+  supportsThinking: boolean;
 }
 
-/**
- * The per-Runtime-Model-ID facts a request path reads and Catalog Persistence
- * keeps — the only part of a generation that crosses a restart.
- */
 export interface CatalogSnapshot {
   enums: Record<string, string>;
   runtimeIds: string[];
@@ -174,21 +76,47 @@ export interface CatalogGeneration {
   version: number;
 }
 
+// Catalog Persistence codec: the private entry this provider keeps inside its
+// own Pi store entry (PRIVATE_SNAPSHOT_KEY). The key spells a snapshot's `enums`
+// as `modelEnums` and must keep doing so — Pi persists unknown keys verbatim.
+export interface PersistedSnapshot {
+  modelEnums: Record<string, string>;
+  runtimeIds: string[];
+  thinking: Record<string, CatalogThinking>;
+  deprecated: Record<string, string>;
+}
+
+export interface ModelPlan {
+  runtimeModelId: string;
+  modelEnum: string;
+  thinkingConfig: { includeThoughts: boolean; thinkingBudget: number };
+  isNonGemini: boolean;
+  isClaude: boolean;
+}
+
 /**
- * The single deep Model Catalog interface. Encapsulates snapshot generations,
- * persistence, network refresh, plan resolution, and CLI formatting.
+ * The single deep Model Catalog interface. Encapsulates wire decoding, snapshot generations,
+ * persistence codecs, network refresh, plan resolution, and CLI formatting behind one seam.
  */
 export interface ModelCatalog {
   /**
    * Current generation. The snapshot is a copy the caller may keep; `items` is
-   * shared, because readers only enumerate it (formatModelsList slices before
-   * sorting) and never mutate it.
+   * shared, because readers only enumerate it and never mutate it.
    */
   generation(): CatalogGeneration;
-  /** Records one completed generation: derives its snapshot, bumps version. */
-  record(catalog: AvailableModelsCatalog): void;
-  /** Restores a persisted snapshot, but only into a pristine store. */
-  restore(snapshot: CatalogSnapshot): void;
+  /**
+   * Records one completed generation from parsed catalog or raw wire JSON payload:
+   * automatically parses wire envelope, derives its snapshot, and bumps version.
+   */
+  record(catalogOrRaw: unknown): void;
+  /**
+   * Restores a persisted snapshot or raw store object into a pristine store.
+   */
+  restore(persistedOrSnapshot: unknown): void;
+  /**
+   * Encodes the current generation snapshot for Pi models-store.json persistence.
+   */
+  toPersisted(): PersistedSnapshot | undefined;
   /**
    * Pi SDK refreshModels entry point: restores stored snapshot, fetches wire
    * catalog when online, updates generation, and publishes to Pi store.
@@ -211,11 +139,6 @@ export interface ModelCatalog {
 
 export type CatalogStore = ModelCatalog;
 
-/**
- * Builds the per-Runtime-ID thinking lookup for a snapshot generation from
- * parsed catalog items. Pure: shared by the refresh path and tests so both
- * derive the same snapshot shape from one parse.
- */
 export function buildThinkingMap(models: AvailableModelItem[]): Record<string, CatalogThinking> {
   return Object.fromEntries(
     models.map((m) => [
@@ -229,8 +152,6 @@ export function buildThinkingMap(models: AvailableModelItem[]): Record<string, C
 }
 
 function snapshotFromCatalog(catalog: AvailableModelsCatalog): CatalogSnapshot {
-  // A generation is complete: derive it wholesale instead of merging, so enums
-  // for server-removed models are evicted instead of pinned forever.
   return {
     enums: { ...catalog.modelEnums },
     runtimeIds: [...new Set(catalog.models.map((m) => m.id))],
@@ -252,91 +173,11 @@ function copySnapshot(snapshot: CatalogSnapshot): CatalogSnapshot {
 
 const EMPTY_SNAPSHOT = (): CatalogSnapshot => ({ enums: {}, runtimeIds: [], thinking: {}, deprecated: {} });
 
-/**
- * Creates the one catalog seam this provider wires up: `index.ts` builds it and
- * hands it to the refresh hook and every request path.
- */
-export function createModelCatalog(): ModelCatalog {
-  let generation: CatalogGeneration = { snapshot: EMPTY_SNAPSHOT(), version: 0 };
-
-  const record = (catalog: AvailableModelsCatalog) => {
-    generation = {
-      snapshot: snapshotFromCatalog(catalog),
-      items: catalog,
-      version: generation.version + 1,
-    };
-  };
-
-  const restore = (snapshot: CatalogSnapshot) => {
-    if (generation.version > 0) return;
-    generation = { snapshot: copySnapshot(snapshot), version: 0 };
-  };
-
-  const refresh = async (context: RefreshContext): Promise<Array<Model<any>>> => {
-    const persisted = fromPersistedSnapshot(context.stored?.[PRIVATE_SNAPSHOT_KEY]);
-    if (persisted) restore(persisted);
-
-    const storedModels = () => [...(context.stored?.models ?? [])];
-    if (!context.allowNetwork) return storedModels();
-
-    try {
-      const creds = await resolveCredentials(context);
-      if (!creds) return storedModels();
-
-      const catalog = await fetchAvailableModelsCatalog(creds, creds.projectId, context.signal);
-      record(catalog);
-
-      const dynamicModels = buildDynamicPublicModels(catalog);
-
-      if (context.publish) {
-        await context.publish({
-          persist: {
-            models: dynamicModels,
-            checkedAt: Date.now(),
-            [PRIVATE_SNAPSHOT_KEY]: toPersistedSnapshot(generation.snapshot),
-          },
-        });
-      }
-
-      return dynamicModels;
-    } catch {
-      return storedModels();
-    }
-  };
-
-  const refreshGen = async (doRefresh: () => unknown): Promise<CatalogRefreshOutcome> => {
-    const versionBefore = generation.version;
-    await doRefresh();
-    const { items, version } = generation;
-    if (!items) return { status: "failed" };
-    return { status: version === versionBefore ? "stale" : "fresh", catalog: items };
-  };
-
-  return {
-    generation: () => ({ ...generation, snapshot: copySnapshot(generation.snapshot) }),
-    record,
-    restore,
-    refresh,
-    refreshGeneration: refreshGen,
-    resolvePlan: (publicModelId, effort) => resolveModelPlan(publicModelId, effort, generation.snapshot),
-    formatList: () => (generation.items ? formatModelsList(generation.items) : "No models available."),
-  };
-}
-
-export const createCatalogStore = createModelCatalog;
-
-export async function refreshCatalog(context: RefreshContext, store: ModelCatalog): Promise<Array<Model<any>>> {
-  return store.refresh(context);
-}
-
-export async function refreshCatalogGeneration(
-  store: ModelCatalog,
-  doRefresh: () => unknown,
-): Promise<CatalogRefreshOutcome> {
-  return store.refreshGeneration(doRefresh);
-}
-
 export function parseAvailableModels(data: any): AvailableModelsCatalog {
+  if (!data || typeof data !== "object") {
+    return { models: [], modelEnums: {} };
+  }
+
   const models: AvailableModelItem[] = [];
   const modelEnums: Record<string, string> = {};
 
@@ -399,7 +240,7 @@ export function parseAvailableModels(data: any): AvailableModelsCatalog {
   };
 }
 
-export async function fetchAvailableModelsCatalog(
+async function fetchAvailableModelsCatalog(
   token: string | AntigravityCredentials,
   projectId: string,
   signal?: AbortSignal
@@ -413,19 +254,7 @@ export async function fetchAvailableModelsCatalog(
   return parseAvailableModels(json);
 }
 
-// Catalog Persistence codec: the private entry this provider keeps inside its
-// own Pi store entry (PRIVATE_SNAPSHOT_KEY, catalog-refresh.ts). The key
-// spells a snapshot's `enums` as `modelEnums` and must keep doing so — Pi
-// persists unknown keys verbatim, and every installed provider already has
-// that spelling on disk.
-export interface PersistedSnapshot {
-  modelEnums: Record<string, string>;
-  runtimeIds: string[];
-  thinking: Record<string, CatalogThinking>;
-  deprecated: Record<string, string>;
-}
-
-export function toPersistedSnapshot(snapshot: CatalogSnapshot): PersistedSnapshot {
+function toPersistedSnapshot(snapshot: CatalogSnapshot): PersistedSnapshot {
   return {
     modelEnums: { ...snapshot.enums },
     runtimeIds: [...snapshot.runtimeIds],
@@ -452,12 +281,7 @@ function isThinkingRecord(value: unknown): value is Record<string, CatalogThinki
   );
 }
 
-/**
- * Lenient inverse of toPersistedSnapshot: a field that is missing or malformed
- * restores as empty rather than as garbage, and an entry with no usable field
- * restores as absent (the refresh path then falls back to a fresh fetch).
- */
-export function fromPersistedSnapshot(raw: unknown): CatalogSnapshot | undefined {
+function fromPersistedSnapshot(raw: unknown): CatalogSnapshot | undefined {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
   const entry = raw as Partial<PersistedSnapshot>;
   const enums = isStringRecord(entry.modelEnums) ? entry.modelEnums : undefined;
@@ -470,39 +294,6 @@ export function fromPersistedSnapshot(raw: unknown): CatalogSnapshot | undefined
   return { enums: enums ?? {}, runtimeIds: runtimeIds ?? [], thinking: thinking ?? {}, deprecated: deprecated ?? {} };
 }
 
-/**
- * Tier Fallback: The unidirectional upward-escalation policy that resolves to an alternative
- * tier (such as medium escalating to high on models lacking a medium variant, or unadvertised
- * efforts clamping to available tiers) when neither canonical nor alias suffixes exist.
- */
-export const TIER_FALLBACKS: Record<string, readonly string[]> = Object.freeze({
-  minimal: Object.freeze(["-low", "-extra-low", ""]),
-  low: Object.freeze(["-extra-low", ""]),
-  medium: Object.freeze(["", "-high"]), // Gemini 3.1 Pro lists no -medium: up to high, never down
-  high: Object.freeze(["-thinking", "-agent", ""]), // Claude's high tier is -thinking
-  xhigh: Object.freeze(["-high", "-thinking", "-agent", ""]),
-  max: Object.freeze(["-high", "-thinking", "-agent", ""]),
-});
-
-export const DEFAULT_TIER_ORDER: readonly string[] = Object.freeze([
-  CANONICAL_TIER_SUFFIXES.high,
-  ...TIER_ALIASES.high,
-  "",
-]);
-
-/**
- * Ordered candidate suffixes attempted when resolving a Runtime Model ID for an effort.
- * Canonical suffix comes first, followed by fallbacks.
- */
-export function tierCandidateOrder(effort?: string): readonly string[] {
-  if (!effort) return DEFAULT_TIER_ORDER;
-  const canonical = effort in CANONICAL_TIER_SUFFIXES
-    ? [CANONICAL_TIER_SUFFIXES[effort as CanonicalTier]]
-    : [`-${effort}`];
-  const fallbacks = TIER_FALLBACKS[effort] ?? DEFAULT_TIER_ORDER;
-  return [...new Set([...canonical, ...fallbacks])];
-}
-
 function resolveRuntimeModelId(
   modelId: string,
   effort: string | undefined,
@@ -512,9 +303,6 @@ function resolveRuntimeModelId(
     return modelId;
   }
 
-  // Tier resolution against the live snapshot: the server's own variant list is
-  // the candidate set, effort only sets the suffix preference order — so newly
-  // released models (e.g. gemini-3.9-flash) resolve with no code change.
   if (availableRuntimeIds.length > 0) {
     const variants = new Set(availableRuntimeIds.filter((id) => extractBaseModelId(id) === modelId));
     const order = tierCandidateOrder(effort);
@@ -525,34 +313,36 @@ function resolveRuntimeModelId(
       }
     }
 
-    // A model the server lists under exactly one variant (claude-opus-4-6-thinking,
-    // gpt-oss-120b-medium) has no tier to choose from: that one variant serves
-    // every effort.
     if (variants.size === 1) {
       return [...variants][0];
     }
   }
 
-  // No runtime-ID list to resolve against: leave the ID unchanged. The enum
-  // lookup in resolveModelPlan then fails fast with refresh guidance instead
-  // of guessing a tier the server may not list.
   return modelId;
 }
 
-export interface ModelPlan {
-  runtimeModelId: string;
-  modelEnum: string;
-  thinkingConfig: { includeThoughts: boolean; thinkingBudget: number };
-  isNonGemini: boolean;
-  isClaude: boolean;
+function followRenames(runtimeModelId: string, snapshot: CatalogSnapshot): string {
+  const renamed = snapshot.deprecated;
+  if (!renamed) return runtimeModelId;
+  let current = runtimeModelId;
+  const seen = new Set<string>([current]);
+  while (renamed[current] && !seen.has(renamed[current])) {
+    current = renamed[current];
+    seen.add(current);
+  }
+  return current;
 }
 
-/**
- * Resolves one model plan from a single snapshot generation:
- * Runtime Model ID, model enum, thinking budget, and the non-Gemini flag that
- * switches tool schema mode. The caller passes the store's current snapshot, so
- * enums and runtime IDs never mix generations.
- */
+function resolveThinkingConfig(
+  runtimeModelId: string,
+  snapshot: CatalogSnapshot
+): { includeThoughts: boolean; thinkingBudget: number } {
+  const budget = snapshot.thinking[runtimeModelId]?.budget;
+  return typeof budget === "number"
+    ? { includeThoughts: true, thinkingBudget: budget }
+    : { includeThoughts: false, thinkingBudget: 0 };
+}
+
 export function resolveModelPlan(
   publicModelId: string,
   effort: string | undefined,
@@ -564,8 +354,6 @@ export function resolveModelPlan(
   );
   const modelEnum = snapshot.enums[runtimeModelId];
   if (!modelEnum) {
-    // Fail fast: a retired or mistyped ID must surface here with guidance,
-    // not as a cryptic server rejection for an empty model_enum label.
     throw new Error(
       `Unknown model "${runtimeModelId}". ` +
         `Run /antigravity refresh, then pick a current model.`
@@ -581,61 +369,27 @@ export function resolveModelPlan(
   };
 }
 
-/**
- * Follows server-directed renames (deprecatedModelIds), e.g.
- * gemini-3.1-pro-high → gemini-pro-agent. Applied uniformly to derived and
- * explicitly passed IDs: the server lists the old ID as deprecated, so new
- * code must not keep sending it. Cycles terminate via the visited set.
- */
-function followRenames(runtimeModelId: string, snapshot: CatalogSnapshot): string {
-  const renamed = snapshot.deprecated;
-  if (!renamed) return runtimeModelId;
-  let current = runtimeModelId;
-  const seen = new Set<string>([current]);
-  while (renamed[current] && !seen.has(renamed[current])) {
-    current = renamed[current];
-    seen.add(current);
-  }
-  return current;
-}
-
-/**
- * Resolves the thinking config for one Runtime Model ID from a single snapshot
- * generation. The wire budget wins; a snapshot with no per-ID thinking data (a
- * pre-budget persist) or no wire budget for the resolved ID degrades to
- * disabled thoughts rather than a guessed budget, and self-heals on the next
- * refresh. Models the wire marks as non-thinking land here too: no budget on
- * the wire means no thoughts.
- */
-function resolveThinkingConfig(
-  runtimeModelId: string,
-  snapshot: CatalogSnapshot
-): { includeThoughts: boolean; thinkingBudget: number } {
-  // Pi signals thinking-off by omitting `reasoning` entirely (never by an "off"
-  // string: it is outside SimpleStreamOptions.reasoning's ThinkingLevel type),
-  // so there is deliberately no string branch here. What the wire must carry
-  // for that state is unverified — no capture has includeThoughts:false.
-  const budget = snapshot.thinking[runtimeModelId]?.budget;
-  return typeof budget === "number"
-    ? { includeThoughts: true, thinkingBudget: budget }
-    : { includeThoughts: false, thinkingBudget: 0 };
-}
-
-// Antigravity is quota-based with no per-token billing, so every model
-// reports zero cost instead of fictitious Gemini API prices.
-// Revisit if a metered paid tier ever appears.
-export function estimateModelCost(_baseId: string): Model<any>["cost"] {
+function estimateModelCost(_baseId: string): Model<any>["cost"] {
   return { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
 }
 
-export function synthesizeDynamicModel(baseId: string, items: AvailableModelItem[]): Model<any> {
+function formatModelDisplayName(baseId: string, rawDisplayName?: string): string {
+  if (rawDisplayName) {
+    const cleaned = rawDisplayName.replace(/\s*\([^)]*\)/g, "").trim();
+    if (cleaned.length > 0) {
+      return cleaned;
+    }
+  }
+  const words = baseId.split("-").map((w) => {
+    if (/^\d+(\.\d+)?$/.test(w)) return w;
+    return w.charAt(0).toUpperCase() + w.slice(1);
+  });
+  return words.join(" ");
+}
+
+function synthesizeDynamicModel(baseId: string, items: AvailableModelItem[]): Model<any> {
   const repItem = items.find((it) => it.id === `${baseId}-high` || it.id === baseId) || items[0];
 
-  // Pi must only offer effort levels the snapshot has a variant for — the same
-  // suffix vocabulary the resolver reads, seen from the other side. The supported
-  // vocabulary is low|medium|high and a model may list fewer:
-  // Gemini 3.1 Pro has no -medium, gpt-oss only -medium, Claude only -thinking
-  // (the default/high tier). `xhigh`/`max` stay unsupported (no mapping entry).
   const hasVariant = (suffixes: readonly string[]) =>
     items.some((it) => suffixes.some((suffix) => it.id.endsWith(suffix)));
   const thinkingLevelMap = {
@@ -653,9 +407,6 @@ export function synthesizeDynamicModel(baseId: string, items: AvailableModelItem
   const isClaude = family === "claude";
   const isGpt = family === "gpt";
 
-  // Static fallbacks mirror the newest capture's models.resp.json
-  // (Claude maxTokens 250000 / maxOutputTokens 64000, also seen on the wire
-  // in stream_turn8/9). Live refresh overwrites these with catalog values.
   const defaultContext = isFlash ? 1048576 : isClaude ? 250000 : isGpt ? 128000 : 1048576;
   const defaultMaxOutput = isClaude ? 64000 : isGpt ? 32768 : 65536;
 
@@ -674,12 +425,11 @@ export function synthesizeDynamicModel(baseId: string, items: AvailableModelItem
   };
 }
 
-export function buildDynamicPublicModels(catalog?: AvailableModelsCatalog): Array<Model<any>> {
+function buildDynamicPublicModels(catalog?: AvailableModelsCatalog): Array<Model<any>> {
   if (!catalog || !Array.isArray(catalog.models) || catalog.models.length === 0) {
     return [];
   }
 
-  // Filter eligible models according to agentModelSorts
   const agentSortIds = catalog.agentModelSorts;
   const eligibleItems =
     Array.isArray(agentSortIds) && agentSortIds.length > 0
@@ -694,7 +444,6 @@ export function buildDynamicPublicModels(catalog?: AvailableModelsCatalog): Arra
     runtimeGroups.set(baseId, list);
   }
 
-  // Preserve recommended ordering from agentModelSorts
   const orderedBaseIds: string[] = [];
   if (Array.isArray(agentSortIds)) {
     for (const sortId of agentSortIds) {
@@ -714,37 +463,15 @@ export function buildDynamicPublicModels(catalog?: AvailableModelsCatalog): Arra
   return orderedBaseIds.map((baseId) => synthesizeDynamicModel(baseId, runtimeGroups.get(baseId)!));
 }
 
-/**
- * Model Catalog presentation (pure, in-process): display-name rules and the
- * Subcommand table format. No network, no snapshot access — everything enters
- * as plain CatalogSnapshot / AvailableModelsCatalog values, so tests pin the
- * rendered output without fetching. Lives here (not in catalog-refresh.ts)
- * so the wire module keeps only fetch/parse/publish.
- */
-export function formatModelDisplayName(baseId: string, rawDisplayName?: string): string {
-  if (rawDisplayName) {
-    const cleaned = rawDisplayName.replace(/\s*\([^)]*\)/g, "").trim();
-    if (cleaned.length > 0) {
-      return cleaned;
-    }
-  }
-  const words = baseId.split("-").map((w) => {
-    if (/^\d+(\.\d+)?$/.test(w)) return w;
-    return w.charAt(0).toUpperCase() + w.slice(1);
-  });
-  return words.join(" ");
-}
-
 function formatTokenCount(n?: number): string {
   if (typeof n !== "number") return "N/A";
   if (n % 1048576 === 0) return `${n / 1048576}M`;
   if (n % 1024 === 0) return `${n / 1024}k`;
   if (n % 1000 === 0) return `${n / 1000}k`;
-  // ponytail: odd values (e.g. 65535) round to nearest KiB instead of a noisy decimal
   return `${Math.round(n / 1024)}k`;
 }
 
-export function formatModelsList(catalog: AvailableModelsCatalog): string {
+function formatModelsList(catalog: AvailableModelsCatalog): string {
   const sorts = catalog.agentModelSorts;
   const recommendedOnly = Array.isArray(sorts) && sorts.length > 0;
   const rank = new Map((sorts || []).map((id, i) => [id, i]));
@@ -786,4 +513,115 @@ export function formatModelsList(catalog: AvailableModelsCatalog): string {
   }
 
   return lines.join("\n");
+}
+
+/**
+ * Creates the authoritative deep Model Catalog interface.
+ */
+export function createModelCatalog(): ModelCatalog {
+  let generation: CatalogGeneration = { snapshot: EMPTY_SNAPSHOT(), version: 0 };
+
+  const record = (catalogOrRaw: unknown) => {
+    let catalog: AvailableModelsCatalog;
+    if (
+      catalogOrRaw &&
+      typeof catalogOrRaw === "object" &&
+      "models" in catalogOrRaw &&
+      Array.isArray((catalogOrRaw as any).models) &&
+      "modelEnums" in catalogOrRaw &&
+      typeof (catalogOrRaw as any).modelEnums === "object"
+    ) {
+      catalog = catalogOrRaw as AvailableModelsCatalog;
+    } else {
+      catalog = parseAvailableModels(catalogOrRaw);
+    }
+    generation = {
+      snapshot: snapshotFromCatalog(catalog),
+      items: catalog,
+      version: generation.version + 1,
+    };
+  };
+
+  const restore = (persistedOrSnapshot: unknown) => {
+    if (generation.version > 0) return;
+    if (!persistedOrSnapshot || typeof persistedOrSnapshot !== "object") return;
+
+    if (
+      "enums" in persistedOrSnapshot &&
+      "runtimeIds" in persistedOrSnapshot &&
+      Array.isArray((persistedOrSnapshot as any).runtimeIds)
+    ) {
+      generation = { snapshot: copySnapshot(persistedOrSnapshot as CatalogSnapshot), version: 0 };
+      return;
+    }
+
+    const snapshot = fromPersistedSnapshot(persistedOrSnapshot);
+    if (snapshot) {
+      generation = { snapshot: copySnapshot(snapshot), version: 0 };
+    }
+  };
+
+  const toPersisted = (): PersistedSnapshot | undefined => {
+    if (generation.version === 0 && generation.snapshot.runtimeIds.length === 0) {
+      return undefined;
+    }
+    return toPersistedSnapshot(generation.snapshot);
+  };
+
+  const refresh = async (context: RefreshContext): Promise<Array<Model<any>>> => {
+    const persisted = context.stored?.[PRIVATE_SNAPSHOT_KEY];
+    if (persisted) restore(persisted);
+
+    const storedModels = () => [...(context.stored?.models ?? [])];
+    if (!context.allowNetwork) return storedModels();
+
+    try {
+      const creds = await resolveCredentials(context);
+      if (!creds) return storedModels();
+
+      const catalog = await fetchAvailableModelsCatalog(creds, creds.projectId, context.signal);
+      record(catalog);
+
+      const dynamicModels = buildDynamicPublicModels(catalog);
+
+      if (context.publish) {
+        await context.publish({
+          persist: {
+            models: dynamicModels,
+            checkedAt: Date.now(),
+            [PRIVATE_SNAPSHOT_KEY]: toPersisted(),
+          },
+        });
+      }
+
+      return dynamicModels;
+    } catch {
+      return storedModels();
+    }
+  };
+
+  const refreshGen = async (doRefresh: () => unknown): Promise<CatalogRefreshOutcome> => {
+    const versionBefore = generation.version;
+    await doRefresh();
+    const { items, version } = generation;
+    if (!items) return { status: "failed" };
+    return { status: version === versionBefore ? "stale" : "fresh", catalog: items };
+  };
+
+  return {
+    generation: () => ({ ...generation, snapshot: copySnapshot(generation.snapshot) }),
+    record,
+    restore,
+    toPersisted,
+    refresh,
+    refreshGeneration: refreshGen,
+    resolvePlan: (publicModelId, effort) => resolveModelPlan(publicModelId, effort, generation.snapshot),
+    formatList: () => (generation.items ? formatModelsList(generation.items) : "No models available."),
+  };
+}
+
+export const createCatalogStore = createModelCatalog;
+
+export async function refreshCatalog(context: RefreshContext, store: ModelCatalog): Promise<Array<Model<any>>> {
+  return store.refresh(context);
 }

@@ -6,24 +6,13 @@ import {
   buildAntigravityRequestBody,
   SKIP_THOUGHT_SIGNATURE_VALIDATOR,
 } from "../src/builder.ts";
-import {
-  resolveModelPlan,
-  createCatalogStore,
-  buildThinkingMap,
-  refreshCatalog,
-  parseAvailableModels,
-} from "../src/model-catalog.ts";
+import { createModelCatalog } from "../src/model-catalog.ts";
 
 const modelsJson = JSON.parse(fs.readFileSync(newestCapture("models.resp.json"), "utf-8"));
-const FIXTURE_CATALOG = parseAvailableModels(modelsJson);
-const FIXTURE_SNAPSHOT = {
-  enums: FIXTURE_CATALOG.modelEnums,
-  runtimeIds: FIXTURE_CATALOG.models.map((m) => m.id),
-  thinking: buildThinkingMap(FIXTURE_CATALOG.models),
-  deprecated: FIXTURE_CATALOG.deprecated,
-};
+const fixtureCatalog = createModelCatalog();
+fixtureCatalog.record(modelsJson);
 const staticPlan = (runtimeModelId) =>
-  resolveModelPlan(runtimeModelId, undefined, FIXTURE_SNAPSHOT);
+  fixtureCatalog.resolvePlan(runtimeModelId);
 
 const fixtureTurn1 = JSON.parse(
   fs.readFileSync(newestCapture("stream_turn1_initial.req.json"), "utf-8")
@@ -296,7 +285,7 @@ test("Seam 1: trailing model turn appends continuation user turn to prevent 400 
 test("Seam 1: integer thinkingBudget matches PR #39 / #36 matrix across models", () => {
   // Values now come from the catalog snapshot (wire thinkingBudget per Runtime
   // Model ID); the expectations below pin that matrix against the capture.
-  const budget = (id, effort) => resolveModelPlan(id, effort, FIXTURE_SNAPSHOT).thinkingConfig;
+  const budget = (id, effort) => fixtureCatalog.resolvePlan(id, effort).thinkingConfig;
   // Flash high -> -1
   assert.deepEqual(budget("gemini-3.8-flash-high"), { includeThoughts: true, thinkingBudget: -1 });
   // Flash medium -> 4000
@@ -540,74 +529,75 @@ test("Seam 1: tool conversion strips $defs and $schema metadata", () => {
 });
 
 test("Seam 1: resolveModelPlan maps Public Model IDs to Runtime Model IDs", () => {
-  assert.equal(resolveModelPlan("gemini-3.8-flash", "high", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-3.8-flash-high");
-  assert.equal(resolveModelPlan("gemini-3.8-flash", "medium", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-3.8-flash-medium");
-  assert.equal(resolveModelPlan("gemini-3.8-flash", "low", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-3.8-flash-low");
+  assert.equal(fixtureCatalog.resolvePlan("gemini-3.8-flash", "high").runtimeModelId, "gemini-3.8-flash-high");
+  assert.equal(fixtureCatalog.resolvePlan("gemini-3.8-flash", "medium").runtimeModelId, "gemini-3.8-flash-medium");
+  assert.equal(fixtureCatalog.resolvePlan("gemini-3.8-flash", "low").runtimeModelId, "gemini-3.8-flash-low");
 
-  assert.equal(resolveModelPlan("gemini-3.1-pro", "high", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-pro-agent");
-  assert.equal(resolveModelPlan("gemini-3.1-pro", "low", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-3.1-pro-low");
+  assert.equal(fixtureCatalog.resolvePlan("gemini-3.1-pro", "high").runtimeModelId, "gemini-pro-agent");
+  assert.equal(fixtureCatalog.resolvePlan("gemini-3.1-pro", "low").runtimeModelId, "gemini-3.1-pro-low");
 
-  assert.equal(resolveModelPlan("claude-opus-4-6", undefined, FIXTURE_SNAPSHOT).runtimeModelId, "claude-opus-4-6-thinking");
-  assert.equal(resolveModelPlan("claude-sonnet-4-6", undefined, FIXTURE_SNAPSHOT).runtimeModelId, "claude-sonnet-4-6");
-  assert.equal(resolveModelPlan("gpt-oss-120b", undefined, FIXTURE_SNAPSHOT).runtimeModelId, "gpt-oss-120b-medium");
+  assert.equal(fixtureCatalog.resolvePlan("claude-opus-4-6", undefined).runtimeModelId, "claude-opus-4-6-thinking");
+  assert.equal(fixtureCatalog.resolvePlan("claude-sonnet-4-6", undefined).runtimeModelId, "claude-sonnet-4-6");
+  assert.equal(fixtureCatalog.resolvePlan("gpt-oss-120b", undefined).runtimeModelId, "gpt-oss-120b-medium");
 
   // Models the snapshot lists under a single variant have no tier to choose
   // from, so that variant serves every effort (the deleted heuristics did this).
   for (const effort of ["high", "medium", "low", "minimal", undefined]) {
-    assert.equal(resolveModelPlan("gpt-oss-120b", effort, FIXTURE_SNAPSHOT).runtimeModelId, "gpt-oss-120b-medium");
-    assert.equal(resolveModelPlan("claude-opus-4-6", effort, FIXTURE_SNAPSHOT).runtimeModelId, "claude-opus-4-6-thinking");
+    assert.equal(fixtureCatalog.resolvePlan("gpt-oss-120b", effort).runtimeModelId, "gpt-oss-120b-medium");
+    assert.equal(fixtureCatalog.resolvePlan("claude-opus-4-6", effort).runtimeModelId, "claude-opus-4-6-thinking");
   }
   // Gemini 3.1 Pro lists no medium tier (-high/-low only); medium
   // resolves to the high variant, which the server renames to gemini-pro-agent.
-  assert.equal(resolveModelPlan("gemini-3.1-pro", "medium", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-pro-agent");
+  assert.equal(fixtureCatalog.resolvePlan("gemini-3.1-pro", "medium").runtimeModelId, "gemini-pro-agent");
 
   // Live-captured 2026-09-06 (agy 1.1.26): effort selects the variant runtime ID.
-  assert.equal(resolveModelPlan("gemini-3.7-flash", "high", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-3.7-flash-high");
-  assert.equal(resolveModelPlan("gemini-3.7-flash", "medium", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-3.7-flash-medium");
-  assert.equal(resolveModelPlan("gemini-3.7-flash", "low", FIXTURE_SNAPSHOT).runtimeModelId, "gemini-3.7-flash-low");
+  assert.equal(fixtureCatalog.resolvePlan("gemini-3.7-flash", "high").runtimeModelId, "gemini-3.7-flash-high");
+  assert.equal(fixtureCatalog.resolvePlan("gemini-3.7-flash", "medium").runtimeModelId, "gemini-3.7-flash-medium");
+  assert.equal(fixtureCatalog.resolvePlan("gemini-3.7-flash", "low").runtimeModelId, "gemini-3.7-flash-low");
 
   // If already suffixed, keep it unchanged
-  assert.equal(resolveModelPlan("gemini-3.7-flash-high", undefined, FIXTURE_SNAPSHOT).runtimeModelId, "gemini-3.7-flash-high");
+  assert.equal(fixtureCatalog.resolvePlan("gemini-3.7-flash-high", undefined).runtimeModelId, "gemini-3.7-flash-high");
 });
 
 test("Seam 1: resolveModelPlan bundles enum, thinking budget, and non-Gemini flag", () => {
-  const flash = resolveModelPlan("gemini-3.8-flash", "high", FIXTURE_SNAPSHOT);
+  const flash = fixtureCatalog.resolvePlan("gemini-3.8-flash", "high");
   assert.equal(flash.modelEnum, "MODEL_PLACEHOLDER_M318");
   assert.deepEqual(flash.thinkingConfig, { includeThoughts: true, thinkingBudget: -1 });
   assert.equal(flash.isNonGemini, false);
   assert.equal(flash.isClaude, false);
 
-  const claude = resolveModelPlan("claude-opus-4-6", undefined, FIXTURE_SNAPSHOT);
+  const claude = fixtureCatalog.resolvePlan("claude-opus-4-6", undefined);
   assert.equal(claude.modelEnum, "MODEL_PLACEHOLDER_M26");
   assert.deepEqual(claude.thinkingConfig, { includeThoughts: true, thinkingBudget: 1024 });
   assert.equal(claude.isNonGemini, true);
   assert.equal(claude.isClaude, true);
 
   assert.throws(
-    () => resolveModelPlan("gemini-99.9-flash-high", undefined, FIXTURE_SNAPSHOT),
+    () => fixtureCatalog.resolvePlan("gemini-99.9-flash-high", undefined),
     /Unknown model "gemini-99.9-flash-high"/
   );
 });
 
 test("Seam 1: resolveModelPlan reads the snapshot it is handed", async () => {
-  const stale = { enums: {}, runtimeIds: [], thinking: {}, deprecated: {} };
-  assert.throws(() => resolveModelPlan("x-high", undefined, stale), /Unknown model "x-high"/);
+  const staleCatalog = createModelCatalog();
+  assert.throws(() => staleCatalog.resolvePlan("x-high"), /Unknown model "x-high"/);
 
-  const store = createCatalogStore();
-  await refreshCatalog({
+  const store = createModelCatalog();
+  await store.refresh({
     allowNetwork: false,
     stored: {
       models: [],
       "pi-provider-antigravity": {
         modelEnums: { "x-high": "ENUM_X" },
         runtimeIds: ["x-high"],
+        thinking: {},
+        deprecated: {},
       },
     },
-  }, store);
+  });
 
-  const restored = store.generation().snapshot;
-  assert.throws(() => resolveModelPlan("x-high", undefined, stale), /Unknown model "x-high"/);
-  assert.equal(resolveModelPlan("x-high", undefined, restored).modelEnum, "ENUM_X");
+  assert.throws(() => staleCatalog.resolvePlan("x-high"), /Unknown model "x-high"/);
+  assert.equal(store.resolvePlan("x-high").modelEnum, "ENUM_X");
 });
 
 test("Seam 1: Turn Trace derives stable session identities across calls", () => {
