@@ -321,7 +321,7 @@ test("Command: tab completion offers subcommands", () => {
   assert.ok(def.getArgumentCompletions);
   assert.deepEqual(
     def.getArgumentCompletions("").map((i) => i.value),
-    ["usage", "models", "refresh", "settings", "login"],
+    ["usage", "models", "refresh", "settings", "search", "login"],
   );
   assert.deepEqual(def.getArgumentCompletions("set").map((i) => i.value), ["settings"]);
   assert.deepEqual(def.getArgumentCompletions("x"), []);

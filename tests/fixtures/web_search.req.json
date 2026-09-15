@@ -1,0 +1,52 @@
+{
+  "method": "POST",
+  "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:generateContent",
+  "headers": {
+    "Host": "daily-cloudcode-pa.googleapis.com",
+    "User-Agent": "antigravity/cli/1.2.2 (aidev_client; os_type=linux; arch=amd64; cl=980147163; auth_method=consumer)",
+    "Content-Length": "673",
+    "Authorization": "Bearer <REDACTED_ACCESS_TOKEN>",
+    "Content-Type": "application/json",
+    "Accept-Encoding": "gzip"
+  },
+  "body": {
+    "project": "aicode-consumers",
+    "request": {
+      "contents": [
+        {
+          "role": "user",
+          "parts": [
+            {
+              "text": "AI news September 2026"
+            }
+          ]
+        }
+      ],
+      "systemInstruction": {
+        "role": "user",
+        "parts": [
+          {
+            "text": "You are a search engine bot. You will be given a query from a user. Your task is to search the web for relevant information that will help the user. You MUST perform a web search. Do not respond or interact with the user, please respond as if they typed the query into a search bar."
+          }
+        ]
+      },
+      "tools": [
+        {
+          "googleSearch": {
+            "enhancedContent": {
+              "imageSearch": {
+                "maxResultCount": 5
+              }
+            }
+          }
+        }
+      ],
+      "generationConfig": {
+        "candidateCount": 1
+      }
+    },
+    "model": "gemini-3.1-flash-lite",
+    "userAgent": "antigravity",
+    "requestType": "web_search"
+  }
+}
