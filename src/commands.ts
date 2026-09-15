@@ -3,6 +3,7 @@ import { resolveCredentials, NOT_LOGGED_IN, type AntigravityCredentials } from "
 import { PROVIDER_ID } from "./protocol.ts";
 import { openSettings, type QuotaStatusCoordinator } from "./quota-status.ts";
 import type { ModelCatalog } from "./model-catalog.ts";
+import { performWebSearch } from "./search.ts";
 
 export function emitOutput(
   ctx: ExtensionCommandContext,
@@ -21,6 +22,7 @@ export interface SubcommandContext {
   ctx: ExtensionCommandContext;
   quotaStatus?: QuotaStatusCoordinator;
   catalog: ModelCatalog;
+  subArgs?: string;
 }
 
 export interface SubcommandDef {
@@ -58,6 +60,11 @@ export const SUBCOMMANDS: readonly SubcommandDef[] = Object.freeze([
     description: "Configure provider settings",
     aliases: Object.freeze(["setting"]),
     run: async ({ ctx, quotaStatus }) => openSettings(ctx, quotaStatus),
+  },
+  {
+    name: "search",
+    description: "Search the web using Google Search Grounding",
+    run: async ({ ctx, subArgs }) => runSearchSubcommand(ctx, subArgs),
   },
   {
     name: "login",
@@ -191,17 +198,47 @@ function runLoginSubcommand(ctx: ExtensionCommandContext): void {
   }
 }
 
+async function runSearchSubcommand(
+  ctx: ExtensionCommandContext,
+  query?: string,
+): Promise<void> {
+  const creds = await resolveCredentials(ctx);
+  if (!creds) {
+    emitOutput(ctx, NOT_LOGGED_IN, "warning");
+    return;
+  }
+
+  const trimmedQuery = (query || "").trim();
+  if (!trimmedQuery) {
+    emitOutput(ctx, "Usage: /antigravity search <query>", "warning");
+    return;
+  }
+
+  try {
+    if (ctx.hasUI) ctx.ui.notify(`Searching: "${trimmedQuery}"…`, "info");
+    const result = await performWebSearch(creds, {
+      query: trimmedQuery,
+      signal: ctx.signal,
+    });
+    emitOutput(ctx, result.formattedOutput);
+  } catch (err: any) {
+    emitOutput(ctx, `Search failed: ${err.message}`, "error");
+  }
+}
+
 export async function runAntigravitySubcommand(
   args: string,
   ctx: ExtensionCommandContext,
   quotaStatus: QuotaStatusCoordinator | undefined,
   catalog: ModelCatalog,
 ): Promise<void> {
-  const parts = (args || "").trim().split(/\s+/).filter(Boolean);
+  const raw = (args || "").trim();
+  const parts = raw.split(/\s+/).filter(Boolean);
   const sub = parseAntigravitySubcommand(parts[0] || "");
+  const subArgs = raw.slice(parts[0]?.length || 0).trim();
   const cmd = SUBCOMMANDS.find((c) => c.name === sub);
   if (cmd) {
-    await cmd.run({ ctx, quotaStatus, catalog });
+    await cmd.run({ ctx, quotaStatus, catalog, subArgs });
     return;
   }
 
