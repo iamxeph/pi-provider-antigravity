@@ -17,7 +17,7 @@ Use Google Antigravity models directly in [Pi](https://pi.dev).
 - **OAuth with auto-refresh**: log in once via `/login antigravity`; tokens refresh silently.
 - **Quota visibility**: 5-hour and weekly remaining quota per model pool, with reset times
   and a live footer slot. See [Quota footer](#quota-footer).
-- **Search grounding**: built-in `search_web` tool and `/antigravity search` command
+- **Search grounding**: built-in `antigravity_search` tool and `/antigravity search` command
   with source citations (no extra API keys required).
 
 ## Requirements

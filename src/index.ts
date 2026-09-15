@@ -42,13 +42,13 @@ export default function (pi: ExtensionAPI): void {
 
   if (typeof pi.registerTool === "function") {
     pi.registerTool({
-      name: "search_web",
-      label: "Search Web",
+      name: "antigravity_search",
+      label: "Antigravity Search",
       description:
         "Performs a web search for a given query. Returns a summary of relevant information along with URL citations.",
       promptSnippet: "Search the web using Google Search Grounding with source citations",
       promptGuidelines: [
-        "Use search_web when you need real-time web search, latest documentation, or up-to-date facts with verified citations.",
+        "Use antigravity_search when you need real-time web search, latest documentation, or up-to-date facts with verified citations.",
       ],
       parameters: Type.Object({
         query: Type.String({ description: "The search query string to look up on the web." }),

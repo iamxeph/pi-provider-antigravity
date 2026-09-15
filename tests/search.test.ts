@@ -113,20 +113,20 @@ test("Search: performWebSearch builds canonical request body and headers", async
   }
 });
 
-test("Search: search_web tool registration and execution in extension", async () => {
+test("Search: antigravity_search tool registration and execution in extension", async () => {
   let registeredTool: any = null;
   const mockPi = {
     registerProvider: () => {},
     registerCommand: () => {},
     registerTool: (tool: any) => {
-      if (tool.name === "search_web") registeredTool = tool;
+      if (tool.name === "antigravity_search") registeredTool = tool;
     },
     on: () => {},
   };
 
   initExtension(mockPi as any);
-  assert.ok(registeredTool, "search_web tool must be registered");
-  assert.equal(registeredTool.name, "search_web");
+  assert.ok(registeredTool, "antigravity_search tool must be registered");
+  assert.equal(registeredTool.name, "antigravity_search");
   assert.ok(registeredTool.parameters);
 
   // 1. Unauthenticated execution
