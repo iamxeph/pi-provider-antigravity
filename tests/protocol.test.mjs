@@ -25,7 +25,7 @@ test("Seam Protocol: buildAntigravityHeaders matches wire fingerprint", () => {
     /^antigravity\/cli\/\d+\.\d+\.\d+ \(aidev_client; os_type=linux; arch=amd64; cl=\d+; auth_method=consumer\)$/,
   );
   // Pinned to latest verified agy CLI release
-  assert.match(headers["User-Agent"], /^antigravity\/cli\/1\.2\.3 /);
+  assert.match(headers["User-Agent"], /^antigravity\/cli\/1\.2\.4 /);
   // Never send Anthropic-beta or Accept: application/json in standard wire traffic
   assert.equal(headers["anthropic-beta"], undefined);
   assert.equal(headers["Accept"], undefined);
