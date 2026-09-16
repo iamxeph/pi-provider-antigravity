@@ -3,7 +3,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import type { ExtensionCommandContext, Theme } from "@earendil-works/pi-coding-agent";
 import { SettingsList, type SettingItem, type SettingsListTheme } from "@earendil-works/pi-tui";
-import type { QuotaStatusCoordinator } from "./quota-status.ts";
+import type { QuotaColorStyle, QuotaStatusCoordinator } from "./quota-status.ts";
 
 export const ANSI_FG_RESET = "\x1b[39m";
 
@@ -232,11 +232,12 @@ export function previewQuotaFooterText(
   coord: QuotaStatusCoordinator | undefined,
   modelId: string | undefined,
   mode: string,
+  style?: QuotaColorStyle,
 ): string | undefined {
   if (!coord) return undefined;
   const normalized = normalizeFooterMode(mode);
   if (!normalized || normalized === "off") return undefined;
-  const { colored } = coord.renderFooter(modelId, normalized);
+  const { colored } = coord.renderFooter(modelId, normalized, style);
   if (!colored) return undefined;
   return ANSI_FG_RESET + colored;
 }
@@ -326,7 +327,9 @@ async function openSettingsDialog(
       if (!item) return;
       const base = quotaField?.description ?? "";
       const sample =
-        mode === "off" ? "hidden" : previewQuotaFooterText(quotaStatus, ctx.model?.id, mode);
+        mode === "off"
+          ? "hidden"
+          : previewQuotaFooterText(quotaStatus, ctx.model?.id, mode, theme);
       const head = sample && base ? `${base}: ${sample}` : (sample ?? base);
       const note = quotaField?.optionNotes?.[mode];
       item.description = note ? `${head}\n${note}` : head;

@@ -151,7 +151,7 @@ test("Footer both: 5h first, each part stands alone", () => {
   assert.equal(buildQuotaFooterBoth({ groups: [] }), undefined);
   assert.equal(
     colorizeQuotaFooterBoth("5h 8% (20m) · Wk 90%"),
-    "\x1b[31m5h 8% (20m)\x1b[39m · Wk 90%",
+    "\x1b[31m5h 8% (20m)\x1b[39m\x1b[90m · \x1b[39m\x1b[90mWk 90%\x1b[39m",
   );
   assert.equal(colorizeQuotaFooterBoth(undefined), undefined);
   assert.equal(
@@ -324,13 +324,40 @@ test("Coordinator: refresh paints footer and throttles refetch", async () => {
   }
 });
 
-test("colorizeQuotaFooter: alert/warn/plain thresholds", () => {
+test("colorizeQuotaFooter: alert/warn/dim thresholds", () => {
   assert.equal(colorizeQuotaFooter("Wk 6% (2d 15h)"), "\x1b[31mWk 6% (2d 15h)\x1b[39m");
   assert.equal(colorizeQuotaFooter("5h 10% (25m)"), "\x1b[31m5h 10% (25m)\x1b[39m");
   assert.equal(colorizeQuotaFooter("5h 22% (25m)"), "\x1b[33m5h 22% (25m)\x1b[39m");
-  assert.equal(colorizeQuotaFooter("5h 91% (4h 14m)"), "5h 91% (4h 14m)");
-  assert.equal(colorizeQuotaFooter("5h 100%"), "5h 100%");
+  assert.equal(colorizeQuotaFooter("5h 91% (4h 14m)"), "\x1b[90m5h 91% (4h 14m)\x1b[39m");
+  assert.equal(colorizeQuotaFooter("5h 100%"), "\x1b[90m5h 100%\x1b[39m");
   assert.equal(colorizeQuotaFooter(undefined), undefined);
+});
+
+test("colorizeQuotaFooter: adapts to active Theme/Colorizer when provided", () => {
+  const customTheme = {
+    fg: (tone, text) => `<${tone}>${text}</${tone}>`,
+  };
+  assert.equal(colorizeQuotaFooter("Wk 6% (2d 15h)", customTheme), "<error>Wk 6% (2d 15h)</error>");
+  assert.equal(colorizeQuotaFooter("5h 22% (25m)", customTheme), "<warning>5h 22% (25m)</warning>");
+  assert.equal(colorizeQuotaFooter("5h 91% (4h 14m)", customTheme), "<dim>5h 91% (4h 14m)</dim>");
+  assert.equal(
+    colorizeQuotaFooterBoth("5h 8% · Wk 90%", customTheme),
+    "<error>5h 8%</error><dim> · </dim><dim>Wk 90%</dim>",
+  );
+});
+
+test("Coordinator: paint adapts to ctx.ui.theme", () => {
+  const coord = new QuotaStatusCoordinator(memStore("smart").store);
+  const summary = parseQuotaSummary(quotaJson);
+  coord.ingest(summary);
+  const statuses = [];
+  const theme = { fg: (tone, text) => `{${tone}}${text}{/${tone}}` };
+  const ctx = {
+    ...makeCtx(statuses),
+    ui: { setStatus: (key, text) => statuses.push([key, text]), theme },
+  };
+  coord.paint(ctx);
+  assert.match(statuses.at(-1)[1], /^\{dim\}5h /);
 });
 
 test("Coordinator: foreign model fetches nothing and clears the slot", async () => {
@@ -426,7 +453,10 @@ test("Coordinator: all mode paints both windows", async () => {
     await coord.refresh(ctx);
     assert.equal(coord.footerFor(ctx.model.id, "all"), "5h 22% · Wk 87%");
     paintQuotaStatus(coord, ctx);
-    assert.deepEqual(statuses.at(-1), [QUOTA_STATUS_KEY, "\x1b[33m5h 22%\x1b[39m · Wk 87%"]);
+    assert.deepEqual(statuses.at(-1), [
+      QUOTA_STATUS_KEY,
+      "\x1b[33m5h 22%\x1b[39m\x1b[90m · \x1b[39m\x1b[90mWk 87%\x1b[39m",
+    ]);
   } finally {
     globalThis.fetch = realFetch;
   }

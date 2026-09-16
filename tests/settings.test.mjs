@@ -274,7 +274,15 @@ test("TUI dialog cycles the value with the real SettingsList", async () => {
       // line: appended after the sample it would lose the description color.
       const ansiList = await factories[0](
         { requestRender() {} },
-        { fg: (c, s) => `\x1b[38;5;240m${s}\x1b[39m`, bold: (s) => s }, // real Theme.fg shape
+        {
+          fg: (c, s) =>
+            c === "warning"
+              ? `\x1b[33m${s}\x1b[39m`
+              : c === "error"
+                ? `\x1b[31m${s}\x1b[39m`
+                : `\x1b[38;5;240m${s}\x1b[39m`,
+          bold: (s) => s,
+        },
         {},
         () => {},
       );
@@ -283,7 +291,7 @@ test("TUI dialog cycles the value with the real SettingsList", async () => {
       assert.ok(!noteLine.includes("5h 22%"), "note is not appended after the colorized sample");
 
       // The sample drops the description color so it reads like the footer:
-      // plain foreground for healthy windows, yellow/red only for low ones.
+      // dim foreground for healthy windows, yellow/red only for low ones.
       const smartLine = ansiList.render(200).find((l) => l.includes("Show remaining quota"));
       assert.match(smartLine, /\x1b\[39m\x1b\[33m5h 22%/, "sample keeps the footer's threshold color, not dim");
 
@@ -291,8 +299,7 @@ test("TUI dialog cycles the value with the real SettingsList", async () => {
       await flush();
       await flush();
       const allLine = ansiList.render(200).find((l) => l.includes("Show remaining quota"));
-      assert.match(allLine, /\x1b\[39m · Wk/, "healthy window stays plain like the footer's");
-      assert.ok(!/\x1b\[38;5;240m · Wk/.test(allLine), "no description color inside the sample");
+      assert.match(allLine, /\x1b\[38;5;240m · \x1b\[39m\x1b\[38;5;240mWk/, "healthy window uses theme dim foreground like the footer's");
       assert.match(outputs.join("\n"), /\[pi-provider-antigravity-footer-usage\].*5h 22%/);
       assert.ok(renders > 0);
 

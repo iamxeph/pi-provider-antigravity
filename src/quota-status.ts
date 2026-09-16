@@ -1,4 +1,4 @@
-import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionContext, Theme } from "@earendil-works/pi-coding-agent";
 import { resolveCredentials } from "./auth.ts";
 import { classifyModelFamily } from "./models.ts";
 import { postAntigravityJson, PROVIDER_ID } from "./protocol.ts";
@@ -269,33 +269,59 @@ export function formatQuotaWindowPart(bucket: QuotaBucket): string {
   return `${prefix} ${pct}%`;
 }
 
-// Threshold coloring for footer slots. Event handlers never see Theme, so this
-// uses basic ANSI (theme.fg("error"/"warning") equivalents on dark) with a
-// foreground-only reset, mirroring Theme.fg instead of a full reset.
+// Threshold coloring for footer slots. Prefers Theme.fg when available so
+// coloring adapts to the active theme (light/dark/custom); falls back to basic
+// ANSI on dark (mirroring Theme.fg with foreground-only resets) when invoked
+// without a theme (e.g. tests, headless, or mock contexts).
 const ANSI_RED = "\x1b[31m";
 const ANSI_YELLOW = "\x1b[33m";
+const ANSI_DIM = "\x1b[90m";
 export const ANSI_FG_RESET = "\x1b[39m";
 
 export const QUOTA_WARN_PCT = 30;
 export const QUOTA_ALERT_PCT = 10;
 
-export function colorizeQuotaFooter(footer: string | undefined): string | undefined {
+export type QuotaColorTone = "error" | "warning" | "dim";
+export type QuotaColorizer = (tone: QuotaColorTone, text: string) => string;
+export type QuotaColorStyle =
+  | { fg: (tone: QuotaColorTone, text: string) => string }
+  | QuotaColorizer;
+
+function resolveColorizer(style?: QuotaColorStyle): QuotaColorizer {
+  if (typeof style === "function") return style;
+  if (style && typeof style.fg === "function") return (tone, text) => style.fg(tone, text);
+  return (tone, text) => {
+    const code = tone === "error" ? ANSI_RED : tone === "warning" ? ANSI_YELLOW : ANSI_DIM;
+    return `${code}${text}${ANSI_FG_RESET}`;
+  };
+}
+
+export function colorizeQuotaFooter(
+  footer: string | undefined,
+  style?: QuotaColorStyle,
+): string | undefined {
   if (!footer) return undefined;
+  const color = resolveColorizer(style);
   const match = footer.match(/(\d+)%/);
-  if (!match) return footer;
+  if (!match) return color("dim", footer);
   const pct = parseInt(match[1], 10);
-  if (pct <= QUOTA_ALERT_PCT) return `${ANSI_RED}${footer}${ANSI_FG_RESET}`;
-  if (pct <= QUOTA_WARN_PCT) return `${ANSI_YELLOW}${footer}${ANSI_FG_RESET}`;
-  return footer;
+  if (pct <= QUOTA_ALERT_PCT) return color("error", footer);
+  if (pct <= QUOTA_WARN_PCT) return color("warning", footer);
+  return color("dim", footer);
 }
 
 // Colors each " · "-separated window part by its own percentage.
-export function colorizeQuotaFooterBoth(footer: string | undefined): string | undefined {
+export function colorizeQuotaFooterBoth(
+  footer: string | undefined,
+  style?: QuotaColorStyle,
+): string | undefined {
   if (!footer) return undefined;
+  const color = resolveColorizer(style);
+  const sep = color("dim", " · ");
   return footer
     .split(" · ")
-    .map((part) => colorizeQuotaFooter(part) ?? part)
-    .join(" · ");
+    .map((part) => colorizeQuotaFooter(part, style) ?? part)
+    .join(sep);
 }
 
 // Namespaced by repo so no other extension (e.g. a personal-config "quota"
@@ -375,6 +401,7 @@ export interface FooterModeDef {
     summary: QuotaSummary | undefined,
     modelId?: string,
     ratio?: number,
+    style?: QuotaColorStyle,
   ) => { plain?: string; colored?: string };
 }
 
@@ -386,19 +413,19 @@ export const FOOTER_MODES: Record<QuotaFooterMode, FooterModeDef> = Object.freez
   smart: {
     key: "smart",
     note: FOOTER_MODE_NOTES.smart,
-    render: (summary, modelId, ratio = DEFAULT_WEEKLY_TO_5H_RATIO) => {
+    render: (summary, modelId, ratio = DEFAULT_WEEKLY_TO_5H_RATIO, style) => {
       if (!summary) return {};
       const plain = buildQuotaFooter(summary, modelId, ratio);
-      return { plain, colored: colorizeQuotaFooter(plain) };
+      return { plain, colored: colorizeQuotaFooter(plain, style) };
     },
   },
   all: {
     key: "all",
     note: FOOTER_MODE_NOTES.all,
-    render: (summary, modelId) => {
+    render: (summary, modelId, _ratio, style) => {
       if (!summary) return {};
       const plain = buildQuotaFooterBoth(summary, modelId);
-      return { plain, colored: colorizeQuotaFooterBoth(plain) };
+      return { plain, colored: colorizeQuotaFooterBoth(plain, style) };
     },
   },
 });
@@ -448,8 +475,9 @@ export class QuotaStatusCoordinator {
   renderFooter(
     modelId?: string,
     mode: QuotaFooterMode = "smart",
+    style?: QuotaColorStyle,
   ): { plain?: string; colored?: string } {
-    return FOOTER_MODES[mode]?.render(this.summary, modelId, this.weeklyTo5hRatio) ?? {};
+    return FOOTER_MODES[mode]?.render(this.summary, modelId, this.weeklyTo5hRatio, style) ?? {};
   }
 
   get isFresh(): boolean {
@@ -483,7 +511,8 @@ export class QuotaStatusCoordinator {
       ctx.ui.setStatus(QUOTA_STATUS_KEY, undefined);
       return;
     }
-    const { colored } = this.renderFooter(ctx.model?.id, mode);
+    const theme = (ctx.ui as { theme?: Theme })?.theme;
+    const { colored } = this.renderFooter(ctx.model?.id, mode, theme);
     ctx.ui.setStatus(QUOTA_STATUS_KEY, colored);
   }
 
