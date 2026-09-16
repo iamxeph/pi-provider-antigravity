@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.11.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.10.0...v0.11.0) (2026-09-16)
+
+
+### Features
+
+* **compatibility:** verify wire compatibility with agy CLI 1.2.3 ([f219db2](https://github.com/iamxeph/pi-provider-antigravity/commit/f219db2a9073126687cfd7dd1d62d2083d0c1011))
+* **search:** rename tool to antigravity_websearch and command to websearch ([9642537](https://github.com/iamxeph/pi-provider-antigravity/commit/96425376d747c40d8cb92037216011a74e8943b7))
+
 ## [0.10.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.9.0...v0.10.0) (2026-09-15)
 
 
