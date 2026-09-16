@@ -1617,16 +1617,40 @@ test("Seam 1: buildAntigravityRequestBody skips aborted and errored assistant me
   assert.equal(body.request.contents[1].parts[0].text, "Query 2 (retried)");
 });
 
-test("Seam 1 (#15): thinking replay matches the agy CLI part-split byte-for-byte (pro turn11)", () => {
-  // agy replays a thinking turn as [{thought, text: ""}, {text, thoughtSignature}]: the
-  // signature never rides the thought part. The pro follow-up is a captured instance of
-  // that shape (the tooltrace's first replay is a tool turn instead).
-  const turn11 = JSON.parse(
-    fs.readFileSync(newestCapture("stream_turn11_pro_followup.req.json"), "utf-8")
-  );
-  const fixtureTurn = turn11.body.request.contents[1];
-  assert.equal(fixtureTurn.parts[0].thought, true);
-  assert.equal("thoughtSignature" in fixtureTurn.parts[0], false);
+test("Seam 1 (#15): thinking replay matches the agy CLI part-split byte-for-byte", () => {
+  // agy replays a thinking turn as [{thought, text}, {text, thoughtSignature}]: the
+  // signature never rides the thought part. Which captured turn carries that split is
+  // sampling-dependent (it moves between continuations from capture to capture), so read
+  // the first Gemini-family model turn the fixtures froze with one — the assertion below
+  // is still byte-for-byte against agy's real bytes, and this test never names a slot.
+  const geminiReqs = [
+    "stream_turn1_initial.req.json",
+    "stream_turn2_toolresult.req.json",
+    "stream_turn4_thinking.req.json",
+    "stream_turn5_multiturn.req.json",
+    "stream_turn6_toolerror.req.json",
+    "stream_turn11_pro_followup.req.json",
+  ];
+  let fixtureTurn;
+  let runtimeModel;
+  for (const file of geminiReqs) {
+    const body = JSON.parse(fs.readFileSync(newestCapture(file), "utf-8")).body;
+    const turn = body.request.contents.find(
+      (c) =>
+        c.role === "model" &&
+        c.parts?.length === 2 &&
+        c.parts[0].thought === true &&
+        !("thoughtSignature" in c.parts[0]) &&
+        typeof c.parts[1].text === "string" &&
+        typeof c.parts[1].thoughtSignature === "string",
+    );
+    if (turn) {
+      fixtureTurn = turn;
+      runtimeModel = body.model;
+      break;
+    }
+  }
+  assert.ok(fixtureTurn, "no captured Gemini turn replays a thinking part");
 
   // Stored history as this provider's own stream adapter leaves it: the thinking
   // block carries the closing signature in its canonical thinkingSignature,
@@ -1639,7 +1663,7 @@ test("Seam 1 (#15): thinking replay matches the agy CLI part-split byte-for-byte
       {
         role: "assistant",
         provider: "antigravity",
-        model: "gemini-pro-agent",
+        model: runtimeModel,
         content: [
           { type: "thinking", thinking: fixtureTurn.parts[0].text, thinkingSignature: sig },
           { type: "text", text: fixtureTurn.parts[1].text },
@@ -1651,7 +1675,7 @@ test("Seam 1 (#15): thinking replay matches the agy CLI part-split byte-for-byte
 
   const body = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.1-pro"),
+    plan: staticPlan(runtimeModel),
     context,
   });
 

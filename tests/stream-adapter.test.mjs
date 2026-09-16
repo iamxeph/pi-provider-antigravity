@@ -7,11 +7,15 @@ import { buildAntigravityRequestBody } from "../src/builder.ts";
 import { createModelCatalog } from "../src/model-catalog.ts";
 
 const sseTurn5 = fs.readFileSync(newestCapture("stream_turn5_multiturn.resp.sse"), "utf-8");
-// A lone-signature turn: visible text plus a signature carrier, nothing else.
-const sseLoneSig = fs.readFileSync(
-  newestCapture("stream_turn4_thinking.resp.sse"),
-  "utf-8"
-);
+// A lone-signature turn: visible text plus a signature carrier, nothing else. Whether a
+// captured turn has that shape is sampling-dependent (1.2.2 froze it on turn4, 1.2.3 on
+// turn5), so this edge case owns its input inline instead of asking the capture for it —
+// the same pattern the request-builder "uncovered edge" tests use. Shape mirrors the
+// exported turn5 response; only the signature is synthetic.
+const sseLoneSig = [
+  'data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": "done"}]}}],"usageMetadata": {"promptTokenCount": 1,"candidatesTokenCount": 1,"totalTokenCount": 2},"modelVersion": "gemini-3.8-flash","responseId": "inline-lone-sig"},"traceId": "inline-lone-sig","metadata": {}}',
+  'data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thoughtSignature": "TG9uZVNpZ25hdHVyZUZvclRlc3QxNg==", "text": ""}]},"finishReason": "STOP"}],"usageMetadata": {"promptTokenCount": 1,"candidatesTokenCount": 1,"totalTokenCount": 2},"modelVersion": "gemini-3.8-flash","responseId": "inline-lone-sig"},"traceId": "inline-lone-sig","metadata": {}}',
+].join("\n");
 // Expected values straight from the fixture text — independent of the parser, and
 // stable across fixtures.
 const textOf = (sse) =>
