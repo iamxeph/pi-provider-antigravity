@@ -62,7 +62,7 @@ export const SUBCOMMANDS: readonly SubcommandDef[] = Object.freeze([
     run: async ({ ctx, quotaStatus }) => openSettings(ctx, quotaStatus),
   },
   {
-    name: "search",
+    name: "websearch",
     description: "Search the web using Google Search Grounding",
     run: async ({ ctx, subArgs }) => runSearchSubcommand(ctx, subArgs),
   },
@@ -210,7 +210,7 @@ async function runSearchSubcommand(
 
   const trimmedQuery = (query || "").trim();
   if (!trimmedQuery) {
-    emitOutput(ctx, "Usage: /antigravity search <query>", "warning");
+    emitOutput(ctx, "Usage: /antigravity websearch <query>", "warning");
     return;
   }
 

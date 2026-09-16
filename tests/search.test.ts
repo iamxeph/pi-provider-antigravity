@@ -113,20 +113,20 @@ test("Search: performWebSearch builds canonical request body and headers", async
   }
 });
 
-test("Search: antigravity_search tool registration and execution in extension", async () => {
+test("Search: antigravity_websearch tool registration and execution in extension", async () => {
   let registeredTool: any = null;
   const mockPi = {
     registerProvider: () => {},
     registerCommand: () => {},
     registerTool: (tool: any) => {
-      if (tool.name === "antigravity_search") registeredTool = tool;
+      if (tool.name === "antigravity_websearch") registeredTool = tool;
     },
     on: () => {},
   };
 
   initExtension(mockPi as any);
-  assert.ok(registeredTool, "antigravity_search tool must be registered");
-  assert.equal(registeredTool.name, "antigravity_search");
+  assert.ok(registeredTool, "antigravity_websearch tool must be registered");
+  assert.equal(registeredTool.name, "antigravity_websearch");
   assert.ok(registeredTool.parameters);
 
   // 1. Unauthenticated execution
@@ -165,7 +165,7 @@ test("Search: antigravity_search tool registration and execution in extension", 
   }
 });
 
-test("Subcommand: /antigravity search runs web search and formats output", async () => {
+test("Subcommand: /antigravity websearch runs web search and formats output", async () => {
   const origFetch = globalThis.fetch;
   globalThis.fetch = (async () => {
     return new Response(
@@ -194,10 +194,10 @@ test("Subcommand: /antigravity search runs web search and formats output", async
     } as any;
 
     // Run without query -> shows usage warning
-    await runAntigravitySubcommand("search", mockCtx, undefined, {} as any);
+    await runAntigravitySubcommand("websearch", mockCtx, undefined, {} as any);
 
     // Run with query -> outputs result
-    await runAntigravitySubcommand("search Seoul weather", {
+    await runAntigravitySubcommand("websearch Seoul weather", {
       ...mockCtx,
       ui: { notify: (msg: string) => outputs.push(msg) },
       hasUI: true,
