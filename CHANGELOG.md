@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.12.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.11.0...v0.12.0) (2026-09-16)
+
+
+### Features
+
+* **compatibility:** verify wire compatibility with agy CLI 1.2.4 ([#11](https://github.com/iamxeph/pi-provider-antigravity/issues/11)) ([adfffd5](https://github.com/iamxeph/pi-provider-antigravity/commit/adfffd5bca755fa28c3e33d0e80aac7a33720d23))
+* **quota-status:** adapt footer quota colors to active Pi theme ([f73add6](https://github.com/iamxeph/pi-provider-antigravity/commit/f73add6bc70d09aafc9f3209dae7237a3070d436))
+
 ## [0.11.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.10.0...v0.11.0) (2026-09-16)
 
 
