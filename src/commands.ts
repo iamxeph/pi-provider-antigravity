@@ -1,7 +1,8 @@
 import type { ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { resolveCredentials, NOT_LOGGED_IN, type AntigravityCredentials } from "./auth.ts";
 import { PROVIDER_ID } from "./protocol.ts";
-import { openSettings, type QuotaStatusCoordinator } from "./quota-status.ts";
+import { openSettings } from "./config.ts";
+import type { QuotaStatusCoordinator } from "./quota-status.ts";
 import type { ModelCatalog } from "./model-catalog.ts";
 import { performWebSearch } from "./search.ts";
 

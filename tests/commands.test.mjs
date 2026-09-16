@@ -12,7 +12,8 @@ import {
 } from "../src/commands.ts";
 import { createCatalogStore, refreshCatalog } from "../src/model-catalog.ts";
 import initExtension from "../src/index.ts";
-import { QuotaStatusCoordinator, fileQuotaStatusStore } from "../src/quota-status.ts";
+import { QuotaStatusCoordinator } from "../src/quota-status.ts";
+import { fileQuotaStatusStore } from "../src/config.ts";
 
 const quotaJson = JSON.parse(fs.readFileSync(newestCapture("quota.resp.json"), "utf-8"));
 // Fixture-derived: the capture rotates every agy release, the command plumbing does not.

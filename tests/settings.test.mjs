@@ -9,15 +9,17 @@ import {
   buildSettingsItems,
   defaultConfigFile,
   FOOTER_MODE_NOTES,
-  FOOTER_MODES,
   loadProviderConfig,
   normalizeFooterMode,
   previewQuotaFooterText,
   resolveFooterMode,
   saveSettingValue,
   SETTINGS_FIELDS,
-  QuotaStatusCoordinator,
   fileQuotaStatusStore,
+} from "../src/config.ts";
+import {
+  FOOTER_MODES,
+  QuotaStatusCoordinator,
 } from "../src/quota-status.ts";
 import { runAntigravitySubcommand } from "../src/commands.ts";
 import { createCatalogStore } from "../src/model-catalog.ts";
