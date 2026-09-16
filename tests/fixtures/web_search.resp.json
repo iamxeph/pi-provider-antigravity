@@ -6,145 +6,146 @@
           "role": "model",
           "parts": [
             {
-              "thoughtSignature": "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDA5",
-              "text": "As of mid-September 2026, the AI landscape is defined by a transition from standalone chatbots to **\"Agentic AI,\"** alongside an intensifying debate over safety, regulation, and the potential for autonomous cyber threats.\n\n### Key Developments in September 2026\n\n*   **The Rise of Agentic AI:** The industry has shifted toward agentic systems capable of orchestrating multi-step workflows—such as research, document drafting, and task management—across various applications. These agents are increasingly becoming the standard unit of value for enterprises.\n*   **Apple Intelligence & Siri AI:** Apple released a significant update to its AI ecosystem on September 14, 2026, introducing \"Siri AI.\" This next-generation assistant features improved personal context understanding, world knowledge, and systemwide app actions, integrated across Apple’s 2027 software releases.\n*   **Cybersecurity & Frontier Models:** \n    *   **OpenAI's \"Astra\" Model:** OpenAI has classified its new \"GPT-6 Astra\" model as reaching a \"Critical\" level under its Preparedness Framework, citing its ability to independently identify and exploit software vulnerabilities. \n    *   **Defense Initiatives:** In response to rising threats, OpenAI also announced a $1 billion \"Daybreak for Frontline Defenders\" initiative to subsidize AI-assisted security tools for critical infrastructure.\n    *   **Anthropic’s Safety Report:** Anthropic released a report in September detailing efforts to detect and counter the misuse of its models in cyber and influence operations, highlighting that while some actors attempt to use AI for exploit research, the company continues to implement and strengthen safeguards.\n*   **Debate on \"AI Doom\" and Regulation:** \n    *   A significant public debate has emerged regarding the safety and potential risks of advanced AI. Anthropic CEO Dario Amodei recently warned about the potential for AI swarms to pose massive internet-scale risks, a claim that has sparked skepticism and intense discussion among experts regarding the feasibility of such scenarios and the responsibility of labs.\n    *   International bodies, including the UN, are increasingly calling for more rigorous regulation to mitigate existential risks. OpenAI has publicly pushed for mandatory national AI safety requirements and highlighted the need for industry standards.\n*   **Business & Infrastructure:**\n    *   **No IPO for OpenAI:** Sam Altman confirmed that OpenAI will not go public in 2026, citing a need to focus on safety and development.\n    *   **AI Infrastructure Growth:** The AI Infra Summit held in mid-September highlighted massive growth in AI-specific hardware, with NVIDIA showcasing advancements in AI \"factory\" efficiency and collaborations with partners like Amazon’s Annapurna Labs. \n    *   **Data Privacy:** A recent report revealed that OpenAI utilizes human contractors to review private ChatGPT conversations for training and safety purposes, reigniting discussions around privacy and the scale of human intervention in AI development."
+              "thoughtSignature": "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDEw",
+              "text": "As of September 16, 2026, the artificial intelligence landscape is defined by a massive surge in infrastructure investment, the maturation of \"agentic\" AI, and increasing scrutiny regarding safety and regulation.\n\n### **Market & Infrastructure**\n*   **Record-Breaking Spending:** Gartner reports that worldwide AI spending is expected to reach **$2.7 trillion in 2026**, a 49.5% year-over-year increase. This is driven by the massive buildout of AI data center capacity, which is being described as one of the largest infrastructure projects in human history.\n*   **Infrastructure Interdependence:** Research from Swiss Re highlights that this rapid expansion is creating new \"accumulation risks\" for insurers, as data centers, power grids, and supply chains become increasingly interdependent.\n\n### **Key Trends: Agentic AI**\n*   **The Shift to Agents:** The industry has moved decisively from simple generative chat interfaces toward **\"agentic AI\"**—systems capable of performing multi-step tasks across different software applications with minimal human intervention.\n*   **Enterprise Adoption:** While 79% of enterprises have adopted AI agents in some form, only 11% are running them in full production, reflecting a cautious \"human-in-the-loop\" approach for high-stakes workflows like legal, pricing, and hiring.\n\n### **Safety, Security, & Regulation**\n*   **Growing Safety Concerns:** Debate over AI safety remains intense. Meta CEO Mark Zuckerberg revealed that the company delayed its \"Muse\" AI tool for months to prioritize safety and security. Meanwhile, internal warnings from researchers at companies like Anthropic continue to fuel public discourse on whether development should be slowed.\n*   **NYC Council Hearing:** The New York City Council has scheduled a rare \"Committee of the Whole\" hearing for October 5 to investigate the risks of advanced AI, with invitations sent to leaders from OpenAI and Anthropic to testify.\n*   **Security Vulnerabilities:** Security remains a major concern following reports of new vulnerabilities in AI-coding tools, such as CVE-2026-57586, and incidents involving hijacked AI coding sessions where attackers deployed malware (e.g., the \"Shai-Hulud\" campaign) across corporate repositories.\n\n### **Scientific & Practical Applications**\n*   **Medical Innovation:** Researchers at MIT have developed a new patient-specific AI technique called **\"xvr,\"** designed to make minimally invasive surgeries (such as neurosurgery and orthopedics) more precise by improving X-ray navigation."
             }
           ]
         },
         "finishReason": "STOP",
         "groundingMetadata": {
           "webSearchQueries": [
-            "major AI developments September 2026",
-            "AI news September 2026"
+            "latest AI news September 16 2026",
+            "major artificial intelligence developments September 2026"
           ],
           "searchEntryPoint": {
-            "renderedContent": "<style>\n.container {\n  align-items: center;\n  border-radius: 8px;\n  display: flex;\n  font-family: Google Sans, Roboto, sans-serif;\n  font-size: 14px;\n  line-height: 20px;\n  padding: 8px 12px;\n}\n.chip {\n  display: inline-block;\n  border: solid 1px;\n  border-radius: 16px;\n  min-width: 14px;\n  padding: 5px 16px;\n  text-align: center;\n  user-select: none;\n  margin: 0 8px;\n  -webkit-tap-highlight-color: transparent;\n}\n.carousel {\n  overflow: auto;\n  scrollbar-width: none;\n  white-space: nowrap;\n  margin-right: -12px;\n}\n.headline {\n  display: flex;\n  margin-right: 4px;\n}\n.gradient-container {\n  position: relative;\n}\n.gradient {\n  position: absolute;\n  transform: translate(3px, -9px);\n  height: 36px;\n  width: 9px;\n}\n@media (prefers-color-scheme: light) {\n  .container {\n    background-color: #fafafa;\n    box-shadow: 0 0 0 1px #0000000f;\n  }\n  .headline-label {\n    color: #1f1f1f;\n  }\n  .chip {\n    background-color: #ffffff;\n    border-color: #d2d2d2;\n    color: #5e5e5e;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #f2f2f2;\n  }\n  .chip:focus {\n    background-color: #f2f2f2;\n  }\n  .chip:active {\n    background-color: #d8d8d8;\n    border-color: #b6b6b6;\n  }\n  .logo-dark {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #fafafa 15%, #fafafa00 100%);\n  }\n}\n@media (prefers-color-scheme: dark) {\n  .container {\n    background-color: #1f1f1f;\n    box-shadow: 0 0 0 1px #ffffff26;\n  }\n  .headline-label {\n    color: #fff;\n  }\n  .chip {\n    background-color: #2c2c2c;\n    border-color: #3c4043;\n    color: #fff;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #353536;\n  }\n  .chip:focus {\n    background-color: #353536;\n  }\n  .chip:active {\n    background-color: #464849;\n    border-color: #53575b;\n  }\n  .logo-light {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #1f1f1f 15%, #1f1f1f00 100%);\n  }\n}\n</style>\n<div class=\"container\">\n  <div class=\"headline\">\n    <svg class=\"logo-light\" width=\"18\" height=\"18\" viewBox=\"9 9 35 35\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M42.8622 27.0064C42.8622 25.7839 42.7525 24.6084 42.5487 23.4799H26.3109V30.1568H35.5897C35.1821 32.3041 33.9596 34.1222 32.1258 35.3448V39.6864H37.7213C40.9814 36.677 42.8622 32.2571 42.8622 27.0064V27.0064Z\" fill=\"#4285F4\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 43.8555C30.9659 43.8555 34.8687 42.3195 37.7213 39.6863L32.1258 35.3447C30.5898 36.3792 28.6306 37.0061 26.3109 37.0061C21.8282 37.0061 18.0195 33.9811 16.6559 29.906H10.9194V34.3573C13.7563 39.9841 19.5712 43.8555 26.3109 43.8555V43.8555Z\" fill=\"#34A853\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M16.6559 29.8904C16.3111 28.8559 16.1074 27.7588 16.1074 26.6146C16.1074 25.4704 16.3111 24.3733 16.6559 23.3388V18.8875H10.9194C9.74388 21.2072 9.06992 23.8247 9.06992 26.6146C9.06992 29.4045 9.74388 32.022 10.9194 34.3417L15.3864 30.8621L16.6559 29.8904V29.8904Z\" fill=\"#FBBC05\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 16.2386C28.85 16.2386 31.107 17.1164 32.9095 18.8091L37.8466 13.8719C34.853 11.082 30.9659 9.3736 26.3109 9.3736C19.5712 9.3736 13.7563 13.245 10.9194 18.8875L16.6559 23.3388C18.0195 19.2636 21.8282 16.2386 26.3109 16.2386V16.2386Z\" fill=\"#EA4335\"/>\n    </svg>\n    <svg class=\"logo-dark\" width=\"18\" height=\"18\" viewBox=\"0 0 48 48\" xmlns=\"http://www.w3.org/2000/svg\">\n      <circle cx=\"24\" cy=\"23\" fill=\"#FFF\" r=\"22\"/>\n      <path d=\"M33.76 34.26c2.75-2.56 4.49-6.37 4.49-11.26 0-.89-.08-1.84-.29-3H24.01v5.99h8.03c-.4 2.02-1.5 3.56-3.07 4.56v.75l3.91 2.97h.88z\" fill=\"#4285F4\"/>\n      <path d=\"M15.58 25.77A8.845 8.845 0 0 0 24 31.86c1.92 0 3.62-.46 4.97-1.31l4.79 3.71C31.14 36.7 27.65 38 24 38c-5.93 0-11.01-3.4-13.45-8.36l.17-1.01 4.06-2.85h.8z\" fill=\"#34A853\"/>\n      <path d=\"M15.59 20.21a8.864 8.864 0 0 0 0 5.58l-5.03 3.86c-.98-2-1.53-4.25-1.53-6.64 0-2.39.55-4.64 1.53-6.64l1-.22 3.81 2.98.22 1.08z\" fill=\"#FBBC05\"/>\n      <path d=\"M24 14.14c2.11 0 4.02.75 5.52 1.98l4.36-4.36C31.22 9.43 27.81 8 24 8c-5.93 0-11.01 3.4-13.45 8.36l5.03 3.85A8.86 8.86 0 0 1 24 14.14z\" fill=\"#EA4335\"/>\n    </svg>\n    <div class=\"gradient-container\"><div class=\"gradient\"></div></div>\n  </div>\n  <div class=\"carousel\">\n<a class=\"chip\" href=\"https://www.google.com/search?q=major+AI+developments+September+2026&client=app-vertex-grounding&safesearch=active\">major AI developments September 2026</a>\n<a class=\"chip\" href=\"https://www.google.com/search?q=AI+news+September+2026&client=app-vertex-grounding&safesearch=active\">AI news September 2026</a>\n  </div>\n</div>"
+            "renderedContent": "<style>\n.container {\n  align-items: center;\n  border-radius: 8px;\n  display: flex;\n  font-family: Google Sans, Roboto, sans-serif;\n  font-size: 14px;\n  line-height: 20px;\n  padding: 8px 12px;\n}\n.chip {\n  display: inline-block;\n  border: solid 1px;\n  border-radius: 16px;\n  min-width: 14px;\n  padding: 5px 16px;\n  text-align: center;\n  user-select: none;\n  margin: 0 8px;\n  -webkit-tap-highlight-color: transparent;\n}\n.carousel {\n  overflow: auto;\n  scrollbar-width: none;\n  white-space: nowrap;\n  margin-right: -12px;\n}\n.headline {\n  display: flex;\n  margin-right: 4px;\n}\n.gradient-container {\n  position: relative;\n}\n.gradient {\n  position: absolute;\n  transform: translate(3px, -9px);\n  height: 36px;\n  width: 9px;\n}\n@media (prefers-color-scheme: light) {\n  .container {\n    background-color: #fafafa;\n    box-shadow: 0 0 0 1px #0000000f;\n  }\n  .headline-label {\n    color: #1f1f1f;\n  }\n  .chip {\n    background-color: #ffffff;\n    border-color: #d2d2d2;\n    color: #5e5e5e;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #f2f2f2;\n  }\n  .chip:focus {\n    background-color: #f2f2f2;\n  }\n  .chip:active {\n    background-color: #d8d8d8;\n    border-color: #b6b6b6;\n  }\n  .logo-dark {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #fafafa 15%, #fafafa00 100%);\n  }\n}\n@media (prefers-color-scheme: dark) {\n  .container {\n    background-color: #1f1f1f;\n    box-shadow: 0 0 0 1px #ffffff26;\n  }\n  .headline-label {\n    color: #fff;\n  }\n  .chip {\n    background-color: #2c2c2c;\n    border-color: #3c4043;\n    color: #fff;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #353536;\n  }\n  .chip:focus {\n    background-color: #353536;\n  }\n  .chip:active {\n    background-color: #464849;\n    border-color: #53575b;\n  }\n  .logo-light {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #1f1f1f 15%, #1f1f1f00 100%);\n  }\n}\n</style>\n<div class=\"container\">\n  <div class=\"headline\">\n    <svg class=\"logo-light\" width=\"18\" height=\"18\" viewBox=\"9 9 35 35\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M42.8622 27.0064C42.8622 25.7839 42.7525 24.6084 42.5487 23.4799H26.3109V30.1568H35.5897C35.1821 32.3041 33.9596 34.1222 32.1258 35.3448V39.6864H37.7213C40.9814 36.677 42.8622 32.2571 42.8622 27.0064V27.0064Z\" fill=\"#4285F4\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 43.8555C30.9659 43.8555 34.8687 42.3195 37.7213 39.6863L32.1258 35.3447C30.5898 36.3792 28.6306 37.0061 26.3109 37.0061C21.8282 37.0061 18.0195 33.9811 16.6559 29.906H10.9194V34.3573C13.7563 39.9841 19.5712 43.8555 26.3109 43.8555V43.8555Z\" fill=\"#34A853\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M16.6559 29.8904C16.3111 28.8559 16.1074 27.7588 16.1074 26.6146C16.1074 25.4704 16.3111 24.3733 16.6559 23.3388V18.8875H10.9194C9.74388 21.2072 9.06992 23.8247 9.06992 26.6146C9.06992 29.4045 9.74388 32.022 10.9194 34.3417L15.3864 30.8621L16.6559 29.8904V29.8904Z\" fill=\"#FBBC05\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 16.2386C28.85 16.2386 31.107 17.1164 32.9095 18.8091L37.8466 13.8719C34.853 11.082 30.9659 9.3736 26.3109 9.3736C19.5712 9.3736 13.7563 13.245 10.9194 18.8875L16.6559 23.3388C18.0195 19.2636 21.8282 16.2386 26.3109 16.2386V16.2386Z\" fill=\"#EA4335\"/>\n    </svg>\n    <svg class=\"logo-dark\" width=\"18\" height=\"18\" viewBox=\"0 0 48 48\" xmlns=\"http://www.w3.org/2000/svg\">\n      <circle cx=\"24\" cy=\"23\" fill=\"#FFF\" r=\"22\"/>\n      <path d=\"M33.76 34.26c2.75-2.56 4.49-6.37 4.49-11.26 0-.89-.08-1.84-.29-3H24.01v5.99h8.03c-.4 2.02-1.5 3.56-3.07 4.56v.75l3.91 2.97h.88z\" fill=\"#4285F4\"/>\n      <path d=\"M15.58 25.77A8.845 8.845 0 0 0 24 31.86c1.92 0 3.62-.46 4.97-1.31l4.79 3.71C31.14 36.7 27.65 38 24 38c-5.93 0-11.01-3.4-13.45-8.36l.17-1.01 4.06-2.85h.8z\" fill=\"#34A853\"/>\n      <path d=\"M15.59 20.21a8.864 8.864 0 0 0 0 5.58l-5.03 3.86c-.98-2-1.53-4.25-1.53-6.64 0-2.39.55-4.64 1.53-6.64l1-.22 3.81 2.98.22 1.08z\" fill=\"#FBBC05\"/>\n      <path d=\"M24 14.14c2.11 0 4.02.75 5.52 1.98l4.36-4.36C31.22 9.43 27.81 8 24 8c-5.93 0-11.01 3.4-13.45 8.36l5.03 3.85A8.86 8.86 0 0 1 24 14.14z\" fill=\"#EA4335\"/>\n    </svg>\n    <div class=\"gradient-container\"><div class=\"gradient\"></div></div>\n  </div>\n  <div class=\"carousel\">\n<a class=\"chip\" href=\"https://www.google.com/search?q=latest+AI+news+September+16+2026&client=app-vertex-grounding&safesearch=active\">latest AI news September 16 2026</a>\n<a class=\"chip\" href=\"https://www.google.com/search?q=major+artificial+intelligence+developments+September+2026&client=app-vertex-grounding&safesearch=active\">major artificial intelligence developments September 2026</a>\n  </div>\n</div>"
           },
           "groundingChunks": [
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGnFUO6Fj69mx1CbQfUdKvuUhTwuB-PCI8MczD9T0HP-YNfK_itZ8tbObtkWOL5DiB9lMncgJKGcwkAM8JsPvRo7sP6CSF4M34-2AM6MaUavUTPhGFaRpeFQZo6w__VCrJu",
-                "title": "youtube.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQE9RuLI_gSobG6Fr_snD7RT6lAdwwd3ikGzaJICfURqPCgjgFojo7z1Qq_VW7UgrCMKlwjxuNkTiQlDHYDkMUcfhyF9tdHqecIZox3AB22FOrxMxY3Z-LpGw0Wi3qIjGhr_xVstDQkYgQkaWohsohYRa0Td7AqVsZT0FoX_W6GzWBjqI4PBaFxD9suHcPjJZZm4HUaPdXKkdlgysMFtXRnE1Qe406Tly5pXLtgxwrDbM3Kf4bcCEVn4jTpByOPH",
+                "title": "gartner.com"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHM8yrpoO6R1wFrC0cVf7qTbLESOSDYlPySW0ouq7xUo-fNyVreVpAvHLukelOTr7C9RfW23g9GVOuzgE5kpRv7Tr4DqxUVS4MTFbwgksHiR5W53kjvHjbks_5BQXQq1yMBhhfxBKDshVmYE1oyIJxN",
-                "title": "tashios.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEP4rqjjrIUdG7L_WB3cz3Orl_CLg0k04BdvkmmkVJ-qhGbioNKeVC9TQENrnAb91c5PFfzd38AgFnuArqTOj-FYMvku0k13tiWI0F4OEinoccfNBAQC68El2AbJBKag4E0SGIDTvk1l6ZlHvZIKZX5i7PUzFZjeJ86hEOIcM9_l8qm1e0eds4kL9OKBRHJ3_tYEe_sk0RnFTmUrDlhCNa_LIU082yOgWCxNlsc",
+                "title": "greencentralbanking.com"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGZizA7HovSoJfoaagVcOMZEIXcsWRgADPV_H5aR8tnMY50XTEupmJ2RWOFADaV2hvmPabmUSLJ7DAu2ldUcbWrmiB_C0oGjr-pB-R98fGtd73oPg71078rW6dgQEaRE05pkLeL2PmgVuwUtl-1iHqNUacWEDidc-Ss-HOZxS7V",
-                "title": "aiquinta.ai"
-              }
-            },
-            {
-              "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQE7IArirun9AmjRw4R2YDMw61PzNzSde9JCW0komaqr8Sn7XlNO5YrXZzxFfoXyj3faLFl5z7uxtsPKZ8C7IxFlhIcCEtJ2N8g2_wmXNg-z4C6BiKvY_LgiwHMXigJnOQs0Hh-7Tg0H1FAv08qrnKLNztJD0Mggvw==",
-                "title": "mean.ceo"
-              }
-            },
-            {
-              "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFyfdhMTy1-u_djplug7emuqjnoXQEtzXCh7ls6YCWEP0Gv9QGUrausXXvV_MnKN6uYM3uP1QVoo_Ge8GC841luOtpagHLoy-CUUNjaFxya04BZb5qTLtaurN1Szc4_8T7MfZbuBeu5nOl7ubMJxpINyOC523ch2ODB5L_aEpW2kQ4NBQlG",
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHI0Twrw9sWgErQHfnwIAKPgGt9M9sGJQUAyH7TYcP-JE9iltbMX0TeHuz3gbJZpvqVpkX0oDimL7OmI4aMptc50h0obza9WQvncHw_gYe5bNGH-hTM0nceLgMttrLWRKsoxSxDWUxeyIFmldH6G_go5a5c_b3B6iKFunsLN9mYEjue31w=",
                 "title": "findtechome.com"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEBF2_RmjT6LyWa989dasABEutbAdYvSaXoDPYKSt-MVl3ACUrS-3sWEKwhnAIdPSDRMkEjkw7-tcxVCtWZ6hsCBJgBMRLtLwE1bCerjymqo2u5R2-ZGjLhIci_cdpatLVCFcNpbKytB6UMoPTSINIzrfpIFfpXyulNgZefYw_ZRdvhQeLpSrl9ZmM5LGlW1z59QforbnBzRnudozOJyw==",
-                "title": "apple.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGCbuHEqFf-ednciFZ_d4f_4HzAh6XJQ76GJD8JWUXOGIlxuZVuDC0W8Yq99GujO4d1NUKHkQ2ghv_ziMOAF7B_4ZDLBeQYX8_OvGAF1f_VrgKVYN1R2pUIz7pFQNoozDlwOxdQHBty0R5vZJtEN6Q=",
+                "title": "tashios.com"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQENWaZmlsUNtnmwgQkLrx85JSaMQW5qfpadfDy9e-aD4pQrCtBTQofGQ8eAPdfRy4EVLW5LTEne_WlVspSFfTG7cnwz87cthLkldDy9TEwvjKEH5xAmDK6Op6UFeCu9kjqW7A9NCj-jUvBjlYDQk6ETK76ENIhMjaLtRszqzvIeQTsYqmQjui8X8Z0B_gD6Mcx0HK3Ugz9NFI-oK_e-YNHBE6xEobCCp1AHzyXjuQ48ppMT9puIdkhRrvQBVS9jPkaSSTBd",
-                "title": "facebook.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGd4vqcyRiWoyuybMYIYQeRP1UIN2e4oNsnucYakmkFuRMvLwuCUu6kFZ1llYT5GZu8MwFbA-jTARBKHL4XO45odMnpIspKcbLNRm0V50waRt2TN1q4LqOsROWNGFf_jCDRkHNkGXMJyR8wOcvBt6GGZpqhe0rC6b5Lg8KFI-o=",
+                "title": "aiquinta.ai"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHLumX8-BiEso8r-QJnoUcX6dkTvRHQZakTQs5UYmacoKpK-eYOp0QOVHOECcF2-PUYCOD1o66MQuogXxrJgpXenIhKo4tKwRPebzUZMg2Qa_L9OE4HTdaD8b8niXhEOCo7WAXhxEDHjKJj0Ix5g5Twkso5kEoRAZ-g",
-                "title": "anthropic.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGKiNaW7eWULMi-6G1afh-0yIYARTbPedthxNNBpUrtC_1nsaUTaMeGSp4aNzV7Rn99WA6oh2OsoWADLmLTp0Ujn9q8XJKCzkFlFPi9f1RByP-Z490rIm3PvwWOdcVYFFkQIKl_AVoqjP_RJP4ke1haAwt5BAZSI4nXGDgLK04Dec0n6pgtz8O3o1LXnsmP",
+                "title": "foxnews.com"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG0vT60-8BP8m-aegQ4I5h1C9NYj5xbfX_OrJUXL00fbIK3wysHWzms_wbx3IZSOt7HArJBkuiJsJyj8U1AfExqdUbe_vyXIX7iqq_znNmXF4X8KjAmuOQE57U5p7QMCIbnN52rp2biuw0CCkdx7WGTJcjGzo3HT3dG2slFapyPeXEdscSxnJVmdxrVe-XW99Q9YzZzLco2gxZf9uXcLzb1zt8QU2jhErxcmg==",
-                "title": "anthropic.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFaWjfIusdtxJeKApB0981uVf2dY72cr_XxHmTHNGqsm4Jd2SvwSdoKrF3oubm62DF2O3ZNaNtxhnL__8dN1L1QdfivAgMWa6W3CilLIb16dlkd1Ay99rgUwN0ooz8GzTPACIAEqbyO954gquW41EWaEHeAUbTKzFKA_7AvhuuWUz5rx_RLSQCuMRXgzko=",
+                "title": "itif.org"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHUptFr_GuGEX55pyUPM_Y9qTO65RY2asEErZ5t5NCkjtSYV4deYwM3nDR83dQ97uw_i7I2g5KvBkFC83Lw8TbWEnW5pVMQMl4-JVlojHKu_Aq6c3FESL1AOi9NyKj9dYbrazUtHyZh2GBi_BhO-vl6FHlJ_gIA40m0eNsN-tfxshRe8DTe0TdcM40kP9mxAOcfXUAyxf7LPCT53flkE0YlyTI=",
-                "title": "theguardian.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHESZhbe_atNpsrkKgbI9nw3bEOsEgO53CAd5aGcf-uh32XntrANBDNHOKNGzai-_DQE1x9BnKY8zQQdoBHkDs8YX8AScbZTgn3_cDeCXIyeEtO2Nu0YCN-p0E6IrReq2JO7nk=",
+                "title": "nyc.gov"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEoVNiu2LeQuIL-POcyrBDyax5_jT1siTqjx0x-0NBIdY7YVV_z61zOUOOtTSsNEHCe_wKsKblzVGJEGzbfVuoD1L8l41fMaWdvyRs9wA8NGuBFslQ5_mAui5uKGBTyYHVW-Q==",
-                "title": "un.org"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGFn9xbdfHvjy4HDKobfm4ByE0ZXJqq_-vf_cznzi4-nlhbCTXkkOOLNCvqxbKVQ0YCfZY_EL766BjWllctVGFh19eYcyXrYokkILja1rNyoXSat9PEsm36krz7WLBaAufes0vM9ujxxwI-vZkLrWGjK8cJxPLplg==",
+                "title": "killtheai.com"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGvxFAbeKKHrDb4H7z3-r0HUiFYkUv-vguT9G5eTt_9IS9rDesgZFmoF-aNx6W1R_H5VMI5P14UKJxfeFXBYCeaCZpORx9mSKVbb5RvpfHtdT25NpiXA4Puhbm6HkhyTqg=",
-                "title": "openai.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQE3Lc0765rkDpTok3nPym65Kp5kL9lA5a1kcipRX4w-nRX6QNhYxENMz3S38GDARxsNoY5z9FVGibFZFNl19CkHo_VO232kpY69mqoeaB65nENY1R_PrZjydbslV5_tV8LnI0KOkgLXmwAuEbtbOJKMOxIHGuPONg5o9eFJ3uOyuw==",
+                "title": "thehackernews.com"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEtE0r0PBtKML8UFCYYnKMzt0BC3UQ7IwhB1ql2pvd8_cWtcSmQF37DCEYtiG2jLtoIO8LH8VmWSx5tZ6QoKGyAywSYPj2ujLUuyNuE2Z_d_iqsAWBGVIB9o2ba-n_-8QdX81uhhPcZhcBZ",
-                "title": "aiweekly.co"
-              }
-            },
-            {
-              "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEQpn6ekHS1qkz9jUfsBJ16-p-ko2aY1byBAnY3gc0jCeVPpxlxddtEdTKYHkmF6eYCCw-V6pm5XmihBEu4Vv4DS3Br5H1tVXp7g7xzozTJeCs16bBanIs3Ia9g8tmqod8J2WUyOh0SKE6k8gyqsoC-Ptiv3iCDKKwb7y8O8VVw5quj3QEeikeTXGhrvX6SzCXSioyzzlR_ZIvRcu2cCKw4nnndkg==",
-                "title": "nvidia.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGBqFnsO0fI0c_khfIgg3ajPw1rZcg4Rz6OkRxJ0H_LoHAc-jGGKvImSkaCiuMgoM0HwPcdOtrgSJ7Ldvgvz2f4uhzzfhcvdqXnr3SkkrbbMnlsvQG7icmlR7hKHB5YrRf6EHUcpiFrxmtw-Y2_DNYAqYg2RnM4x8Rk82wcGqF3ddygEOxhp-dY7GRRfz7HisQeyRIzj_2d0uGDIi8rCUY=",
+                "title": "mit.edu"
               }
             }
           ],
           "groundingSupports": [
             {
               "segment": {
-                "endIndex": 220,
-                "text": "As of mid-September 2026, the AI landscape is defined by a transition from standalone chatbots to **\"Agentic AI,\"** alongside an intensifying debate over safety, regulation, and the potential for autonomous cyber threats"
+                "startIndex": 214,
+                "endIndex": 402,
+                "text": "### **Market & Infrastructure**\n*   **Record-Breaking Spending:** Gartner reports that worldwide AI spending is expected to reach **$2.7 trillion in 2026**, a 49.5% year-over-year increase"
               },
               "groundingChunkIndices": [
-                0,
-                1,
-                2
+                0
               ]
             },
             {
               "segment": {
-                "startIndex": 263,
-                "endIndex": 477,
-                "text": "*   **The Rise of Agentic AI:** The industry has shifted toward agentic systems capable of orchestrating multi-step workflows—such as research, document drafting, and task management—across various applications"
+                "startIndex": 404,
+                "endIndex": 558,
+                "text": "This is driven by the massive buildout of AI data center capacity, which is being described as one of the largest infrastructure projects in human history"
               },
               "groundingChunkIndices": [
+                0
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 560,
+                "endIndex": 793,
+                "text": "*   **Infrastructure Interdependence:** Research from Swiss Re highlights that this rapid expansion is creating new \"accumulation risks\" for insurers, as data centers, power grids, and supply chains become increasingly interdependent"
+              },
+              "groundingChunkIndices": [
+                1
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 796,
+                "endIndex": 1072,
+                "text": "### **Key Trends: Agentic AI**\n*   **The Shift to Agents:** The industry has moved decisively from simple generative chat interfaces toward **\"agentic AI\"**—systems capable of performing multi-step tasks across different software applications with minimal human intervention"
+              },
+              "groundingChunkIndices": [
+                2,
                 3,
-                1
+                4
               ]
             },
             {
               "segment": {
-                "startIndex": 479,
-                "endIndex": 560,
-                "text": "These agents are increasingly becoming the standard unit of value for enterprises"
+                "startIndex": 1074,
+                "endIndex": 1319,
+                "text": "*   **Enterprise Adoption:** While 79% of enterprises have adopted AI agents in some form, only 11% are running them in full production, reflecting a cautious \"human-in-the-loop\" approach for high-stakes workflows like legal, pricing, and hiring"
               },
               "groundingChunkIndices": [
-                4,
-                1
+                3
               ]
             },
             {
               "segment": {
-                "startIndex": 562,
-                "endIndex": 878,
-                "text": "*   **Apple Intelligence & Siri AI:** Apple released a significant update to its AI ecosystem on September 14, 2026, introducing \"Siri AI.\" This next-generation assistant features improved personal context understanding, world knowledge, and systemwide app actions, integrated across Apple’s 2027 software releases"
+                "startIndex": 1433,
+                "endIndex": 1555,
+                "text": "Meta CEO Mark Zuckerberg revealed that the company delayed its \"Muse\" AI tool for months to prioritize safety and security"
               },
               "groundingChunkIndices": [
                 5
@@ -152,9 +153,9 @@
             },
             {
               "segment": {
-                "startIndex": 880,
-                "endIndex": 1154,
-                "text": "*   **Cybersecurity & Frontier Models:** \n    *   **OpenAI's \"Astra\" Model:** OpenAI has classified its new \"GPT-6 Astra\" model as reaching a \"Critical\" level under its Preparedness Framework, citing its ability to independently identify and exploit software vulnerabilities"
+                "startIndex": 1557,
+                "endIndex": 1704,
+                "text": "Meanwhile, internal warnings from researchers at companies like Anthropic continue to fuel public discourse on whether development should be slowed"
               },
               "groundingChunkIndices": [
                 6
@@ -162,30 +163,29 @@
             },
             {
               "segment": {
-                "startIndex": 1161,
-                "endIndex": 1369,
-                "text": "*   **Defense Initiatives:** In response to rising threats, OpenAI also announced a $1 billion \"Daybreak for Frontline Defenders\" initiative to subsidize AI-assisted security tools for critical infrastructure"
+                "startIndex": 1706,
+                "endIndex": 1939,
+                "text": "*   **NYC Council Hearing:** The New York City Council has scheduled a rare \"Committee of the Whole\" hearing for October 5 to investigate the risks of advanced AI, with invitations sent to leaders from OpenAI and Anthropic to testify"
               },
               "groundingChunkIndices": [
-                6
+                7
               ]
             },
             {
               "segment": {
-                "startIndex": 1375,
-                "endIndex": 1689,
-                "text": "*   **Anthropic’s Safety Report:** Anthropic released a report in September detailing efforts to detect and counter the misuse of its models in cyber and influence operations, highlighting that while some actors attempt to use AI for exploit research, the company continues to implement and strengthen safeguards"
+                "startIndex": 1941,
+                "endIndex": 2091,
+                "text": "*   **Security Vulnerabilities:** Security remains a major concern following reports of new vulnerabilities in AI-coding tools, such as CVE-2026-57586"
               },
               "groundingChunkIndices": [
-                7,
                 8
               ]
             },
             {
               "segment": {
-                "startIndex": 1841,
-                "endIndex": 2103,
-                "text": "Anthropic CEO Dario Amodei recently warned about the potential for AI swarms to pose massive internet-scale risks, a claim that has sparked skepticism and intense discussion among experts regarding the feasibility of such scenarios and the responsibility of labs"
+                "startIndex": 1941,
+                "endIndex": 2241,
+                "text": "*   **Security Vulnerabilities:** Security remains a major concern following reports of new vulnerabilities in AI-coding tools, such as CVE-2026-57586, and incidents involving hijacked AI coding sessions where attackers deployed malware (e.g., the \"Shai-Hulud\" campaign) across corporate repositories"
               },
               "groundingChunkIndices": [
                 9
@@ -193,52 +193,12 @@
             },
             {
               "segment": {
-                "startIndex": 2109,
-                "endIndex": 2236,
-                "text": "*   International bodies, including the UN, are increasingly calling for more rigorous regulation to mitigate existential risks"
+                "startIndex": 2244,
+                "endIndex": 2531,
+                "text": "### **Scientific & Practical Applications**\n*   **Medical Innovation:** Researchers at MIT have developed a new patient-specific AI technique called **\"xvr,\"** designed to make minimally invasive surgeries (such as neurosurgery and orthopedics) more precise by improving X-ray navigation"
               },
               "groundingChunkIndices": [
                 10
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 2238,
-                "endIndex": 2358,
-                "text": "OpenAI has publicly pushed for mandatory national AI safety requirements and highlighted the need for industry standards"
-              },
-              "groundingChunkIndices": [
-                11
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 2360,
-                "endIndex": 2535,
-                "text": "*   **Business & Infrastructure:**\n    *   **No IPO for OpenAI:** Sam Altman confirmed that OpenAI will not go public in 2026, citing a need to focus on safety and development"
-              },
-              "groundingChunkIndices": [
-                12
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 2541,
-                "endIndex": 2795,
-                "text": "*   **AI Infrastructure Growth:** The AI Infra Summit held in mid-September highlighted massive growth in AI-specific hardware, with NVIDIA showcasing advancements in AI \"factory\" efficiency and collaborations with partners like Amazon’s Annapurna Labs"
-              },
-              "groundingChunkIndices": [
-                13
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 2802,
-                "endIndex": 3053,
-                "text": "*   **Data Privacy:** A recent report revealed that OpenAI utilizes human contractors to review private ChatGPT conversations for training and safety purposes, reigniting discussions around privacy and the scale of human intervention in AI development"
-              },
-              "groundingChunkIndices": [
-                12
               ]
             }
           ]
@@ -246,13 +206,13 @@
       }
     ],
     "usageMetadata": {
-      "promptTokenCount": 72,
-      "candidatesTokenCount": 720,
-      "totalTokenCount": 792
+      "promptTokenCount": 70,
+      "candidatesTokenCount": 611,
+      "totalTokenCount": 681
     },
     "modelVersion": "gemini-3.1-flash-lite",
-    "responseId": "_u6pasWAPOCE0-kPpbfq2QE"
+    "responseId": "Mc6qavTkGoDrrfcP7OrP6Qc"
   },
-  "traceId": "d2102c2782fe20ab",
+  "traceId": "36317f192e31ec33",
   "metadata": {}
 }
