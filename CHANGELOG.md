@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.12.0...v0.13.0) (2026-09-17)
+
+
+### Features
+
+* **compatibility:** verify wire compatibility with agy CLI 1.2.5 ([#15](https://github.com/iamxeph/pi-provider-antigravity/issues/15)) ([5f3f14f](https://github.com/iamxeph/pi-provider-antigravity/commit/5f3f14fa7c7be2643510c96fd6bf7cb15ff519f0))
+
 ## [0.12.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.11.0...v0.12.0) (2026-09-16)
 
 
