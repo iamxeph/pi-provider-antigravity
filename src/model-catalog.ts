@@ -1,19 +1,96 @@
 import type { Model, RefreshModelsContext } from "@earendil-works/pi-ai";
 import { resolveCredentials, type AntigravityCredentials } from "./auth.ts";
 import { DEFAULT_ENDPOINT, postAntigravityJson, PROVIDER_ID } from "./protocol.ts";
-import {
-  ALL_TIER_SUFFIXES,
-  CANONICAL_TIER_SUFFIXES,
-  type CanonicalTier,
-  classifyModelFamily,
-  extractBaseModelId,
-  SPECIAL_TIER_SUFFIXES,
-  TIER_ALIASES,
-  tierCandidateOrder,
-  tierSpellings,
-} from "./models.ts";
+import { classifyModelFamily } from "./model-identity.ts";
 
 export const PRIVATE_SNAPSHOT_KEY = "pi-provider-antigravity";
+
+type CanonicalTier = "low" | "medium" | "high";
+
+/**
+ * Canonical Tier Suffix: The wire suffix that mirrors the user-requested thinking
+ * effort by name (-low, -medium, -high), attempted first when resolving a Runtime Model ID.
+ */
+const CANONICAL_TIER_SUFFIXES: Record<CanonicalTier, string> = Object.freeze({
+  low: "-low",
+  medium: "-medium",
+  high: "-high",
+});
+
+/**
+ * Tier Alias: Alternative wire spellings representing the same thinking effort tier
+ * (-thinking or -agent for high, -extra-low for low, or an unsuffixed base identifier
+ * for the default tier), resolved when the canonical suffix is absent.
+ */
+const TIER_ALIASES: Record<CanonicalTier, readonly string[]> = Object.freeze({
+  low: Object.freeze(["-extra-low"]),
+  medium: Object.freeze([]),
+  high: Object.freeze(["-thinking", "-agent"]),
+});
+
+/**
+ * Special suffixes in the catalog that designate non-effort variant types (e.g. server-directed
+ * dynamic thinking selection). Stripped for base model grouping and recognized as runtime IDs,
+ * but not selectable as a user thinking effort tier.
+ */
+const SPECIAL_TIER_SUFFIXES: readonly string[] = Object.freeze(["-tiered"]);
+
+/**
+ * Union of all known model ID tier suffixes (canonical, aliases, and special tokens).
+ */
+const ALL_TIER_SUFFIXES: readonly string[] = Object.freeze([
+  ...new Set([
+    ...Object.values(CANONICAL_TIER_SUFFIXES),
+    ...Object.values(TIER_ALIASES).flat(),
+    ...SPECIAL_TIER_SUFFIXES,
+  ]),
+]);
+
+/**
+ * Strips any known tier suffix from a model ID for grouping.
+ */
+const TIER_SUFFIX_PATTERN = new RegExp(
+  `-(?:${ALL_TIER_SUFFIXES.map((s) => s.replace(/^-/, "")).join("|")})$`,
+);
+
+function tierSpellings(tier: CanonicalTier): readonly string[] {
+  return [CANONICAL_TIER_SUFFIXES[tier], ...TIER_ALIASES[tier]];
+}
+
+function extractBaseModelId(runtimeId: string): string {
+  if (runtimeId === "gemini-pro-agent") return "gemini-3.1-pro";
+  if (runtimeId.startsWith("gemini-3.1-pro-")) return "gemini-3.1-pro";
+
+  return runtimeId.replace(TIER_SUFFIX_PATTERN, "");
+}
+
+/**
+ * Ordered candidate suffixes attempted when resolving a Runtime Model ID for an effort.
+ * Canonical suffix comes first, followed by fallbacks.
+ */
+const TIER_FALLBACKS: Record<string, readonly string[]> = Object.freeze({
+  minimal: Object.freeze(["-low", "-extra-low", ""]),
+  low: Object.freeze(["-extra-low", ""]),
+  medium: Object.freeze(["", "-high"]), // Gemini 3.1 Pro lists no -medium: up to high, never down
+  high: Object.freeze(["-thinking", "-agent", ""]), // Claude's high tier is -thinking
+  xhigh: Object.freeze(["-high", "-thinking", "-agent", ""]),
+  max: Object.freeze(["-high", "-thinking", "-agent", ""]),
+});
+
+const DEFAULT_TIER_ORDER: readonly string[] = Object.freeze([
+  CANONICAL_TIER_SUFFIXES.high,
+  ...TIER_ALIASES.high,
+  "",
+]);
+
+function tierCandidateOrder(effort?: string): readonly string[] {
+  if (!effort) return DEFAULT_TIER_ORDER;
+  const canonical = effort in CANONICAL_TIER_SUFFIXES
+    ? [CANONICAL_TIER_SUFFIXES[effort as CanonicalTier]]
+    : [`-${effort}`];
+  const fallbacks = TIER_FALLBACKS[effort] ?? DEFAULT_TIER_ORDER;
+  return [...new Set([...canonical, ...fallbacks])];
+}
 
 type StoreEntry = NonNullable<RefreshModelsContext["stored"]>;
 

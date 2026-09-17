@@ -3,17 +3,9 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { newestCapture } from "./fixtures.mjs";
 import {
-  ALL_TIER_SUFFIXES,
-  CANONICAL_TIER_SUFFIXES,
   classifyModelFamily,
-  extractBaseModelId,
   isCompatibleFamily,
-  SPECIAL_TIER_SUFFIXES,
-  TIER_ALIASES,
-  TIER_FALLBACKS,
-  tierCandidateOrder,
-  tierSpellings,
-} from "../src/models.ts";
+} from "../src/model-identity.ts";
 import {
   createModelCatalog,
   PRIVATE_SNAPSHOT_KEY,
@@ -309,46 +301,43 @@ test("Seam 3: synthesized models hide effort levels the snapshot has no variant 
   }
 });
 
-test("Seam 3: unified tier vocabulary enforces canonical resolution order and picker invariants", () => {
-  // 1. All tier suffixes union completeness
-  for (const suffix of Object.values(CANONICAL_TIER_SUFFIXES)) {
-    assert.ok(ALL_TIER_SUFFIXES.includes(suffix));
-  }
-  for (const suffixes of Object.values(TIER_ALIASES)) {
-    for (const suffix of suffixes) {
-      assert.ok(ALL_TIER_SUFFIXES.includes(suffix));
-    }
-  }
-  for (const suffix of SPECIAL_TIER_SUFFIXES) {
-    assert.ok(ALL_TIER_SUFFIXES.includes(suffix));
-  }
+test("Seam 3: catalog resolves canonical tier order and preserves picker invariants", () => {
+  const catalog = createModelCatalog();
+  catalog.record({
+    models: {
+      "model-a-low": { model: "model_a_low" },
+      "model-a-extra-low": { model: "model_a_extra_low" },
+      "model-a-medium": { model: "model_a_medium" },
+      "model-a-high": { model: "model_a_high" },
+      "model-a-thinking": { model: "model_a_thinking" },
+      "model-a-tiered": { model: "model_a_tiered" },
+    },
+  });
 
-  // 2. Base ID extraction strips all recognized suffixes
-  for (const suffix of ALL_TIER_SUFFIXES) {
-    assert.equal(extractBaseModelId(`gemini-model${suffix}`), "gemini-model");
-  }
+  // 1. Canonical suffix is resolved when available
+  assert.equal(catalog.resolvePlan("model-a", "low").runtimeModelId, "model-a-low");
+  assert.equal(catalog.resolvePlan("model-a", "medium").runtimeModelId, "model-a-medium");
+  assert.equal(catalog.resolvePlan("model-a", "high").runtimeModelId, "model-a-high");
 
-  // 3. Canonical suffixes are attempted first
-  for (const [tier, canonicalSuffix] of Object.entries(CANONICAL_TIER_SUFFIXES)) {
-    const order = tierCandidateOrder(tier);
-    assert.equal(order[0], canonicalSuffix, `Canonical suffix must be first for ${tier}`);
-  }
+  // 2. Alias fallback is resolved when canonical suffix is absent
+  const aliasCatalog = createModelCatalog();
+  aliasCatalog.record({
+    models: {
+      "model-b-extra-low": { model: "model_b_extra_low" },
+      "model-b-thinking": { model: "model_b_thinking" },
+    },
+  });
+  assert.equal(aliasCatalog.resolvePlan("model-b", "low").runtimeModelId, "model-b-extra-low");
+  assert.equal(aliasCatalog.resolvePlan("model-b", "high").runtimeModelId, "model-b-thinking");
 
-  // 4. Invariant: every advertised tier spelling is tested before cross-tier fallbacks
-  for (const tier of ["low", "medium", "high"]) {
-    const spellings = tierSpellings(tier);
-    const order = tierCandidateOrder(tier);
-    for (const spelling of spellings) {
-      assert.ok(order.includes(spelling), `${spelling} must be in resolution order for ${tier}`);
-    }
-  }
-
-  // 5. Fallback entries all belong to known suffixes or empty string
-  for (const fallbacks of Object.values(TIER_FALLBACKS)) {
-    for (const fb of fallbacks) {
-      assert.ok(fb === "" || ALL_TIER_SUFFIXES.includes(fb), `unknown fallback suffix: ${fb}`);
-    }
-  }
+  // 3. Exact runtime ID lookup with special suffix (-tiered)
+  const tieredCatalog = createModelCatalog();
+  tieredCatalog.record({
+    models: {
+      "model-c-tiered": { model: "model_c_tiered" },
+    },
+  });
+  assert.equal(tieredCatalog.resolvePlan("model-c-tiered").runtimeModelId, "model-c-tiered");
 });
 
 test("Seam 3: resolveModelPlan dynamically resolves tiers for new models", () => {
