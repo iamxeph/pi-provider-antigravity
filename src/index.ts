@@ -3,7 +3,7 @@ import { Type } from "@earendil-works/pi-ai";
 import { loginAntigravity, refreshAntigravityToken, getApiKey, resolveCredentials } from "./auth.ts";
 import { DEFAULT_ENDPOINT, PROVIDER_ID } from "./protocol.ts";
 import { createModelCatalog } from "./model-catalog.ts";
-import { QuotaStatusCoordinator } from "./quota-status.ts";
+import { QuotaStatusCoordinator, registerQuotaSettings } from "./quota-status.ts";
 import { streamAntigravity } from "./stream.ts";
 import { completeSubcommands, runAntigravitySubcommand } from "./commands.ts";
 import { performWebSearch } from "./search.ts";
@@ -13,6 +13,7 @@ export const PROVIDER_NAME = "Antigravity";
 
 export default function (pi: ExtensionAPI): void {
   const quotaStatus = new QuotaStatusCoordinator();
+  registerQuotaSettings(quotaStatus);
   // The one deep Model Catalog seam for this extension: handles Pi refreshModels,
   // Model Plan resolution for streaming, and CLI formatting for subcommands.
   const catalog = createModelCatalog();
