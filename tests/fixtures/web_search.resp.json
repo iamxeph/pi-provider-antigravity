@@ -215,8 +215,8 @@
       "totalTokenCount": 675
     },
     "modelVersion": "gemini-3.1-flash-lite",
-    "responseId": "DhSsaqDnJrnarfcPw6ujOA"
+    "responseId": "mock-response-id-0004"
   },
-  "traceId": "c2c9de6a3c190e8c",
+  "traceId": "0000000000000004",
   "metadata": {}
 }
