@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { ModelPlan } from "./model-catalog.ts";
-import { classifyModelFamily, isCompatibleFamily } from "./models.ts";
+import { classifyModelFamily, isCompatibleFamily } from "./model-identity.ts";
 import { PROVIDER_ID } from "./protocol.ts";
 
 export interface BuildRequestBodyParams {

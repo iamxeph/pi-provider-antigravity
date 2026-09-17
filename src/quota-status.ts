@@ -1,6 +1,6 @@
 import type { ExtensionCommandContext, ExtensionContext, Theme } from "@earendil-works/pi-coding-agent";
 import { resolveCredentials } from "./auth.ts";
-import { classifyModelFamily } from "./models.ts";
+import { classifyModelFamily } from "./model-identity.ts";
 import { postAntigravityJson, PROVIDER_ID } from "./protocol.ts";
 import {
   defaultConfigFile,
