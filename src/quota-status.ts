@@ -1,22 +1,45 @@
-import type { ExtensionContext, Theme } from "@earendil-works/pi-coding-agent";
+import type { ExtensionCommandContext, ExtensionContext, Theme } from "@earendil-works/pi-coding-agent";
 import { resolveCredentials } from "./auth.ts";
 import { classifyModelFamily } from "./models.ts";
 import { postAntigravityJson, PROVIDER_ID } from "./protocol.ts";
 import {
   defaultConfigFile,
-  fileQuotaStatusStore,
-  type QuotaFooterMode,
-  FOOTER_MODE_NOTES,
-  FOOTER_MODE_OPTIONS,
+  loadProviderConfig,
+  loadSubsystemState,
+  saveSubsystemState,
+  registerSettingField,
+  type ProviderFileConfig,
+  type SettingsFieldDef,
 } from "./config.ts";
-
-export { FOOTER_MODE_OPTIONS };
 
 /**
  * Quota Status module (deep, ports & adapters): Quota Pool wire parsing, urgent-window
  * math, ratio self-calibration, throttle, cache, and status footer slot painting.
  * Persists calibration state through the Provider Config Seam (states.quota).
  */
+
+export type QuotaFooterMode = "off" | "smart" | "all";
+
+export const FOOTER_MODE_NOTES: Readonly<Record<string, string>> = Object.freeze({
+  smart:
+    "Picks whichever window runs out first (5h or weekly), weighting the weekly pool by a ratio learned from your usage",
+  all: "Lists every window of the pool backing the current model (5h or weekly)",
+});
+
+export const FOOTER_MODE_OPTIONS: readonly QuotaFooterMode[] = Object.freeze([
+  "off",
+  "smart",
+  "all",
+]);
+
+export function normalizeFooterMode(value: unknown): QuotaFooterMode | undefined {
+  const v = typeof value === "string" ? value.trim().toLowerCase() : "";
+  return FOOTER_MODE_OPTIONS.includes(v as QuotaFooterMode) ? (v as QuotaFooterMode) : undefined;
+}
+
+export function resolveFooterMode(config?: ProviderFileConfig): QuotaFooterMode {
+  return normalizeFooterMode(config?.settings?.quotaFooter) ?? "off";
+}
 
 export interface QuotaBucket {
   bucketId: string;
@@ -324,6 +347,20 @@ export function colorizeQuotaFooterBoth(
     .join(sep);
 }
 
+export function previewQuotaFooterText(
+  coord: QuotaStatusCoordinator | undefined,
+  modelId: string | undefined,
+  mode: string,
+  style?: QuotaColorStyle,
+): string | undefined {
+  if (!coord) return undefined;
+  const normalized = normalizeFooterMode(mode);
+  if (!normalized || normalized === "off") return undefined;
+  const { colored } = coord.renderFooter(modelId, normalized, style);
+  if (!colored) return undefined;
+  return ANSI_FG_RESET + colored;
+}
+
 // Namespaced by repo so no other extension (e.g. a personal-config "quota"
 // slot) can overwrite this footer slot, and vice versa.
 export const QUOTA_STATUS_KEY = "pi-provider-antigravity-footer-usage";
@@ -351,6 +388,47 @@ export interface QuotaStatusStore {
     previousObservation: Record<string, WindowFractionPair>;
     updatedAt: number;
   }) => boolean;
+}
+
+// Production QuotaStatusStore backed by the provider file. Reads per call:
+// tiny file, and edits apply on the next refresh without a restart.
+export function fileQuotaStatusStore(file = defaultConfigFile()): QuotaStatusStore {
+  return {
+    loadMode: () => resolveFooterMode(loadProviderConfig(file)),
+    loadQuotaState: () => loadSubsystemState<QuotaState>("quota", file),
+    saveQuotaState: (state) => saveSubsystemState("quota", state, file),
+  };
+}
+
+export function createQuotaFooterField(
+  quotaStatus: QuotaStatusCoordinator,
+): SettingsFieldDef {
+  return {
+    key: "quotaFooter",
+    label: "Quota footer",
+    description: "Show remaining quota in Pi's status footer",
+    options: FOOTER_MODE_OPTIONS,
+    defaultValue: "off",
+    optionNotes: FOOTER_MODE_NOTES,
+    renderPreview: (mode, ctx, theme) => {
+      if (mode === "off") return "hidden";
+      const activeTheme = theme || (ctx.ui as { theme?: Theme })?.theme;
+      return previewQuotaFooterText(quotaStatus, ctx.model?.id, mode, activeTheme);
+    },
+    prepare: async (ctx) => {
+      await quotaStatus.ensurePreview(ctx);
+    },
+    onChange: async (ctx, _value) => {
+      if (quotaStatus.mode() !== "off") {
+        await quotaStatus.refresh(ctx, { ignoreMode: true });
+      }
+      quotaStatus.paint(ctx);
+    },
+  };
+}
+
+export function registerQuotaSettings(quotaStatus: QuotaStatusCoordinator): void {
+  registerSettingField(createQuotaFooterField(quotaStatus));
 }
 
 export interface RefreshOptions {

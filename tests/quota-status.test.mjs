@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { newestCapture } from "./fixtures.mjs";
 import {
   buildQuotaFooter,
@@ -11,13 +13,19 @@ import {
   DEFAULT_WEEKLY_TO_5H_RATIO,
   extractWindowFractionPairs,
   FOOTER_MODES,
+  FOOTER_MODE_NOTES,
   FOOTER_MODE_OPTIONS,
   formatQuotaSummary,
   formatQuotaWindowPart,
+  normalizeFooterMode,
+  resolveFooterMode,
   parseQuotaSummary,
   selectQuotaGroup,
   QUOTA_STATUS_KEY,
   QuotaStatusCoordinator,
+  fileQuotaStatusStore,
+  previewQuotaFooterText,
+  createQuotaFooterField,
   isAntigravityModel,
   paintQuotaStatus,
 } from "../src/quota-status.ts";
@@ -723,3 +731,84 @@ test("README documents the footer status key verbatim", () => {
     `README must document the footer slot key "${QUOTA_STATUS_KEY}"`,
   );
 });
+
+test("Footer mode: settings.quotaFooter or off", () => {
+  assert.equal(resolveFooterMode(undefined), "off");
+  assert.equal(resolveFooterMode({}), "off");
+  assert.equal(resolveFooterMode({ settings: { quotaFooter: " ALL " } }), "all");
+  assert.equal(resolveFooterMode({ settings: { quotaFooter: "smart" } }), "smart");
+  assert.equal(resolveFooterMode({ settings: { quotaFooter: "everything" } }), "off");
+  assert.equal(resolveFooterMode({ settings: {} }), "off");
+  assert.equal(normalizeFooterMode(42), undefined);
+});
+
+test("Footer mode table: createQuotaFooterField derives options from FOOTER_MODES and notes from FOOTER_MODE_NOTES", () => {
+  const coord = new QuotaStatusCoordinator(memStore("smart").store);
+  const quotaField = createQuotaFooterField(coord);
+  assert.ok(quotaField);
+  assert.deepEqual(quotaField.options, Object.keys(FOOTER_MODES));
+  assert.deepEqual(quotaField.optionNotes, FOOTER_MODE_NOTES);
+});
+
+test("fileQuotaStatusStore: state merges without clobbering", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agy-store-"));
+  const file = path.join(dir, "pi-provider-antigravity.json");
+  fs.writeFileSync(file, JSON.stringify({ settings: { quotaFooter: "all" }, states: { other: { x: 1 } } }));
+  const store = fileQuotaStatusStore(file);
+
+  assert.equal(store.loadMode(), "all");
+  assert.equal(store.loadQuotaState(), undefined);
+  assert.equal(store.saveQuotaState({ weeklyTo5hRatio: 4, previousObservation: {}, updatedAt: 1 }), true);
+
+  const saved = JSON.parse(fs.readFileSync(file, "utf-8"));
+  assert.equal(saved.settings.quotaFooter, "all"); // settings preserved
+  assert.deepEqual(saved.states.other, { x: 1 }); // sibling entries preserved
+  assert.equal(saved.states.quota.weeklyTo5hRatio, 4);
+});
+
+test("fileQuotaStatusStore: garbage file is never clobbered", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agy-store-"));
+  const file = path.join(dir, "pi-provider-antigravity.json");
+  fs.writeFileSync(file, "{oops");
+  const store = fileQuotaStatusStore(file);
+
+  assert.equal(store.loadMode(), "off");
+  assert.equal(store.loadQuotaState(), undefined);
+  assert.equal(store.saveQuotaState({ weeklyTo5hRatio: 4, previousObservation: {}, updatedAt: 1 }), false);
+  assert.equal(fs.readFileSync(file, "utf-8"), "{oops"); // untouched
+});
+
+test("Preview renders the footer sample per mode", async () => {
+  const lowQuotaJson = structuredClone(quotaJson);
+  const setBucket = (group, bucketId, fraction) => {
+    lowQuotaJson.groups
+      .find((g) => g.displayName === group)
+      .buckets.find((b) => b.bucketId === bucketId).remainingFraction = fraction;
+  };
+  setBucket("Gemini Models", "gemini-5h", 0.22);
+  setBucket("Gemini Models", "gemini-weekly", 0.87);
+  setBucket("Claude and GPT models", "3p-5h", 0.84);
+
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    assert.match(String(url), /retrieveUserQuotaSummary/);
+    return { ok: true, json: async () => lowQuotaJson };
+  };
+  try {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agy-set-"));
+    const file = path.join(dir, "pi-provider-antigravity.json");
+    fs.writeFileSync(file, JSON.stringify({ settings: { quotaFooter: "smart" } }));
+    const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(file));
+    await coord.ensurePreview(makeCtx([]));
+    assert.match(previewQuotaFooterText(coord, "gemini-3-flash", "smart"), /5h 22%/);
+    assert.match(previewQuotaFooterText(coord, "gemini-3-flash", "all"), /Wk 87%/);
+    assert.match(previewQuotaFooterText(coord, "claude-sonnet-4-6", "smart"), /5h 84%/);
+    assert.equal(previewQuotaFooterText(coord, "gemini-3-flash", "off"), undefined);
+    assert.equal(previewQuotaFooterText(undefined, "gemini-3-flash", "smart"), undefined);
+    const fresh = new QuotaStatusCoordinator(fileQuotaStatusStore(file));
+    assert.equal(previewQuotaFooterText(fresh, "gemini-3-flash", "smart"), undefined);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+

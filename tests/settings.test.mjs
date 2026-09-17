@@ -8,28 +8,28 @@ import {
   applySettingValue,
   buildSettingsItems,
   defaultConfigFile,
-  FOOTER_MODE_NOTES,
   loadProviderConfig,
-  normalizeFooterMode,
-  previewQuotaFooterText,
-  resolveFooterMode,
   saveSettingValue,
-  SETTINGS_FIELDS,
-  fileQuotaStatusStore,
+  loadSubsystemState,
+  saveSubsystemState,
+  SettingsRegistry,
+  defaultSettingsRegistry,
+  registerSettingField,
+  getRegisteredSettingFields,
 } from "../src/config.ts";
 import {
   FOOTER_MODES,
+  FOOTER_MODE_NOTES,
+  FOOTER_MODE_OPTIONS,
+  normalizeFooterMode,
+  resolveFooterMode,
   QuotaStatusCoordinator,
+  fileQuotaStatusStore,
+  createQuotaFooterField,
+  registerQuotaSettings,
 } from "../src/quota-status.ts";
 import { runAntigravitySubcommand } from "../src/commands.ts";
 import { createCatalogStore } from "../src/model-catalog.ts";
-
-function makeConf(settings) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agy-set-"));
-  const file = path.join(dir, "pi-provider-antigravity.json");
-  fs.writeFileSync(file, JSON.stringify(settings === undefined ? {} : { settings }));
-  return file;
-}
 
 function stubFetchRouter(payload) {
   return async (url) => {
@@ -75,21 +75,27 @@ function makeCtx(outputs, { authed = true } = {}) {
 const factories = [];
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
-test("Footer mode: settings.quotaFooter or off", () => {
-  assert.equal(resolveFooterMode(undefined), "off");
-  assert.equal(resolveFooterMode({}), "off");
-  assert.equal(resolveFooterMode({ settings: { quotaFooter: " ALL " } }), "all");
-  assert.equal(resolveFooterMode({ settings: { quotaFooter: "smart" } }), "smart");
-  assert.equal(resolveFooterMode({ settings: { quotaFooter: "everything" } }), "off");
-  assert.equal(resolveFooterMode({ settings: {} }), "off");
-  assert.equal(normalizeFooterMode(42), undefined);
-});
+test("SettingsRegistry: registers, retrieves, and clears fields", () => {
+  const registry = new SettingsRegistry();
+  assert.equal(registry.getFields().length, 0);
 
-test("Footer mode table: SETTINGS_FIELDS derives options from FOOTER_MODES and notes from FOOTER_MODE_NOTES", () => {
-  const quotaField = SETTINGS_FIELDS.find((f) => f.key === "quotaFooter");
-  assert.ok(quotaField);
-  assert.deepEqual(quotaField.options, Object.keys(FOOTER_MODES));
-  assert.deepEqual(quotaField.optionNotes, FOOTER_MODE_NOTES);
+  const field1 = { key: "foo", label: "Foo", options: ["1", "2"] };
+  registry.register(field1);
+  assert.equal(registry.getFields().length, 1);
+  assert.equal(registry.getFields()[0].key, "foo");
+
+  // Re-register replaces
+  const field1Updated = { key: "foo", label: "Foo Updated", options: ["1", "2"] };
+  registry.register(field1Updated);
+  assert.equal(registry.getFields().length, 1);
+  assert.equal(registry.getFields()[0].label, "Foo Updated");
+
+  registry.unregister("foo");
+  assert.equal(registry.getFields().length, 0);
+
+  registry.register(field1);
+  registry.clear();
+  assert.equal(registry.getFields().length, 0);
 });
 
 test("File config: default path mirrors Pi, garbage is unconfigured", () => {
@@ -108,32 +114,17 @@ test("File config: default path mirrors Pi, garbage is unconfigured", () => {
   assert.equal(loadProviderConfig(file), undefined);
 });
 
-test("fileQuotaStatusStore: state merges without clobbering", () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agy-store-"));
+test("saveSubsystemState: state merges without clobbering", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agy-subsystem-"));
   const file = path.join(dir, "pi-provider-antigravity.json");
   fs.writeFileSync(file, JSON.stringify({ settings: { quotaFooter: "all" }, states: { other: { x: 1 } } }));
-  const store = fileQuotaStatusStore(file);
 
-  assert.equal(store.loadMode(), "all");
-  assert.equal(store.loadQuotaState(), undefined);
-  assert.equal(store.saveQuotaState({ weeklyTo5hRatio: 4, previousObservation: {}, updatedAt: 1 }), true);
+  assert.equal(saveSubsystemState("quota", { weeklyTo5hRatio: 4 }, file), true);
 
   const saved = JSON.parse(fs.readFileSync(file, "utf-8"));
   assert.equal(saved.settings.quotaFooter, "all"); // settings preserved
   assert.deepEqual(saved.states.other, { x: 1 }); // sibling entries preserved
   assert.equal(saved.states.quota.weeklyTo5hRatio, 4);
-});
-
-test("fileQuotaStatusStore: garbage file is never clobbered", () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agy-store-"));
-  const file = path.join(dir, "pi-provider-antigravity.json");
-  fs.writeFileSync(file, "{oops");
-  const store = fileQuotaStatusStore(file);
-
-  assert.equal(store.loadMode(), "off");
-  assert.equal(store.loadQuotaState(), undefined);
-  assert.equal(store.saveQuotaState({ weeklyTo5hRatio: 4, previousObservation: {}, updatedAt: 1 }), false);
-  assert.equal(fs.readFileSync(file, "utf-8"), "{oops"); // untouched
 });
 
 // The sibling of the quota writer's guard: both writers go through the same
@@ -145,7 +136,9 @@ test("saveSettingValue: garbage file is never clobbered and reports failure", ()
   const handEdited = `{\n  // my note\n  "settings": { "quotaFooter": "all" },\n  "states": { "quota": { "weeklyTo5hRatio": 6.4 } }\n}\n`;
   fs.writeFileSync(file, handEdited);
 
-  assert.equal(saveSettingValue(SETTINGS_FIELDS[0], "off", file), false);
+  const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(file));
+  const quotaField = createQuotaFooterField(coord);
+  assert.equal(saveSettingValue(quotaField, "off", file), false);
   assert.equal(fs.readFileSync(file, "utf-8"), handEdited); // untouched
 });
 
@@ -155,14 +148,16 @@ test("File config: settings and quota state survive each other's writes", () => 
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agy-both-"));
   const file = path.join(dir, "pi-provider-antigravity.json");
   const store = fileQuotaStatusStore(file);
+  const coord = new QuotaStatusCoordinator(store);
+  const quotaField = createQuotaFooterField(coord);
   const quotaState = { weeklyTo5hRatio: 4, previousObservation: {}, updatedAt: 1 };
 
-  assert.equal(saveSettingValue(SETTINGS_FIELDS[0], "all", file), true); // creates the file
+  assert.equal(saveSettingValue(quotaField, "all", file), true); // creates the file
   assert.equal(store.saveQuotaState(quotaState), true);
   assert.equal(loadProviderConfig(file).settings.quotaFooter, "all");
   assert.equal(store.loadQuotaState().weeklyTo5hRatio, 4);
 
-  assert.equal(saveSettingValue(SETTINGS_FIELDS[0], "smart", file), true);
+  assert.equal(saveSettingValue(quotaField, "smart", file), true);
   assert.equal(loadProviderConfig(file).settings.quotaFooter, "smart");
   assert.equal(store.loadQuotaState().weeklyTo5hRatio, 4); // quota state kept
 
@@ -181,8 +176,8 @@ test("TUI dialog reports a refused write instead of faking success", async () =>
     fs.writeFileSync(file, "{oops"); // hand-edited into invalid JSON
     const outputs = [];
     factories.length = 0;
-    // No quotaStatus: the preview path would fetch, and this case is about the write.
-    await runAntigravitySubcommand("settings", makeCtx(outputs), undefined, createCatalogStore());
+    const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(file));
+    await runAntigravitySubcommand("settings", makeCtx(outputs), coord, createCatalogStore());
     const list = await factories[0](
       { requestRender() {} },
       { fg: (c, s) => s, bold: (s) => s },
@@ -206,29 +201,13 @@ test("TUI dialog reports a refused write instead of faking success", async () =>
 });
 
 test("Settings items carry current values and options", () => {
-  const items = buildSettingsItems({ settings: { quotaFooter: "all" } });
+  const coord = new QuotaStatusCoordinator(fileQuotaStatusStore());
+  const quotaField = createQuotaFooterField(coord);
+  const items = buildSettingsItems({ settings: { quotaFooter: "all" } }, [quotaField]);
   assert.deepEqual(items, [
     { id: "quotaFooter", label: "Quota footer", description: "Show remaining quota in Pi's status footer", currentValue: "all", values: ["off", "smart", "all"] },
   ]);
-  assert.deepEqual(buildSettingsItems(undefined)[0].currentValue, "off");
-});
-
-test("Preview renders the footer sample per mode", async () => {
-  const realFetch = globalThis.fetch;
-  globalThis.fetch = stubFetchRouter(lowQuotaJson);
-  try {
-    const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(makeConf({ quotaFooter: "smart" })));
-    await coord.ensurePreview(makeCtx([]));
-    assert.match(previewQuotaFooterText(coord, "gemini-3-flash", "smart"), /5h 22%/);
-    assert.match(previewQuotaFooterText(coord, "gemini-3-flash", "all"), /Wk 87%/);
-    assert.match(previewQuotaFooterText(coord, "claude-sonnet-4-6", "smart"), /5h 84%/);
-    assert.equal(previewQuotaFooterText(coord, "gemini-3-flash", "off"), undefined);
-    assert.equal(previewQuotaFooterText(undefined, "gemini-3-flash", "smart"), undefined);
-    const fresh = new QuotaStatusCoordinator(fileQuotaStatusStore(makeConf({ quotaFooter: "smart" })));
-    assert.equal(previewQuotaFooterText(fresh, "gemini-3-flash", "smart"), undefined);
-  } finally {
-    globalThis.fetch = realFetch;
-  }
+  assert.deepEqual(buildSettingsItems(undefined, [quotaField])[0].currentValue, "off");
 });
 
 test("TUI dialog cycles the value with the real SettingsList", async () => {
@@ -353,14 +332,16 @@ test("Settings preview samples quota while another provider's model is selected"
 
 test("Settings rows follow the field definitions", async () => {
   const probe = { key: "probe", label: "Probe", options: ["a", "b"], defaultValue: "a" };
-  const items = buildSettingsItems({ settings: { quotaFooter: "all" } }, [...SETTINGS_FIELDS, probe]);
+  const coord = new QuotaStatusCoordinator(fileQuotaStatusStore());
+  const quotaField = createQuotaFooterField(coord);
+  const items = buildSettingsItems({ settings: { quotaFooter: "all" } }, [quotaField, probe]);
   const text = items.map((i) => `${i.label}: ${i.currentValue}`).join("\n");
   assert.match(text, /Quota footer: all/);
   assert.match(text, /Probe: a/);
 
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agy-agent-"));
   const file = path.join(dir, "pi-provider-antigravity.json");
-  assert.equal(await applySettingValue(probe, "b", file, {}, undefined), true);
+  assert.equal(await applySettingValue(probe, "b", file, {}), true);
   assert.equal(JSON.parse(fs.readFileSync(file, "utf-8")).settings.probe, "b");
 });
 

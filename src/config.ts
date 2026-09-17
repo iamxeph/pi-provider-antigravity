@@ -3,36 +3,16 @@ import * as os from "node:os";
 import * as path from "node:path";
 import type { ExtensionCommandContext, Theme } from "@earendil-works/pi-coding-agent";
 import { SettingsList, type SettingItem, type SettingsListTheme } from "@earendil-works/pi-tui";
-import type { QuotaColorStyle, QuotaStatusCoordinator } from "./quota-status.ts";
 
 export const ANSI_FG_RESET = "\x1b[39m";
 
 export const PROVIDER_CONFIG_FILE = "pi-provider-antigravity.json";
 
 export interface ProviderFileConfig {
-  settings?: { quotaFooter?: unknown; [key: string]: unknown };
+  settings?: { [key: string]: unknown };
   // Runtime state namespaced per subsystem (e.g. states.quota); unknown
   // entries pass through untouched.
   states?: { [name: string]: { [key: string]: unknown } | undefined };
-}
-
-export type QuotaFooterMode = "off" | "smart" | "all";
-
-export const FOOTER_MODE_NOTES: Readonly<Record<string, string>> = Object.freeze({
-  smart:
-    "Picks whichever window runs out first (5h or weekly), weighting the weekly pool by a ratio learned from your usage",
-  all: "Lists every window of the pool backing the current model (5h or weekly)",
-});
-
-export const FOOTER_MODE_OPTIONS: readonly QuotaFooterMode[] = Object.freeze([
-  "off",
-  "smart",
-  "all",
-]);
-
-export function normalizeFooterMode(value: unknown): QuotaFooterMode | undefined {
-  const v = typeof value === "string" ? value.trim().toLowerCase() : "";
-  return FOOTER_MODE_OPTIONS.includes(v as QuotaFooterMode) ? (v as QuotaFooterMode) : undefined;
 }
 
 // Single opt-in file next to Pi's settings.json (NOT settings.json itself —
@@ -113,10 +93,6 @@ export function updateProviderConfig(
   }
 }
 
-export function resolveFooterMode(config?: ProviderFileConfig): QuotaFooterMode {
-  return normalizeFooterMode(config?.settings?.quotaFooter) ?? "off";
-}
-
 /**
  * Loads subsystem state from states[subsystem], e.g. states.quota.
  */
@@ -150,16 +126,6 @@ export function saveSubsystemState<T extends object>(
   });
 }
 
-// Production QuotaStatusStore backed by the provider file. Reads per call:
-// tiny file, and edits apply on the next refresh without a restart.
-export function fileQuotaStatusStore(file = defaultConfigFile()) {
-  return {
-    loadMode: () => resolveFooterMode(loadProviderConfig(file)),
-    loadQuotaState: () => loadSubsystemState<Record<string, unknown>>("quota", file),
-    saveQuotaState: (state: Record<string, unknown>) => saveSubsystemState("quota", state, file),
-  };
-}
-
 export interface SettingsFieldDef {
   key: string;
   label: string;
@@ -167,24 +133,48 @@ export interface SettingsFieldDef {
   options: readonly string[];
   defaultValue?: string;
   optionNotes?: Record<string, string>;
-  onChange?: (ctx: ExtensionCommandContext, quotaStatus?: QuotaStatusCoordinator) => Promise<void>;
+  /** Optional preview hook returning formatted preview text for a chosen value. */
+  renderPreview?: (value: string, ctx: ExtensionCommandContext, theme?: Theme) => string | undefined;
+  /** Optional async hook invoked after a value is saved. */
+  onChange?: (ctx: ExtensionCommandContext, value: string) => Promise<void>;
+  /** Optional async prepare hook called before opening the settings dialog. */
+  prepare?: (ctx: ExtensionCommandContext) => Promise<void>;
 }
 
-export const SETTINGS_FIELDS: readonly SettingsFieldDef[] = Object.freeze([
-  {
-    key: "quotaFooter",
-    label: "Quota footer",
-    description: "Show remaining quota in Pi's status footer",
-    options: FOOTER_MODE_OPTIONS,
-    defaultValue: "off",
-    optionNotes: FOOTER_MODE_NOTES,
-    onChange: async (ctx, quotaStatus) => {
-      if (!quotaStatus) return;
-      if (quotaStatus.mode() !== "off") await quotaStatus.refresh(ctx, { ignoreMode: true });
-      quotaStatus.paint(ctx);
-    },
-  },
-]);
+export class SettingsRegistry {
+  private fields: SettingsFieldDef[] = [];
+
+  register(field: SettingsFieldDef): void {
+    const existingIndex = this.fields.findIndex((f) => f.key === field.key);
+    if (existingIndex >= 0) {
+      this.fields[existingIndex] = field;
+    } else {
+      this.fields.push(field);
+    }
+  }
+
+  unregister(key: string): void {
+    this.fields = this.fields.filter((f) => f.key !== key);
+  }
+
+  getFields(): readonly SettingsFieldDef[] {
+    return [...this.fields];
+  }
+
+  clear(): void {
+    this.fields = [];
+  }
+}
+
+export const defaultSettingsRegistry = new SettingsRegistry();
+
+export function registerSettingField(field: SettingsFieldDef): void {
+  defaultSettingsRegistry.register(field);
+}
+
+export function getRegisteredSettingFields(): readonly SettingsFieldDef[] {
+  return defaultSettingsRegistry.getFields();
+}
 
 export function fieldDisplayValue(
   config: ProviderFileConfig | undefined,
@@ -211,12 +201,11 @@ export async function applySettingValue(
   value: string,
   file: string,
   ctx: ExtensionCommandContext,
-  quotaStatus?: QuotaStatusCoordinator,
 ): Promise<boolean> {
   if (!saveSettingValue(field, value, file)) {
     return false;
   }
-  await field.onChange?.(ctx, quotaStatus);
+  await field.onChange?.(ctx, value);
   return true;
 }
 
@@ -228,23 +217,9 @@ function writeFailedMessage(file: string): string {
   return `Failed to write ${file}. If the file is not valid JSON, fix or delete it.`;
 }
 
-export function previewQuotaFooterText(
-  coord: QuotaStatusCoordinator | undefined,
-  modelId: string | undefined,
-  mode: string,
-  style?: QuotaColorStyle,
-): string | undefined {
-  if (!coord) return undefined;
-  const normalized = normalizeFooterMode(mode);
-  if (!normalized || normalized === "off") return undefined;
-  const { colored } = coord.renderFooter(modelId, normalized, style);
-  if (!colored) return undefined;
-  return ANSI_FG_RESET + colored;
-}
-
 export function buildSettingsItems(
   config: ProviderFileConfig | undefined,
-  fields: readonly SettingsFieldDef[] = SETTINGS_FIELDS,
+  fields: readonly SettingsFieldDef[] = getRegisteredSettingFields(),
 ): SettingItem[] {
   return fields.map((f) => ({
     id: f.key,
@@ -270,33 +245,44 @@ async function settingsListTheme(theme: Theme): Promise<SettingsListTheme> {
   }
 }
 
+function resolveFields(
+  registryOrFields?: SettingsRegistry | readonly SettingsFieldDef[],
+): readonly SettingsFieldDef[] {
+  if (!registryOrFields) return getRegisteredSettingFields();
+  if ("getFields" in registryOrFields && typeof (registryOrFields as any).getFields === "function") {
+    return (registryOrFields as SettingsRegistry).getFields();
+  }
+  return registryOrFields as readonly SettingsFieldDef[];
+}
+
 export async function openSettings(
   ctx: ExtensionCommandContext,
-  quotaStatus?: QuotaStatusCoordinator,
+  registryOrFields?: SettingsRegistry | readonly SettingsFieldDef[],
 ): Promise<void> {
+  const fields = resolveFields(registryOrFields);
   const file = defaultConfigFile();
   if (ctx.mode === "tui" && ctx.hasUI) {
-    await openSettingsDialog(ctx, quotaStatus, file);
+    await openSettingsDialog(ctx, fields, file);
     return;
   }
   const config = loadProviderConfig(file);
   if (!ctx.hasUI) {
     const text =
-      SETTINGS_FIELDS.map((f) => `${f.label}: ${fieldDisplayValue(config, f)}`).join("\n") +
+      fields.map((f) => `${f.label}: ${fieldDisplayValue(config, f)}`).join("\n") +
       `\nEdit ${file} to change.`;
     if (ctx.hasUI) ctx.ui.notify(text, "info");
     else console.log(text);
     return;
   }
-  let field = SETTINGS_FIELDS[0];
+  let field = fields[0];
   if (!field) return;
-  if (SETTINGS_FIELDS.length > 1) {
-    const labels = SETTINGS_FIELDS.map(
+  if (fields.length > 1) {
+    const labels = fields.map(
       (f) => `${f.label} (current: ${fieldDisplayValue(config, f)})`,
     );
     const choice = await ctx.ui.select("Antigravity settings", labels);
     if (!choice) return;
-    const found = SETTINGS_FIELDS[labels.indexOf(choice)];
+    const found = fields[labels.indexOf(choice)];
     if (!found) return;
     field = found;
   }
@@ -305,7 +291,7 @@ export async function openSettings(
     [...field.options],
   );
   if (!picked || !field.options.includes(picked)) return;
-  if (await applySettingValue(field, picked, file, ctx, quotaStatus)) {
+  if (await applySettingValue(field, picked, file, ctx)) {
     ctx.ui.notify(`${field.label} set to ${picked}.`, "info");
   } else {
     ctx.ui.notify(writeFailedMessage(file), "error");
@@ -314,37 +300,38 @@ export async function openSettings(
 
 async function openSettingsDialog(
   ctx: ExtensionCommandContext,
-  quotaStatus: QuotaStatusCoordinator | undefined,
+  fields: readonly SettingsFieldDef[],
   file: string,
 ): Promise<void> {
-  if (quotaStatus) await quotaStatus.ensurePreview(ctx);
+  for (const field of fields) {
+    if (field.prepare) await field.prepare(ctx);
+  }
   await ctx.ui.custom<void>(async (tui, theme, _kb, done) => {
     const config = loadProviderConfig(file);
-    const items = buildSettingsItems(config);
-    const quotaField = SETTINGS_FIELDS.find((f) => f.key === "quotaFooter");
-    const paintPreview = (mode: string) => {
-      const item = items.find((i) => i.id === "quotaFooter");
+    const items = buildSettingsItems(config, fields);
+    const paintPreview = (field: SettingsFieldDef, value: string) => {
+      const item = items.find((i) => i.id === field.key);
       if (!item) return;
-      const base = quotaField?.description ?? "";
-      const sample =
-        mode === "off"
-          ? "hidden"
-          : previewQuotaFooterText(quotaStatus, ctx.model?.id, mode, theme);
+      const base = field.description ?? "";
+      const sample = field.renderPreview?.(value, ctx, theme);
       const head = sample && base ? `${base}: ${sample}` : (sample ?? base);
-      const note = quotaField?.optionNotes?.[mode];
+      const note = field.optionNotes?.[value];
       item.description = note ? `${head}\n${note}` : head;
     };
-    paintPreview(resolveFooterMode(config));
+    for (const field of fields) {
+      const current = fieldDisplayValue(config, field);
+      paintPreview(field, current);
+    }
     const list = new SettingsList(
       items,
       Math.min(items.length, 10),
       await settingsListTheme(theme),
       (id, newValue) => {
-        const field = SETTINGS_FIELDS.find((f) => f.key === id);
+        const field = fields.find((f) => f.key === id);
         if (!field) return;
         list.invalidate();
         tui.requestRender();
-        void applySettingValue(field, newValue, file, ctx, quotaStatus).then((saved) => {
+        void applySettingValue(field, newValue, file, ctx).then((saved) => {
           // A refused write (unreadable file) must not look like a success: the
           // list has already moved to the value it asked for, so put the row back
           // on what the file actually holds before reporting the failure.
@@ -355,7 +342,7 @@ async function openSettingsDialog(
             tui.requestRender();
             return;
           }
-          paintPreview(newValue);
+          paintPreview(field, newValue);
           list.invalidate();
           tui.requestRender();
         });
