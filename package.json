@@ -32,11 +32,12 @@
       "./dist/index.js"
     ]
   },
+  "packageManager": "pnpm@11.27.0",
   "scripts": {
     "build": "node esbuild.config.mjs",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test 'tests/**/*.test.mjs' 'tests/**/*.test.ts'",
-    "prepublishOnly": "npm run typecheck && npm run test && npm run build"
+    "prepublishOnly": "pnpm run typecheck && pnpm run test && pnpm run build"
   },
   "peerDependencies": {
     "@earendil-works/pi-ai": ">=0.80.0",
