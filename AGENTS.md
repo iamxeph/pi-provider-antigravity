@@ -23,7 +23,7 @@ Always inspect Pi's official type definitions, documentation, and reference exam
 ## 3. Verification & Build
 All changes must pass:
 ```bash
-npm run prepublishOnly # tsc --noEmit && npm test && build
+pnpm run prepublishOnly # tsc --noEmit && pnpm test && build
 ```
 - Ensure `dist/index.js` is rebuilt whenever `src/` files change.
 - Any new or modified logic must include test coverage in `tests/`.
