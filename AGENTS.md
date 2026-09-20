@@ -41,6 +41,7 @@ Issues live in GitHub Issues (via the `gh` CLI).
 - Sequential by default. Dependent issues (e.g. error-mapping before retry) chain on the same branch in order.
 - Light direct edits by the maintainer may use a plain branch instead.
 - Commit and push only after maintainer confirmation.
+- **PR Description for Release Please**: Always format the PR description with `## Summary` and `## Changes`. Under `## Changes`, list every change using Conventional Commits format (`feat(scope): ...`, `fix(scope): ...`, `docs(scope): ...`), even for single-change PRs. When squash-merged, Release Please automatically parses these lines into separate changelog entries under Features and Bug Fixes, ensuring consistent changelog generation.
 - Stacked PRs: retarget dependents onto `main` (`gh pr edit <n> --base main`) BEFORE merging or deleting the base branch. Deleting a base branch auto-closes every PR stacked on it, and a closed PR whose base is gone can neither be reopened nor retargeted — the only recovery is a replacement PR.
 
 ## 7. GitHub Identity
