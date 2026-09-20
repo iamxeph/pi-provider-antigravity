@@ -88,3 +88,20 @@ test("Seam 2: parseWhole handles text responses from Turn 4", () => {
   assert.equal(text, wireText);
   assert.equal(result.stopReason, "stop");
 });
+
+test("Seam 2: parseWhole attaches lone thoughtSignature to text block when no thinking block was emitted", () => {
+  const rawSse = [
+    'data: {"response": {"candidates": [{"content": {"role": "model", "parts": [{"text": "ok"}]}}], "usageMetadata": {"promptTokenCount": 100, "candidatesTokenCount": 1, "thoughtsTokenCount": 123}}}\n\n',
+    'data: {"response": {"candidates": [{"content": {"role": "model", "parts": [{"thoughtSignature": "lone_sig_xyz", "text": ""}]}, "finishReason": "STOP"}]}}\n\n',
+  ].join("");
+
+  const result = parseWhole(rawSse);
+  assert.equal(result.content.length, 1);
+  assert.equal(result.content[0].type, "text");
+  assert.equal(result.content[0].text, "ok");
+  assert.equal(result.content[0].textSignature, "lone_sig_xyz");
+  // Ensure no empty thinking block was created
+  assert.equal(result.content.some((b) => b.type === "thinking"), false);
+  assert.equal(result.usage.reasoning, 123);
+  assert.equal(result.stopReason, "stop");
+});

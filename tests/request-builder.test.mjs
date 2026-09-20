@@ -1625,7 +1625,7 @@ test("Seam 1: buildAntigravityRequestBody skips aborted and errored assistant me
   assert.equal(body.request.contents[1].parts[0].text, "Query 2 (retried)");
 });
 
-test("Seam 1 (#15): thinking replay matches the agy CLI part-split byte-for-byte", () => {
+test("Seam 1 (#15): thinking replay matches the agy CLI part-split byte-for-byte", (t) => {
   // agy replays a thinking turn as [{thought, text}, {text, thoughtSignature}]: the
   // signature never rides the thought part. Which captured turn carries that split is
   // sampling-dependent (it moves between continuations from capture to capture), so read
@@ -1658,7 +1658,9 @@ test("Seam 1 (#15): thinking replay matches the agy CLI part-split byte-for-byte
       break;
     }
   }
-  assert.ok(fixtureTurn, "no captured Gemini turn replays a thinking part");
+  if (!fixtureTurn) {
+    return t.skip("no captured Gemini turn replays a thinking part in this fixture set (sampling-dependent)");
+  }
 
   // Stored history as this provider's own stream adapter leaves it: the thinking
   // block carries the closing signature in its canonical thinkingSignature,
@@ -1688,6 +1690,75 @@ test("Seam 1 (#15): thinking replay matches the agy CLI part-split byte-for-byte
   });
 
   assert.deepEqual(body.request.contents[1], fixtureTurn);
+});
+
+test("Seam 1 (#15): deterministic Gemini thinking replay produces canonical part-split", () => {
+  const sig = "EtUOCtIOARFNMg8lE2aQ3yiigw==";
+  const context = {
+    messages: [
+      { role: "user", content: "hello" },
+      {
+        role: "assistant",
+        provider: "antigravity",
+        model: "gemini-3.8-flash-high",
+        content: [
+          { type: "thinking", thinking: "Thinking step by step...", thinkingSignature: sig },
+          { type: "text", text: "Here is the answer." },
+        ],
+      },
+      { role: "user", content: "next" },
+    ],
+  };
+
+  const body = buildAntigravityRequestBody({
+    projectId: "aicode-consumers",
+    plan: staticPlan("gemini-3.8-flash-high"),
+    context,
+  });
+
+  const modelTurn = body.request.contents[1];
+  assert.equal(modelTurn.role, "model");
+  assert.equal(modelTurn.parts.length, 2);
+  assert.deepEqual(modelTurn.parts[0], {
+    thought: true,
+    text: "Thinking step by step...",
+  });
+  assert.equal("thoughtSignature" in modelTurn.parts[0], false);
+  assert.deepEqual(modelTurn.parts[1], {
+    text: "Here is the answer.",
+    thoughtSignature: sig,
+  });
+});
+
+test("Seam 1 (#15): assistant turn with textSignature only replays signature on text part without thought part", () => {
+  const sig = "EtUOCtIOARFNMg8lE2aQ3yiigw==";
+  const context = {
+    messages: [
+      { role: "user", content: "reply with ok" },
+      {
+        role: "assistant",
+        provider: "antigravity",
+        model: "gemini-3.8-flash-high",
+        content: [{ type: "text", text: "ok", textSignature: sig }],
+      },
+      { role: "user", content: "next" },
+    ],
+  };
+
+  const body = buildAntigravityRequestBody({
+    projectId: "aicode-consumers",
+    plan: staticPlan("gemini-3.8-flash-high"),
+    context,
+  });
+
+  const modelTurn = body.request.contents[1];
+  assert.equal(modelTurn.role, "model");
+  assert.equal(modelTurn.parts.length, 1);
+  assert.deepEqual(modelTurn.parts[0], {
+    text: "ok",
+    thoughtSignature: sig,
+  });
+  assert.equal(modelTurn.parts[0].thought, undefined);
 });
 
 test("Seam 1 (#14): Claude thinking replay matches the agy CLI part-split byte-for-byte (1.1.27 turn9)", () => {

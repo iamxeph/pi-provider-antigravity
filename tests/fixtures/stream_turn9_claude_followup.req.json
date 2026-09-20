@@ -3,7 +3,7 @@
   "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse",
   "headers": {
     "Host": "daily-cloudcode-pa.googleapis.com",
-    "User-Agent": "antigravity/cli/1.2.5 (aidev_client; os_type=linux; arch=amd64; cl=982839923; auth_method=consumer)",
+    "User-Agent": "antigravity/cli/1.2.7 (aidev_client; os_type=linux; arch=amd64; cl=984112147; auth_method=consumer)",
     "Transfer-Encoding": "chunked",
     "Authorization": "Bearer <REDACTED_ACCESS_TOKEN>",
     "Content-Type": "application/json",
@@ -26,11 +26,11 @@
           "role": "model",
           "parts": [
             {
-              "text": "120 ÷ 1.5 = 80 km/h",
+              "text": "120 km ÷ 1.5 hours = 80 km/h",
               "thought": true
             },
             {
-              "text": "120 ÷ 1.5 = **80 km/h**.",
+              "text": "Dividing 120 km by 1.5 hours gives **80 km/h**.",
               "thoughtSignature": "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDA1"
             }
           ]
@@ -47,7 +47,7 @@
           "role": "user",
           "parts": [
             {
-              "text": "The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.\n\n<SYSTEM_MESSAGE>\n[Message] timestamp=2026-09-17T16:22:00Z sender=system priority=MESSAGE_PRIORITY_LOW content=[Notice] All your subagents and background tasks have been stopped due to server restart. If you want a subagent to continue working, it needs to be revived by sending it a new message. If resuming work, please check on status and restart as needed.\n</SYSTEM_MESSAGE>"
+              "text": "The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.\n\n<SYSTEM_MESSAGE>\n[Message] timestamp=2026-09-20T23:23:26Z sender=system priority=MESSAGE_PRIORITY_LOW content=[Notice] All your subagents and background tasks have been stopped due to server restart. If you want a subagent to continue working, it needs to be revived by sending it a new message. If resuming work, please check on status and restart as needed.\n</SYSTEM_MESSAGE>"
             }
           ]
         },
@@ -76,7 +76,7 @@
           "role": "user",
           "parts": [
             {
-              "text": "The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.\n\n<SYSTEM_MESSAGE>\n[Message] timestamp=2026-09-17T16:22:06Z sender=system priority=MESSAGE_PRIORITY_LOW content=[Notice] All your subagents and background tasks have been stopped due to server restart. If you want a subagent to continue working, it needs to be revived by sending it a new message. If resuming work, please check on status and restart as needed.\n</SYSTEM_MESSAGE>"
+              "text": "The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.\n\n<SYSTEM_MESSAGE>\n[Message] timestamp=2026-09-20T23:23:32Z sender=system priority=MESSAGE_PRIORITY_LOW content=[Notice] All your subagents and background tasks have been stopped due to server restart. If you want a subagent to continue working, it needs to be revived by sending it a new message. If resuming work, please check on status and restart as needed.\n</SYSTEM_MESSAGE>"
             }
           ]
         }
@@ -707,151 +707,6 @@
                 },
                 "required": [
                   "query",
-                  "toolSummary",
-                  "toolAction"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "functionDeclarations": [
-            {
-              "name": "find_by_name",
-              "description": "Search for files and subdirectories within a specified directory using fd.\nSearch uses smart case and will ignore gitignored files by default.\nPattern and Excludes both use the glob format. If you are searching for Extensions, there is no need to specify both Pattern AND Extensions.\nTo avoid overwhelming output, the results are capped at 50 matches. Use the various arguments to filter the search scope as needed.\nResults will include the type, size, modification time, and relative path.",
-              "parameters": {
-                "type": "OBJECT",
-                "properties": {
-                  "Excludes": {
-                    "type": "ARRAY",
-                    "description": "Optional, exclude files/directories that match the given glob patterns",
-                    "items": {
-                      "type": "STRING"
-                    }
-                  },
-                  "Extensions": {
-                    "type": "ARRAY",
-                    "description": "Optional, file extensions to include (without leading .), matching paths must match at least one of the included extensions",
-                    "items": {
-                      "type": "STRING"
-                    }
-                  },
-                  "FullPath": {
-                    "type": "BOOLEAN",
-                    "description": "Optional, whether the full absolute path must match the glob pattern, default: only filename needs to match. Take care when specifying glob patterns with this flag on, e.g when FullPath is on, pattern '*.py' will not match to the file '/foo/bar.py', but pattern '**/*.py' will match."
-                  },
-                  "MaxDepth": {
-                    "type": "INTEGER",
-                    "description": "Optional, maximum depth to search"
-                  },
-                  "Pattern": {
-                    "type": "STRING",
-                    "description": "Optional, Pattern to search for, supports glob format"
-                  },
-                  "SearchDirectory": {
-                    "type": "STRING",
-                    "description": "The directory to search within. Must be an absolute path."
-                  },
-                  "Type": {
-                    "type": "STRING",
-                    "description": "Optional, type filter, enum=file,directory,any"
-                  },
-                  "toolAction": {
-                    "type": "STRING",
-                    "description": "Brief 2-5 word phrase in -ing form describing the specific action. Capitalize like a sentence. Some examples: 'Analyzing directory', 'Searching the web', 'Checking git status', 'Running tests', 'Searching code'."
-                  },
-                  "toolSummary": {
-                    "type": "STRING",
-                    "description": "Brief 2-5 word noun phrase describing the specific task. Capitalize like a sentence. Some examples: 'Directory analysis', 'Web search', 'Git status check', 'Test execution', 'Code search'."
-                  }
-                },
-                "required": [
-                  "SearchDirectory",
-                  "Pattern",
-                  "toolSummary",
-                  "toolAction"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "functionDeclarations": [
-            {
-              "name": "grep_search",
-              "description": "Use ripgrep to find exact pattern matches within files or directories.\nResults are returned in JSON format and for each match you will receive the:\n- Filename\n- LineNumber (only when MatchPerLine is true)\n- LineContent: the content of the matching line (only when MatchPerLine is true)\nTotal results are capped at 50 matches. Use the Includes option to filter by file type or specific paths to refine your search.",
-              "parameters": {
-                "type": "OBJECT",
-                "properties": {
-                  "CaseInsensitive": {
-                    "type": "BOOLEAN",
-                    "description": "If true, performs a case-insensitive search."
-                  },
-                  "Includes": {
-                    "type": "ARRAY",
-                    "description": "Glob patterns to filter files found within the 'SearchPath', if 'SearchPath' is a directory. For example, '*.go' to only include Go files, or '!**/vendor/*' to exclude vendor directories. This is NOT for specifying the primary search directory; use 'SearchPath' for that. Leave empty if no glob filtering is needed or if 'SearchPath' is a single file.",
-                    "items": {
-                      "type": "STRING"
-                    }
-                  },
-                  "IsRegex": {
-                    "type": "BOOLEAN",
-                    "description": "If true, treats Query as a regular expression pattern with special characters like *, +, (, etc. having regex meaning. If false, treats Query as a literal string where all characters are matched exactly. Use false for normal text searches and true only when you specifically need regex functionality."
-                  },
-                  "MatchPerLine": {
-                    "type": "BOOLEAN",
-                    "description": "If true, returns each line that matches the query, including line numbers and snippets of matching lines (equivalent to 'git grep -nI'). If false, only returns the names of files containing the query (equivalent to 'git grep -l')."
-                  },
-                  "Query": {
-                    "type": "STRING",
-                    "description": "The search term or pattern to look for within files."
-                  },
-                  "SearchPath": {
-                    "type": "STRING",
-                    "description": "The path to search. Must be an absolute path to a directory or a file. This is a required parameter."
-                  },
-                  "toolAction": {
-                    "type": "STRING",
-                    "description": "Brief 2-5 word phrase in -ing form describing the specific action. Capitalize like a sentence. Some examples: 'Analyzing directory', 'Searching the web', 'Checking git status', 'Running tests', 'Searching code'."
-                  },
-                  "toolSummary": {
-                    "type": "STRING",
-                    "description": "Brief 2-5 word noun phrase describing the specific task. Capitalize like a sentence. Some examples: 'Directory analysis', 'Web search', 'Git status check', 'Test execution', 'Code search'."
-                  }
-                },
-                "required": [
-                  "SearchPath",
-                  "Query",
-                  "toolSummary",
-                  "toolAction"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "functionDeclarations": [
-            {
-              "name": "list_dir",
-              "description": "List the contents of a directory, i.e. all files and subdirectories that are children of the directory. Directory path must be an absolute path to a directory that exists. For each child in the directory, output will have: relative path to the directory, whether it is a directory or file, size in bytes if file, and number of children (recursive) if directory. Number of children may be missing if the workspace is too large, since we are not able to track the entire workspace.",
-              "parameters": {
-                "type": "OBJECT",
-                "properties": {
-                  "DirectoryPath": {
-                    "type": "STRING",
-                    "description": "Path to list contents of, should be absolute path to a directory"
-                  },
-                  "toolAction": {
-                    "type": "STRING",
-                    "description": "Brief 2-5 word phrase in -ing form describing the specific action. Capitalize like a sentence. Some examples: 'Analyzing directory', 'Searching the web', 'Checking git status', 'Running tests', 'Searching code'."
-                  },
-                  "toolSummary": {
-                    "type": "STRING",
-                    "description": "Brief 2-5 word noun phrase describing the specific task. Capitalize like a sentence. Some examples: 'Directory analysis', 'Web search', 'Git status check', 'Test execution', 'Code search'."
-                  }
-                },
-                "required": [
-                  "DirectoryPath",
                   "toolSummary",
                   "toolAction"
                 ]
