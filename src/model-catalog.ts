@@ -487,6 +487,8 @@ function synthesizeDynamicModel(baseId: string, items: AvailableModelItem[]): Mo
   const defaultContext = isFlash ? 1048576 : isClaude ? 250000 : isGpt ? 128000 : 1048576;
   const defaultMaxOutput = isClaude ? 64000 : isGpt ? 32768 : 65536;
 
+  const promptCache = isClaude ? { short: 300, long: 3600 } : { short: 300 };
+
   return {
     id: baseId,
     name: formatModelDisplayName(baseId, repItem?.displayName),
@@ -497,6 +499,7 @@ function synthesizeDynamicModel(baseId: string, items: AvailableModelItem[]): Mo
     thinkingLevelMap,
     input: repItem?.supportsImages ? ["text", "image"] : ["text"],
     cost: estimateModelCost(baseId),
+    promptCache,
     contextWindow: repItem?.maxTokens || defaultContext,
     maxTokens: repItem?.maxOutputTokens || defaultMaxOutput,
   };

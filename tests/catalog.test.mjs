@@ -274,6 +274,24 @@ test("Seam 3: buildDynamicPublicModels dynamically synthesizes unreleased future
     assert.deepEqual(synthesized.input, ["text", "image"]);
     assert.deepEqual(synthesized.cost, { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 });
     assert.deepEqual(synthesized.thinkingLevelMap, { off: null, minimal: null });
+    assert.deepEqual(synthesized.promptCache, { short: 300 });
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Seam 3: synthesized models declare promptCache lifetimes per model family", async () => {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({ ok: true, json: async () => modelsJson });
+  try {
+    const catalog = createModelCatalog();
+    const publicModels = await catalog.refresh({ allowNetwork: true, credential: TEST_CREDENTIAL, stored: {} });
+    const byId = new Map(publicModels.map((m) => [m.id, m]));
+
+    assert.deepEqual(byId.get("gemini-3.8-flash")?.promptCache, { short: 300 });
+    assert.deepEqual(byId.get("gemini-3.1-pro")?.promptCache, { short: 300 });
+    assert.deepEqual(byId.get("claude-sonnet-4-6")?.promptCache, { short: 300, long: 3600 });
+    assert.deepEqual(byId.get("claude-opus-4-6")?.promptCache, { short: 300, long: 3600 });
   } finally {
     globalThis.fetch = realFetch;
   }

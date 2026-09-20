@@ -7,11 +7,12 @@ import {
   type ThinkingContent,
   type ToolCall,
   type TranscriptContext,
+  calculateCost,
   createAssistantMessageEventStream,
 } from "@earendil-works/pi-ai";
 import { requireCredentials } from "./auth.ts";
 import { buildAntigravityRequestBody } from "./builder.ts";
-import { postAntigravityStream } from "./protocol.ts";
+import { DEFAULT_ENDPOINT, postAntigravityStream } from "./protocol.ts";
 import type { ModelCatalog } from "./model-catalog.ts";
 
 /**
@@ -35,7 +36,8 @@ export interface ParsedStreamResult {
     reasoning: number;
     total: number;
   };
-  stopReason: "stop" | "toolUse" | "length" | "error";
+  stopReason: "pending" | "stop" | "toolUse" | "length" | "error";
+  rawStopReason?: string;
   responseId?: string;
 }
 
@@ -51,6 +53,7 @@ interface StreamParserState {
   content: ParsedBlock[];
   usage: ParsedStreamResult["usage"];
   stopReason: ParsedStreamResult["stopReason"];
+  rawStopReason?: string;
   openType: "text" | "thinking" | null;
   lastThoughtSignature?: string;
   responseId?: string;
@@ -127,6 +130,11 @@ function processLine(
     return;
   }
 
+  const streamError = payload?.error ?? payload?.response?.error;
+  if (streamError) {
+    throw new Error(streamError.message ?? JSON.stringify(streamError));
+  }
+
   const response = payload.response || payload;
 
   if (response.responseId && !state.responseId) {
@@ -157,8 +165,14 @@ function processLine(
   // length, every other reason (SAFETY, RECITATION, BLOCKLIST, ...) is error.
   if (candidate.finishReason === "MAX_TOKENS") {
     state.stopReason = "length";
-  } else if (typeof candidate.finishReason === "string" && candidate.finishReason !== "STOP") {
+    state.rawStopReason = "MAX_TOKENS";
+  } else if (candidate.finishReason === "STOP") {
+    if (state.stopReason === "pending") {
+      state.stopReason = "stop";
+    }
+  } else if (typeof candidate.finishReason === "string") {
     state.stopReason = "error";
+    state.rawStopReason = candidate.finishReason;
   }
 
   const parts = candidate.content?.parts || [];
@@ -194,7 +208,9 @@ function processLine(
       });
     } else if (part.functionCall) {
       closeOpenBlock(state, onEvent);
-      state.stopReason = "toolUse";
+      if (state.stopReason === "pending" || state.stopReason === "stop") {
+        state.stopReason = "toolUse";
+      }
       const block: ToolCall = {
         type: "toolCall",
         id: part.functionCall.id || `call_${state.content.length}`,
@@ -267,7 +283,7 @@ export function parseAntigravitySseResponse(
   const state: StreamParserState = {
     content: [],
     usage: { input: 0, output: 0, cacheRead: 0, reasoning: 0, total: 0 },
-    stopReason: "stop",
+    stopReason: "pending",
     openType: null,
     buffer: "",
   };
@@ -285,23 +301,44 @@ export function parseAntigravitySseResponse(
     content: state.content,
     usage: state.usage,
     stopReason: state.stopReason,
+    rawStopReason: state.rawStopReason,
     responseId: state.responseId,
   };
+}
+
+const NON_OVERFLOW_PATTERN =
+  /rate limit|too many requests|quota exceeded|resource_exhausted/i;
+const CONTEXT_OVERFLOW_PATTERN =
+  /(?:(?:input|prompt) token count.*exceeds|prompt (?:is )?too long)/i;
+
+/**
+ * Normalizes provider errors matching context overflow patterns by prefixing
+ * with `context_length_exceeded:` so Pi's auto-compaction recovery triggers reliably.
+ */
+export function normalizeOverflowError(rawMessage: string): string {
+  if (rawMessage.includes("context_length_exceeded")) return rawMessage;
+  if (!NON_OVERFLOW_PATTERN.test(rawMessage) && CONTEXT_OVERFLOW_PATTERN.test(rawMessage)) {
+    return `context_length_exceeded: ${rawMessage}`;
+  }
+  return rawMessage;
 }
 
 async function consumeAntigravityStream(
   streamBody: ReadableStream<Uint8Array>,
   output: AssistantMessage,
   stream: AssistantMessageEventStream,
-  modelCost?: Model<any>["cost"],
+  model: Model<any>,
+  signal?: AbortSignal,
 ): Promise<void> {
   const state: StreamParserState = {
     content: output.content,
     usage: { input: 0, output: 0, cacheRead: 0, reasoning: 0, total: 0 },
-    stopReason: "stop",
+    stopReason: "pending",
     openType: null,
     buffer: "",
   };
+
+  let lastTotalTokens = -1;
 
   const updateUsageAndCost = () => {
     output.usage.input = state.usage.input;
@@ -310,22 +347,19 @@ async function consumeAntigravityStream(
     output.usage.reasoning = state.usage.reasoning;
     output.usage.totalTokens = state.usage.total;
 
-    if (modelCost) {
-      const inputCost = (output.usage.input * (modelCost.input || 0)) / 1_000_000;
-      const outputCost = (output.usage.output * (modelCost.output || 0)) / 1_000_000;
-      const cacheCost = (output.usage.cacheRead * (modelCost.cacheRead || 0)) / 1_000_000;
-      output.usage.cost = {
-        input: inputCost,
-        output: outputCost,
-        cacheRead: cacheCost,
-        cacheWrite: 0,
-        total: inputCost + outputCost + cacheCost,
-      };
+    if (state.usage.total !== lastTotalTokens) {
+      lastTotalTokens = state.usage.total;
+      if (model.cost) {
+        calculateCost(model, output.usage);
+      }
     }
     if (state.responseId) {
       output.responseId ||= state.responseId;
     }
     output.stopReason = state.stopReason;
+    if (state.rawStopReason) {
+      output.rawStopReason = state.rawStopReason;
+    }
   };
 
   const dispatchEvent = (ev: StreamDeliveryEvent) => {
@@ -336,14 +370,20 @@ async function consumeAntigravityStream(
   const reader = streamBody.getReader();
   const decoder = new TextDecoder();
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    feedChunk(decoder.decode(value, { stream: true }), state, dispatchEvent);
+  try {
+    while (true) {
+      if (signal?.aborted) {
+        throw new Error("Request was aborted");
+      }
+      const { done, value } = await reader.read();
+      if (done) break;
+      feedChunk(decoder.decode(value, { stream: true }), state, dispatchEvent);
+    }
+    finishStream(state, dispatchEvent);
+    updateUsageAndCost();
+  } finally {
+    reader.releaseLock();
   }
-
-  finishStream(state, dispatchEvent);
-  updateUsageAndCost();
 }
 
 /**
@@ -392,7 +432,7 @@ export function streamAntigravity(
           : undefined;
       const plan = catalog.resolvePlan(model.id, effort);
 
-      const requestBody = buildAntigravityRequestBody({
+      let requestBody = buildAntigravityRequestBody({
         projectId,
         plan,
         context,
@@ -402,14 +442,60 @@ export function streamAntigravity(
         toolChoice: options?.toolChoice,
       });
 
-      const streamBody = await postAntigravityStream({
+      if (options?.onPayload) {
+        const replacement = await options.onPayload(requestBody, model);
+        if (replacement !== undefined) {
+          requestBody = replacement as typeof requestBody;
+        }
+      }
+
+      const endpoint = model.baseUrl || DEFAULT_ENDPOINT;
+      const mergedHeaders: Record<string, string> = {};
+      if (model.headers) {
+        for (const [k, v] of Object.entries(model.headers)) {
+          if (typeof v === "string") mergedHeaders[k] = v;
+        }
+      }
+      if (options?.headers) {
+        for (const [k, v] of Object.entries(options.headers)) {
+          if (typeof v === "string") mergedHeaders[k] = v;
+        }
+      }
+
+      const { response, stream: streamBody } = await postAntigravityStream({
         auth: token,
+        endpoint,
         path: "v1internal:streamGenerateContent?alt=sse",
+        headers: mergedHeaders,
         body: requestBody,
         signal: options?.signal,
       });
 
-      await consumeAntigravityStream(streamBody, output, stream, model.cost);
+      if (options?.onResponse) {
+        const resHeaders: Record<string, string> = {};
+        response.headers.forEach((val, key) => {
+          resHeaders[key] = val;
+        });
+        await options.onResponse({ status: response.status, headers: resHeaders }, model);
+      }
+
+      await consumeAntigravityStream(streamBody, output, stream, model, options?.signal);
+
+      if (options?.signal?.aborted) {
+        throw new Error("Request was aborted");
+      }
+
+      if (output.stopReason === "pending") {
+        throw new Error("Provider stream ended without a stop reason");
+      }
+
+      if (output.stopReason === "error" || output.stopReason === "aborted") {
+        throw new Error(
+          output.rawStopReason
+            ? `Provider stopped with: ${output.rawStopReason}`
+            : output.errorMessage || "An unknown error occurred",
+        );
+      }
 
       const doneReason: "stop" | "toolUse" | "length" =
         output.stopReason === "toolUse" || output.stopReason === "length"
@@ -424,7 +510,8 @@ export function streamAntigravity(
       stream.end();
     } catch (error) {
       output.stopReason = options?.signal?.aborted ? "aborted" : "error";
-      output.errorMessage = error instanceof Error ? error.message : String(error);
+      const rawMessage = error instanceof Error ? error.message : String(error);
+      output.errorMessage = normalizeOverflowError(rawMessage);
       stream.push({ type: "error", reason: output.stopReason, error: output });
       stream.end();
     }

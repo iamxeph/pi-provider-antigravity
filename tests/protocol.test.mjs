@@ -106,22 +106,56 @@ test("Seam Protocol: postAntigravityJson throws AntigravityHttpError on non-ok r
   }
 });
 
-test("Seam Protocol: postAntigravityStream returns ReadableStream on success", async () => {
+test("Seam Protocol: postAntigravityStream returns Response and ReadableStream on success", async () => {
   const realFetch = globalThis.fetch;
   const mockStream = new ReadableStream();
-  globalThis.fetch = async () => ({
+  const mockResponse = {
     ok: true,
     status: 200,
     body: mockStream,
-  });
+  };
+  globalThis.fetch = async () => mockResponse;
 
   try {
-    const stream = await postAntigravityStream({
+    const result = await postAntigravityStream({
       auth: "stream-tok",
       path: "v1internal:streamGenerateContent?alt=sse",
       body: { prompt: "hi" },
     });
-    assert.equal(stream, mockStream);
+    assert.equal(result.stream, mockStream);
+    assert.equal(result.response, mockResponse);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Seam Protocol: postAntigravityStream honors endpoint and custom headers", async () => {
+  const realFetch = globalThis.fetch;
+  let capturedUrl = null;
+  let capturedHeaders = null;
+
+  globalThis.fetch = async (url, init) => {
+    capturedUrl = url;
+    capturedHeaders = init.headers;
+    return {
+      ok: true,
+      status: 200,
+      body: new ReadableStream(),
+    };
+  };
+
+  try {
+    await postAntigravityStream({
+      auth: "stream-tok",
+      endpoint: "https://custom-proxy.example.com",
+      path: "v1internal:streamGenerateContent?alt=sse",
+      headers: { "X-Custom-Header": "custom-val", "User-Agent": "custom-ua" },
+      body: { prompt: "hi" },
+    });
+    assert.equal(capturedUrl, "https://custom-proxy.example.com/v1internal:streamGenerateContent?alt=sse");
+    assert.equal(capturedHeaders["X-Custom-Header"], "custom-val");
+    assert.equal(capturedHeaders["User-Agent"], "custom-ua");
+    assert.equal(capturedHeaders["Authorization"], "Bearer stream-tok");
   } finally {
     globalThis.fetch = realFetch;
   }
