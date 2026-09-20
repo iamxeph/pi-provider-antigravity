@@ -11,6 +11,7 @@ import {
   PRIVATE_SNAPSHOT_KEY,
 } from "../src/model-catalog.ts";
 import { buildAntigravityRequestBody } from "../src/builder.ts";
+import { normalizeContext } from "@earendil-works/pi-ai";
 
 const modelsJson = JSON.parse(fs.readFileSync(newestCapture("models.resp.json"), "utf-8"));
 const TEST_CREDENTIAL = { type: "oauth", access: JSON.stringify({ token: "test-token", projectId: "test-project" }) };
@@ -462,9 +463,9 @@ test("Seam 3: buildAntigravityRequestBody uses the plan model_enum", () => {
   const body = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
     plan: catalog.resolvePlan("gemini-99.9-flash-high", undefined),
-    context: {
+    context: normalizeContext({
       messages: [{ role: "user", content: "Hello Future Gemini" }],
-    },
+    }),
   });
 
   assert.equal(body.request.labels.model_enum, "MODEL_PLACEHOLDER_M999");

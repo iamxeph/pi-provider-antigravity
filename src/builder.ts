@@ -1,4 +1,14 @@
 import { createHash, randomUUID } from "node:crypto";
+import {
+  collapseSystemMessages,
+  getCurrentSystemPrompt,
+  getCurrentTools,
+  normalizeContext,
+  withoutInitialSystemMessage,
+  type TranscriptContext,
+} from "@earendil-works/pi-ai";
+// Load-bearing: re-exported for private/ tests without requiring private/node_modules
+export { normalizeContext };
 import type { ModelPlan } from "./model-catalog.ts";
 import { classifyModelFamily, isCompatibleFamily } from "./model-identity.ts";
 import { PROVIDER_ID } from "./protocol.ts";
@@ -6,11 +16,7 @@ import { PROVIDER_ID } from "./protocol.ts";
 export interface BuildRequestBodyParams {
   projectId: string;
   plan: ModelPlan;
-  context: {
-    systemPrompt?: string;
-    messages: Array<any>;
-    tools?: Array<any>;
-  };
+  context: TranscriptContext;
   sessionId?: string;
   trajectoryId?: string;
   maxOutputTokens?: number;
@@ -73,14 +79,14 @@ function resolveThoughtSignature(
  * Deterministically derives a persistent session ID from the initial conversation turn.
  */
 function deriveSessionId(
-  context: { messages?: Array<any>; systemPrompt?: string },
+  conversation: Array<any>,
   explicitSessionId?: string
 ): string {
   if (explicitSessionId && typeof explicitSessionId === "string" && explicitSessionId.trim().length > 0) {
     return explicitSessionId.trim();
   }
 
-  const firstMsg = context.messages?.[0];
+  const firstMsg = conversation?.[0];
   if (!firstMsg) {
     return randomUUID();
   }
@@ -219,11 +225,11 @@ function convertTools(
  * Translates a conversation turn trace into Antigravity wire contents.
  */
 function translateTurnTrace(
-  context: { messages?: Array<any>; systemPrompt?: string },
+  conversation: Array<any>,
   runtimeModelId: string
 ): Array<any> {
   const contents: Array<any> = [];
-  const messages = context.messages || [];
+  const messages = conversation || [];
 
   // The sentinel is Gemini-specific evidence: the probe shows a Claude runtime model
   // accepts the same unsigned foreign functionCall with no sentinel at all (and merely
@@ -485,12 +491,18 @@ export function buildAntigravityRequestBody(params: BuildRequestBodyParams): Rec
   } = params;
   const runtimeModelId = plan.runtimeModelId;
 
-  const sessionId = deriveSessionId(context, params.sessionId);
+  // Pi 0.86: System prompt and tool declarations live in the transcript's system messages.
+  const transcript = collapseSystemMessages(context);
+  const systemPrompt = getCurrentSystemPrompt(transcript.messages);
+  const tools = convertTools(getCurrentTools(transcript.messages));
+  const conversation = withoutInitialSystemMessage(transcript.messages);
+
+  const sessionId = deriveSessionId(conversation, params.sessionId);
   const trajectoryId =
     params.trajectoryId && typeof params.trajectoryId === "string" && params.trajectoryId.trim().length > 0
       ? params.trajectoryId.trim()
       : resolveSessionTrajectory(sessionId);
-  const contents = translateTurnTrace(context, runtimeModelId);
+  const contents = translateTurnTrace(conversation, runtimeModelId);
 
   // Request ID sequence increments by completed assistant turns **as carried by
   // this request**: derive it from the payload, so a turn the translation drops
@@ -522,14 +534,13 @@ export function buildAntigravityRequestBody(params: BuildRequestBodyParams): Rec
     contents,
   };
 
-  if (context.systemPrompt) {
+  if (systemPrompt) {
     request.systemInstruction = {
       role: "user",
-      parts: [{ text: context.systemPrompt }],
+      parts: [{ text: systemPrompt }],
     };
   }
 
-  const tools = convertTools(context.tools);
   if (tools) {
     request.tools = tools;
   }
