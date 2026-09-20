@@ -3,10 +3,18 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { newestCapture } from "./fixtures.mjs";
 import {
-  buildAntigravityRequestBody,
+  buildAntigravityRequestBody as rawBuildAntigravityRequestBody,
   SKIP_THOUGHT_SIGNATURE_VALIDATOR,
 } from "../src/builder.ts";
+import { normalizeContext } from "@earendil-works/pi-ai";
 import { createModelCatalog } from "../src/model-catalog.ts";
+
+const buildAntigravityRequestBody = (params) => {
+  return rawBuildAntigravityRequestBody({
+    ...params,
+    context: normalizeContext(params.context),
+  });
+};
 
 const modelsJson = JSON.parse(fs.readFileSync(newestCapture("models.resp.json"), "utf-8"));
 const fixtureCatalog = createModelCatalog();

@@ -1,12 +1,12 @@
 import {
   type AssistantMessage,
   type AssistantMessageEventStream,
-  type Context,
   type Model,
   type SimpleStreamOptions,
   type TextContent,
   type ThinkingContent,
   type ToolCall,
+  type TranscriptContext,
   createAssistantMessageEventStream,
 } from "@earendil-works/pi-ai";
 import { requireCredentials } from "./auth.ts";
@@ -36,6 +36,7 @@ export interface ParsedStreamResult {
     total: number;
   };
   stopReason: "stop" | "toolUse" | "length" | "error";
+  responseId?: string;
 }
 
 export type StreamDeliveryEvent =
@@ -52,6 +53,7 @@ interface StreamParserState {
   stopReason: ParsedStreamResult["stopReason"];
   openType: "text" | "thinking" | null;
   lastThoughtSignature?: string;
+  responseId?: string;
   buffer: string;
 }
 
@@ -126,6 +128,10 @@ function processLine(
   }
 
   const response = payload.response || payload;
+
+  if (response.responseId && !state.responseId) {
+    state.responseId = response.responseId;
+  }
 
   // Usage metadata (promptTokenCount includes cached tokens per Google spec).
   // output counts thinking tokens too, mirroring the pi-ai Google adapter:
@@ -279,6 +285,7 @@ export function parseAntigravitySseResponse(
     content: state.content,
     usage: state.usage,
     stopReason: state.stopReason,
+    responseId: state.responseId,
   };
 }
 
@@ -315,6 +322,9 @@ async function consumeAntigravityStream(
         total: inputCost + outputCost + cacheCost,
       };
     }
+    if (state.responseId) {
+      output.responseId ||= state.responseId;
+    }
     output.stopReason = state.stopReason;
   };
 
@@ -343,7 +353,7 @@ async function consumeAntigravityStream(
  */
 export function streamAntigravity(
   model: Model<any>,
-  context: Context,
+  context: TranscriptContext,
   options: SimpleStreamOptions | undefined,
   catalog: ModelCatalog,
 ): AssistantMessageEventStream {
@@ -388,7 +398,7 @@ export function streamAntigravity(
         context,
         sessionId: options?.sessionId,
         trajectoryId,
-        maxOutputTokens: model.maxTokens,
+        maxOutputTokens: options?.maxTokens ?? model.maxTokens,
         toolChoice: options?.toolChoice,
       });
 
