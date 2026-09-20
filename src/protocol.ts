@@ -27,6 +27,8 @@ export interface AntigravityPostParams {
   /** Path below the endpoint, e.g. "v1internal:retrieveUserQuotaSummary". */
   path: string;
   body: unknown;
+  endpoint?: string;
+  headers?: Record<string, string>;
   signal?: AbortSignal;
 }
 
@@ -39,13 +41,15 @@ function resolveToken(auth: string | { token: string }): string {
 async function postAntigravityRaw({
   auth,
   path,
+  endpoint = DEFAULT_ENDPOINT,
+  headers,
   body,
   signal,
 }: AntigravityPostParams): Promise<Response> {
   const token = resolveToken(auth);
-  return fetch(`${DEFAULT_ENDPOINT}/${path}`, {
+  return fetch(`${endpoint}/${path}`, {
     method: "POST",
-    headers: buildAntigravityHeaders(token),
+    headers: { ...buildAntigravityHeaders(token), ...headers },
     body: JSON.stringify(body),
     signal,
   });
@@ -64,13 +68,18 @@ export async function postAntigravityJson<T>(params: AntigravityPostParams): Pro
   return (await res.json()) as T;
 }
 
+export interface AntigravityStreamResult {
+  response: Response;
+  stream: ReadableStream<Uint8Array>;
+}
+
 /**
  * Deep protocol stream client: validates HTTP status, checks stream presence,
- * and returns the validated ReadableStream.
+ * and returns the validated Response and ReadableStream.
  */
 export async function postAntigravityStream(
   params: AntigravityPostParams
-): Promise<ReadableStream<Uint8Array>> {
+): Promise<AntigravityStreamResult> {
   const res = await postAntigravityRaw(params);
   if (!res.ok) {
     const errText = await res.text();
@@ -79,7 +88,7 @@ export async function postAntigravityStream(
   if (!res.body) {
     throw new Error(`No response stream received from Antigravity for ${params.path}.`);
   }
-  return res.body;
+  return { response: res, stream: res.body };
 }
 
 /**

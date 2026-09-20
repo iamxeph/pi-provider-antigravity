@@ -87,7 +87,8 @@ export async function fetchProjectId(token: string, signal?: AbortSignal): Promi
     if (data.cloudaicompanionProject) {
       return data.cloudaicompanionProject;
     }
-  } catch {
+  } catch (err) {
+    if (signal?.aborted) throw err;
     // Fall back to standard project
   }
   return FALLBACK_PROJECT_ID;
@@ -114,6 +115,19 @@ export async function loginAntigravity(callbacks: OAuthLoginCallbacks): Promise<
   const authUrl = `${AUTH_URL}?${authParams.toString()}`;
   callbacks.onAuth({ url: authUrl });
 
+  let timer: NodeJS.Timeout | undefined;
+  const abortPromise = new Promise<never>((_, rej) => {
+    if (callbacks.signal?.aborted) {
+      rej(callbacks.signal.reason ?? new Error("Login cancelled"));
+      return;
+    }
+    callbacks.signal?.addEventListener(
+      "abort",
+      () => rej(callbacks.signal?.reason ?? new Error("Login cancelled")),
+      { once: true }
+    );
+  });
+
   const manualPromptPromise = (async () => {
     const input = await callbacks.onPrompt({
       message: "Paste authorization code from browser:",
@@ -121,11 +135,21 @@ export async function loginAntigravity(callbacks: OAuthLoginCallbacks): Promise<
     return extractCodeFromInput(input);
   })();
 
-  const timeout = new Promise<never>((_, rej) =>
-    setTimeout(() => rej(new Error("Timed out waiting for authorization code (5 minutes)")), OAUTH_CALLBACK_TIMEOUT_MS)
-  );
+  const timeoutPromise = new Promise<never>((_, rej) => {
+    timer = setTimeout(
+      () => rej(new Error("Timed out waiting for authorization code (5 minutes)")),
+      OAUTH_CALLBACK_TIMEOUT_MS
+    );
+  });
 
-  const code = await Promise.race([manualPromptPromise, timeout]);
+  let code: string;
+  try {
+    code = await Promise.race([manualPromptPromise, timeoutPromise, abortPromise]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+
+  callbacks.onProgress?.("Exchanging authorization code for tokens...");
 
   const tokenParams = new URLSearchParams({
     client_id: CLIENT_ID,
@@ -140,6 +164,7 @@ export async function loginAntigravity(callbacks: OAuthLoginCallbacks): Promise<
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: tokenParams.toString(),
+    signal: callbacks.signal,
   });
 
   if (!tokenRes.ok) {
@@ -152,7 +177,9 @@ export async function loginAntigravity(callbacks: OAuthLoginCallbacks): Promise<
     refresh_token?: string;
     expires_in?: number;
   };
-  const projectId = await fetchProjectId(tokens.access_token);
+
+  callbacks.onProgress?.("Resolving Code Assist project ID...");
+  const projectId = await fetchProjectId(tokens.access_token, callbacks.signal);
 
   return {
     refresh: tokens.refresh_token || "",

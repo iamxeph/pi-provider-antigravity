@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { newestCapture } from "./fixtures.mjs";
-import { streamAntigravity } from "../src/stream.ts";
+import { streamAntigravity, normalizeOverflowError } from "../src/stream.ts";
 import { buildAntigravityRequestBody } from "../src/builder.ts";
 import { createModelCatalog } from "../src/model-catalog.ts";
 import { normalizeContext } from "@earendil-works/pi-ai";
@@ -257,4 +257,298 @@ test("Seam 2 (0.86 Parity): mid-conversation system updates collapse into system
     !body.request.contents.some((c) => c.role === "system"),
     "System messages must never leak into wire contents",
   );
+});
+
+test("Seam 2: normalizeOverflowError adds context_length_exceeded prefix for overflow patterns and ignores rate limits", () => {
+  // Google Gemini overflow message
+  assert.equal(
+    normalizeOverflowError("The input token count (1196265) exceeds the maximum number of tokens allowed (1048575)"),
+    "context_length_exceeded: The input token count (1196265) exceeds the maximum number of tokens allowed (1048575)",
+  );
+
+  // agy CLI prompt token count hard cap
+  assert.equal(
+    normalizeOverflowError("overall prompt token count 150000 exceeds hard cap of 128000 tokens"),
+    "context_length_exceeded: overall prompt token count 150000 exceeds hard cap of 128000 tokens",
+  );
+
+  // Claude on Antigravity overflow message
+  assert.equal(
+    normalizeOverflowError("Prompt is too long: 213462 tokens > 200000 maximum"),
+    "context_length_exceeded: Prompt is too long: 213462 tokens > 200000 maximum",
+  );
+
+  // Already prefixed — idempotent
+  assert.equal(
+    normalizeOverflowError("context_length_exceeded: input token count exceeds the maximum"),
+    "context_length_exceeded: input token count exceeds the maximum",
+  );
+
+  // Rate limit / quota exceeded — must NOT be treated as context overflow
+  assert.equal(
+    normalizeOverflowError("Rate limit exceeded: 60 requests per minute"),
+    "Rate limit exceeded: 60 requests per minute",
+  );
+  assert.equal(
+    normalizeOverflowError("RESOURCE_EXHAUSTED: quota exceeded for day"),
+    "RESOURCE_EXHAUSTED: quota exceeded for day",
+  );
+  assert.equal(
+    normalizeOverflowError("Too many requests, please slow down"),
+    "Too many requests, please slow down",
+  );
+});
+
+test("Seam 2: calculateCost updates usage.cost with model pricing", async () => {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({
+    ok: true,
+    body: new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode(sseTurn5));
+        controller.close();
+      },
+    }),
+  });
+
+  try {
+    const message = await streamAntigravity(
+      {
+        id: "gemini-3.8-flash",
+        provider: "antigravity",
+        api: "antigravity-api",
+        maxTokens: 65536,
+        cost: { input: 1.0, output: 2.0, cacheRead: 0.25, cacheWrite: 1.0 },
+      },
+      normalizeContext({ messages: [{ role: "user", content: "hello" }] }),
+      { apiKey: JSON.stringify({ token: "test-token", projectId: "test-project" }) },
+      store,
+    ).result();
+
+    assert.equal(message.stopReason, "stop");
+    // Verify calculateCost populated usage.cost based on model.cost
+    assert.ok(message.usage.cost, "usage.cost must be populated");
+    assert.ok(message.usage.cost.total > 0, "usage.cost.total must be > 0 when model has non-zero cost");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Seam 2 (H1 Fix): streamAntigravity throws error on non-STOP finishReason", async () => {
+  const realFetch = globalThis.fetch;
+  const safetySse = 'data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": "blocked"}]},"finishReason": "SAFETY"}]}}\n';
+  globalThis.fetch = async () => ({
+    ok: true,
+    status: 200,
+    headers: new Headers({ "content-type": "text/event-stream" }),
+    body: new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode(safetySse));
+        controller.close();
+      },
+    }),
+  });
+
+  try {
+    const stream = streamAntigravity(
+      {
+        id: "gemini-3.8-flash",
+        provider: "antigravity",
+        api: "antigravity-api",
+        maxTokens: 65536,
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+      },
+      normalizeContext({ messages: [{ role: "user", content: "hello" }] }),
+      { apiKey: JSON.stringify({ token: "test-token", projectId: "test-project" }) },
+      store,
+    );
+
+    const message = await stream.result();
+    assert.equal(message.stopReason, "error");
+    assert.equal(message.rawStopReason, "SAFETY");
+    assert.ok(message.errorMessage?.includes("SAFETY"));
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Seam 2 (H2 Fix): stream ending without finishReason is rejected as truncated", async () => {
+  const realFetch = globalThis.fetch;
+  const truncatedSse = 'data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": "halfway"}]}}]}}\n';
+  globalThis.fetch = async () => ({
+    ok: true,
+    status: 200,
+    headers: new Headers({ "content-type": "text/event-stream" }),
+    body: new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode(truncatedSse));
+        controller.close();
+      },
+    }),
+  });
+
+  try {
+    const stream = streamAntigravity(
+      {
+        id: "gemini-3.8-flash",
+        provider: "antigravity",
+        api: "antigravity-api",
+        maxTokens: 65536,
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+      },
+      normalizeContext({ messages: [{ role: "user", content: "hello" }] }),
+      { apiKey: JSON.stringify({ token: "test-token", projectId: "test-project" }) },
+      store,
+    );
+
+    const message = await stream.result();
+    assert.equal(message.stopReason, "error");
+    assert.ok(message.errorMessage?.includes("Provider stream ended without a stop reason"));
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Seam 2 (H3 & H4 Fix): streamAntigravity invokes onPayload, onResponse, and applies baseUrl/headers", async () => {
+  const realFetch = globalThis.fetch;
+  let capturedUrl = null;
+  let capturedHeaders = null;
+  let capturedBody = null;
+  let onPayloadCalled = false;
+  let onResponseStatus = null;
+  let onResponseHeaders = null;
+
+  globalThis.fetch = async (url, init) => {
+    capturedUrl = url;
+    capturedHeaders = init.headers;
+    capturedBody = JSON.parse(init.body);
+    return {
+      ok: true,
+      status: 200,
+      headers: new Headers({ "content-type": "text/event-stream", "x-goog-test": "header-val" }),
+      body: new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode(sseTurn5));
+          controller.close();
+        },
+      }),
+    };
+  };
+
+  try {
+    const message = await streamAntigravity(
+      {
+        id: "gemini-3.8-flash",
+        provider: "antigravity",
+        api: "antigravity-api",
+        baseUrl: "https://custom-gateway.example.com",
+        headers: { "X-Model-Header": "model-val" },
+        maxTokens: 65536,
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+      },
+      normalizeContext({ messages: [{ role: "user", content: "hello" }] }),
+      {
+        apiKey: JSON.stringify({ token: "test-token", projectId: "test-project" }),
+        headers: { "X-Request-Header": "request-val" },
+        onPayload: async (payload, _model) => {
+          onPayloadCalled = true;
+          return { ...payload, customTransformed: true };
+        },
+        onResponse: async (res, _model) => {
+          onResponseStatus = res.status;
+          onResponseHeaders = res.headers;
+        },
+      },
+      store,
+    ).result();
+
+    assert.equal(message.stopReason, "stop");
+    assert.ok(onPayloadCalled, "onPayload must be invoked");
+    assert.equal(capturedBody.customTransformed, true, "replacement payload from onPayload must be used");
+    assert.equal(capturedUrl, "https://custom-gateway.example.com/v1internal:streamGenerateContent?alt=sse");
+    assert.equal(capturedHeaders["X-Model-Header"], "model-val");
+    assert.equal(capturedHeaders["X-Request-Header"], "request-val");
+    assert.equal(onResponseStatus, 200);
+    assert.equal(onResponseHeaders["x-goog-test"], "header-val");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Seam 2 (M2 Fix): streamAntigravity throws on in-stream SSE error payload", async () => {
+  const realFetch = globalThis.fetch;
+  const errorSse = 'data: {"error": {"code": 400, "message": "Invalid argument on stream", "status": "INVALID_ARGUMENT"}}\n';
+  globalThis.fetch = async () => ({
+    ok: true,
+    status: 200,
+    headers: new Headers({ "content-type": "text/event-stream" }),
+    body: new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode(errorSse));
+        controller.close();
+      },
+    }),
+  });
+
+  try {
+    const stream = streamAntigravity(
+      {
+        id: "gemini-3.8-flash",
+        provider: "antigravity",
+        api: "antigravity-api",
+        maxTokens: 65536,
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+      },
+      normalizeContext({ messages: [{ role: "user", content: "hello" }] }),
+      { apiKey: JSON.stringify({ token: "test-token", projectId: "test-project" }) },
+      store,
+    );
+
+    const message = await stream.result();
+    assert.equal(message.stopReason, "error");
+    assert.ok(message.errorMessage?.includes("Invalid argument on stream"));
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Seam 2 (M4 Fix): streamAntigravity stops with aborted reason on AbortSignal", async () => {
+  const realFetch = globalThis.fetch;
+  const controller = new AbortController();
+
+  globalThis.fetch = async () => ({
+    ok: true,
+    status: 200,
+    headers: new Headers({ "content-type": "text/event-stream" }),
+    body: new ReadableStream({
+      start(ctrl) {
+        ctrl.enqueue(new TextEncoder().encode('data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": "chunk1"}]}}]}}\n'));
+        controller.abort();
+        ctrl.close();
+      },
+    }),
+  });
+
+  try {
+    const stream = streamAntigravity(
+      {
+        id: "gemini-3.8-flash",
+        provider: "antigravity",
+        api: "antigravity-api",
+        maxTokens: 65536,
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+      },
+      normalizeContext({ messages: [{ role: "user", content: "hello" }] }),
+      {
+        apiKey: JSON.stringify({ token: "test-token", projectId: "test-project" }),
+        signal: controller.signal,
+      },
+      store,
+    );
+
+    const message = await stream.result();
+    assert.equal(message.stopReason, "aborted");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
 });

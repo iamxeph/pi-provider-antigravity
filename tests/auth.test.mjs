@@ -300,3 +300,54 @@ test("Token refresh keeps the stored projectId when lookup fails", async () => {
     globalThis.fetch = realFetch;
   }
 });
+
+test("Seam Auth (M1 & Low-1 Fix): loginAntigravity invokes onProgress and respects callbacks.signal abort", async () => {
+  const { loginAntigravity } = await import("../src/auth.ts");
+  const controller = new AbortController();
+  controller.abort(new Error("User cancelled login"));
+
+  const progressUpdates = [];
+  const callbacks = {
+    onAuth: () => {},
+    onPrompt: async () => "test_code",
+    onProgress: (msg) => progressUpdates.push(msg),
+    signal: controller.signal,
+  };
+
+  await assert.rejects(
+    async () => loginAntigravity(callbacks),
+    (err) => {
+      assert.ok(err.message.includes("cancelled"));
+      return true;
+    }
+  );
+});
+
+test("Seam Auth (Low-1 Fix): loginAntigravity emits progress events during login", async () => {
+  const { loginAntigravity } = await import("../src/auth.ts");
+  const realFetch = globalThis.fetch;
+  const progressUpdates = [];
+
+  globalThis.fetch = async (url) => {
+    if (String(url).includes("loadCodeAssist")) {
+      return { ok: true, json: async () => ({ cloudaicompanionProject: "proj-123" }) };
+    }
+    return { ok: true, json: async () => ({ access_token: "tok-123", expires_in: 3600, refresh_token: "ref-123" }) };
+  };
+
+  try {
+    const creds = await loginAntigravity({
+      onAuth: () => {},
+      onPrompt: async () => "test_auth_code",
+      onProgress: (msg) => progressUpdates.push(msg),
+    });
+
+    assert.ok(progressUpdates.some((p) => p.includes("Exchanging authorization code")));
+    assert.ok(progressUpdates.some((p) => p.includes("Resolving Code Assist project ID")));
+    const parsed = JSON.parse(creds.access);
+    assert.equal(parsed.token, "tok-123");
+    assert.equal(parsed.projectId, "proj-123");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

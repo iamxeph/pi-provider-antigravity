@@ -25,6 +25,7 @@ export default function (pi: ExtensionAPI): void {
     models: [], // Purely dynamic provider per Pi SDK architecture
     oauth: {
       name: PROVIDER_NAME,
+      isSubscription: true,
       login: loginAntigravity,
       refreshToken: refreshAntigravityToken,
       getApiKey,

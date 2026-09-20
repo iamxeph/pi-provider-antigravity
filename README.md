@@ -39,7 +39,9 @@ pi -e npm:pi-provider-antigravity
 
 ### Legacy Pi Support
 
-For Pi 0.80.0 ~ 0.85.x, install the compatible `0.13.0` release:
+We strongly recommend upgrading to Pi >= 0.86.0 to take advantage of the latest SDK capabilities, streaming reliability improvements, and full feature parity.
+
+However, if you are unable to upgrade your Pi installation just yet (for environment or workflow reasons), you can pin to the compatible `0.13.0` release for Pi 0.80.0 ~ 0.85.x:
 
 ```bash
 pi install npm:pi-provider-antigravity@0.13.0
