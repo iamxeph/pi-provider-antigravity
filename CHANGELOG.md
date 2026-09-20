@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.14.0...v0.15.0) (2026-09-20)
+
+
+### Features
+
+* improve Pi 0.86 SDK integration and stream robustness ([#21](https://github.com/iamxeph/pi-provider-antigravity/issues/21)) ([464e376](https://github.com/iamxeph/pi-provider-antigravity/commit/464e3762dde6719842e5baa1857dc564fb7b8bbc))
+
 ## [0.14.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.13.0...v0.14.0) (2026-09-20)
 
 
