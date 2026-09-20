@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.14.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.13.0...v0.14.0) (2026-09-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* Drops support for Pi < 0.86.0.
+
+### Features
+
+* migrate to Pi 0.86.x TranscriptContext ([#18](https://github.com/iamxeph/pi-provider-antigravity/issues/18)) ([a2bb390](https://github.com/iamxeph/pi-provider-antigravity/commit/a2bb390fd5e811c9b1baf7dbc2d585dff7b58ced))
+
 ## [0.13.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.12.0...v0.13.0) (2026-09-17)
 
 
