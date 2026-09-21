@@ -4,7 +4,7 @@ import { DEFAULT_ENDPOINT, PROVIDER_ID } from "./protocol.ts";
 import { createModelCatalog } from "./model-catalog.ts";
 import { createQuotaStatus } from "./quota-status.ts";
 import { streamAntigravity } from "./stream.ts";
-import { completeSubcommands, runAntigravitySubcommand } from "./commands.ts";
+import { createAntigravityCommands } from "./commands.ts";
 import { registerWebSearchTool } from "./search.ts";
 
 export { PROVIDER_ID };
@@ -15,6 +15,7 @@ export default function (pi: ExtensionAPI): void {
   // The one deep Model Catalog seam for this extension: handles Pi refreshModels,
   // Model Plan resolution for streaming, and CLI formatting for subcommands.
   const catalog = createModelCatalog();
+  const commands = createAntigravityCommands({ quotaStatus, catalog });
 
   pi.registerProvider(PROVIDER_ID, {
     name: PROVIDER_NAME,
@@ -34,9 +35,9 @@ export default function (pi: ExtensionAPI): void {
 
   pi.registerCommand("antigravity", {
     description: "Antigravity quota, models and settings",
-    getArgumentCompletions: (prefix) => completeSubcommands(prefix),
+    getArgumentCompletions: (prefix) => commands.complete(prefix),
     handler: async (args: string, ctx: ExtensionCommandContext) => {
-      await runAntigravitySubcommand(args, ctx, quotaStatus, catalog);
+      await commands.handle(args, ctx);
     },
   });
 

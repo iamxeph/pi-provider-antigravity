@@ -10,7 +10,7 @@ import {
   SEARCH_SYSTEM_INSTRUCTION,
 } from "../src/search.ts";
 import initExtension from "../src/index.ts";
-import { runAntigravitySubcommand } from "../src/commands.ts";
+import { createAntigravityCommands } from "../src/commands.ts";
 
 function getRegisteredTool() {
   let tool: any = null;
@@ -237,12 +237,13 @@ test("Web Search Grounding: /antigravity websearch executes via command interfac
     await executeWebSearchCommand(mockCtx, "Seoul weather");
     assert.ok(outputs.some((o) => o.includes("Today is sunny in Seoul.")));
 
-    // 3. Delegation from runAntigravitySubcommand
+    // 3. Delegation from createAntigravityCommands
     const subOutputs: string[] = [];
-    await runAntigravitySubcommand("websearch Seoul weather", {
+    const cmds = createAntigravityCommands({ catalog: {} as any });
+    await cmds.handle("websearch Seoul weather", {
       ...mockCtx,
       ui: { notify: (msg: string) => subOutputs.push(msg) },
-    }, undefined, {} as any);
+    } as any);
     assert.ok(subOutputs.some((o) => o.includes("Today is sunny in Seoul.")));
   } finally {
     globalThis.fetch = origFetch;
