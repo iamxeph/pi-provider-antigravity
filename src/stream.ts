@@ -97,6 +97,19 @@ function attachLoneSignature(content: ParsedBlock[], lastThoughtSignature?: stri
   content.push({ type: "text", text: "", textSignature: lastThoughtSignature });
 }
 
+/**
+ * Whether the turn carried an answer: a non-empty text block or a tool call.
+ *
+ * Thinking is not an answer, and neither is an empty text block — those are
+ * Thought Signature carriers (see `attachLoneSignature`), so `content.length`
+ * cannot stand in for this test.
+ */
+function hasAnswerContent(content: ParsedBlock[]): boolean {
+  return content.some((block) =>
+    block.type === "toolCall" ? true : block.type === "text" ? block.text.trim().length > 0 : false,
+  );
+}
+
 function closeOpenBlock(
   state: StreamParserState,
   onEvent?: (ev: StreamDeliveryEvent) => void,
@@ -389,7 +402,7 @@ async function consumeAntigravityStream(
 /**
  * Stream Delivery Module: the deep module encapsulating wire byte streaming,
  * incremental SSE decoding, usage accounting, Thought Signature placement,
- * and direct Pi AssistantMessageEventStream dispatch.
+ * no-answer turn rejection, and direct Pi AssistantMessageEventStream dispatch.
  */
 export function streamAntigravity(
   model: Model<any>,
@@ -431,6 +444,7 @@ export function streamAntigravity(
           ? options.trajectoryId
           : undefined;
       const plan = catalog.resolvePlan(model.id, effort);
+      const maxOutputTokens = options?.maxTokens ?? model.maxTokens;
 
       let requestBody = buildAntigravityRequestBody({
         projectId,
@@ -438,7 +452,7 @@ export function streamAntigravity(
         context,
         sessionId: options?.sessionId,
         trajectoryId,
-        maxOutputTokens: options?.maxTokens ?? model.maxTokens,
+        maxOutputTokens,
         toolChoice: options?.toolChoice,
       });
 
@@ -494,6 +508,39 @@ export function streamAntigravity(
           output.rawStopReason
             ? `Provider stopped with: ${output.rawStopReason}`
             : output.errorMessage || "An unknown error occurred",
+        );
+      }
+
+      // A STOP turn whose only content is thinking answered nothing: the model
+      // deliberated to the end and sent no text and no tool call. Pi treats a
+      // `stop` turn with no tool calls as complete, so the turn would end in
+      // silence — with its one output block hidden behind `hideThinkingBlock`.
+      // The MAX_TOKENS variant of the same pathology is recovered by Pi's
+      // recoverable-length compaction; this is the complement of that path, so
+      // `length` is deliberately left alone here.
+      // Wording matters twice: the message must not match Pi's retryable-error
+      // patterns (`retry your request`, `ended without`, ...), because
+      // re-requesting an identical deliberate-to-the-budget turn just burns the
+      // same budget again, nor its overflow patterns, which would reroute the
+      // failure into compaction. tests/stream-adapter.test.mjs pins both.
+      //
+      // PROVISIONAL (2026-09-21): observed once in 15,541 archived antigravity
+      // assistant turns, and not reproducible on demand — 14 replays of the exact
+      // failing request produced 0 answer-less STOPs (evidence and method: the
+      // private archive's captures/pi_probe_no_answer/README.md). What the
+      // official CLI does with this shape is uncaptured, so this is our policy,
+      // not a copied fingerprint.
+      //
+      // Revisit: if a capture shows agy reacting differently, or if the shape
+      // never recurs, delete this guard, the `hasAnswerContent` helper above (this
+      // guard is its only caller, and `noUnusedLocals` is off — the leftover would
+      // not fail typecheck), and its adapter test. The parser test that pins the
+      // wire-faithful `stop` shape stands on its own and can stay.
+      if (output.stopReason === "stop" && !hasAnswerContent(output.content)) {
+        throw new Error(
+          `Antigravity returned no answer: the turn ended after thinking only ` +
+            `(reasoning ${output.usage.reasoning} of ${maxOutputTokens} max output tokens). ` +
+            `Lower the thinking level or prompt again.`,
         );
       }
 
