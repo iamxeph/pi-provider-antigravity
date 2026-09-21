@@ -60,7 +60,7 @@ export interface QuotaSummary {
   description?: string;
 }
 
-export function renderProgressBar(fraction: number, width = 10): string {
+function renderProgressBar(fraction: number, width = 10): string {
   const clamped = Math.max(0, Math.min(1, fraction));
   const filled = Math.round(clamped * width);
   return `[${"#".repeat(filled)}${"-".repeat(width - filled)}]`;
@@ -98,11 +98,11 @@ function sortQuotaBuckets(buckets: QuotaBucket[]): QuotaBucket[] {
     );
 }
 
-export function formatResetRemaining(resetTime?: string): string | null {
+function formatResetRemaining(resetTime?: string, nowFn: () => number = Date.now): string | null {
   if (!resetTime) return null;
   const ts = Date.parse(resetTime);
   if (!Number.isFinite(ts)) return null;
-  const delta = ts - Date.now();
+  const delta = ts - nowFn();
   if (delta <= 0) return "ready";
   const totalMin = Math.ceil(delta / 60000);
   const days = Math.floor(totalMin / (60 * 24));
@@ -113,7 +113,7 @@ export function formatResetRemaining(resetTime?: string): string | null {
   return `in ${mins}m`;
 }
 
-export function parseQuotaSummary(data: any): QuotaSummary {
+function parseQuotaSummary(data: any): QuotaSummary {
   const groups: QuotaGroup[] = [];
 
   for (const g of data.groups || []) {
@@ -141,7 +141,7 @@ export function parseQuotaSummary(data: any): QuotaSummary {
   };
 }
 
-export function formatQuotaSummary(summary: QuotaSummary): string {
+function formatQuotaSummary(summary: QuotaSummary, nowFn: () => number = Date.now): string {
   const lines: string[] = [];
 
   for (const group of summary.groups) {
@@ -150,7 +150,7 @@ export function formatQuotaSummary(summary: QuotaSummary): string {
     for (const b of sortQuotaBuckets(group.buckets)) {
       const pct = Math.round(b.remainingFraction * 100);
       const label = shortWindowLabel(b, classifyQuotaWindow(b)).padEnd(3);
-      const reset = formatResetRemaining(b.resetTime);
+      const reset = formatResetRemaining(b.resetTime, nowFn);
       const suffix = reset && pct < 100 ? ` (${reset})` : "";
       lines.push(
         `  ${label} ${renderProgressBar(b.remainingFraction)} ${String(pct).padStart(3)}% left${suffix}`,
@@ -161,12 +161,12 @@ export function formatQuotaSummary(summary: QuotaSummary): string {
   return lines.join("\n");
 }
 
-export function isGeminiQuotaGroup(group: QuotaGroup): boolean {
+function isGeminiQuotaGroup(group: QuotaGroup): boolean {
   // Bucket ids ("gemini-5h" vs "3p-5h") — not display prose ("Gemini Models").
   return (group.buckets || []).some((b) => (b.bucketId || "").toLowerCase().includes("gemini"));
 }
 
-export function selectQuotaGroup(groups: QuotaGroup[], modelId?: string): QuotaGroup | undefined {
+function selectQuotaGroup(groups: QuotaGroup[], modelId?: string): QuotaGroup | undefined {
   if (groups.length === 0) return undefined;
   const family = classifyModelFamily(modelId);
   if (family === "claude" || family === "gpt") {
@@ -180,9 +180,9 @@ export function selectQuotaGroup(groups: QuotaGroup[], modelId?: string): QuotaG
 // urgent window of the group backing the current model: 5h and weekly pools
 // differ in volume, so the wall you hit first is min(r5h, rWk × R) — not min
 // fraction. R self-calibrates from observed deltas (see calibrateWeeklyTo5hRatio).
-export const DEFAULT_WEEKLY_TO_5H_RATIO = 6.0;
+const DEFAULT_WEEKLY_TO_5H_RATIO = 6.0;
 
-export interface WindowFractionPair {
+interface WindowFractionPair {
   "5h": number;
   weekly: number;
 }
@@ -201,7 +201,7 @@ function poolKey(bucket: QuotaBucket): string {
 }
 
 // Plain-object form for JSON persistence (see coordinator state).
-export function extractWindowFractionPairs(
+function extractWindowFractionPairs(
   summary?: QuotaSummary,
 ): Record<string, WindowFractionPair> {
   const pairs: Record<string, WindowFractionPair> = {};
@@ -220,7 +220,7 @@ export function extractWindowFractionPairs(
 // Self-calibrates the 5h vs weekly volume ratio R from delta consumption:
 // the same absolute spend drops the 5h fraction R× faster than weekly.
 // First valid pool wins; resets and noise fall outside the guards below.
-export function calibrateWeeklyTo5hRatio(
+function calibrateWeeklyTo5hRatio(
   previous: Record<string, WindowFractionPair> | undefined,
   current: Record<string, WindowFractionPair> | undefined,
   currentRatio = DEFAULT_WEEKLY_TO_5H_RATIO,
@@ -261,32 +261,39 @@ function selectUrgentBucket(group: QuotaGroup, weeklyTo5hRatio: number): QuotaBu
   return worst;
 }
 
-export function buildQuotaFooter(
+function buildQuotaFooter(
   summary: QuotaSummary,
   modelId?: string,
   weeklyTo5hRatio = DEFAULT_WEEKLY_TO_5H_RATIO,
+  nowFn: () => number = Date.now,
 ): string | undefined {
   const group = selectQuotaGroup(summary.groups, modelId);
   if (!group) return undefined;
   const urgent = selectUrgentBucket(group, weeklyTo5hRatio);
-  return urgent ? formatQuotaWindowPart(urgent) : undefined;
+  return urgent ? formatQuotaWindowPart(urgent, nowFn) : undefined;
 }
 
 // Both windows of the backing group, 5h first (e.g. "5h 35% (26m) · Wk 75% (6d 14h)").
-export function buildQuotaFooterBoth(summary: QuotaSummary, modelId?: string): string | undefined {
+function buildQuotaFooterBoth(
+  summary: QuotaSummary,
+  modelId?: string,
+  nowFn: () => number = Date.now,
+): string | undefined {
   const group = selectQuotaGroup(summary.groups, modelId);
   if (!group || group.buckets.length === 0) return undefined;
-  return sortQuotaBuckets(group.buckets).map(formatQuotaWindowPart).join(" · ");
+  return sortQuotaBuckets(group.buckets)
+    .map((b) => formatQuotaWindowPart(b, nowFn))
+    .join(" · ");
 }
 
 // Window prefix names the bucket ("5h"/"Wk"); unknown windows fall back to
 // the bucket's own display name.
-export function formatQuotaWindowPart(bucket: QuotaBucket): string {
+function formatQuotaWindowPart(bucket: QuotaBucket, nowFn: () => number = Date.now): string {
   const kind = classifyQuotaWindow(bucket);
   const prefix =
     kind === "5h" ? "5h" : kind === "weekly" ? "Wk" : bucket.displayName || bucket.bucketId;
   const pct = Math.round(bucket.remainingFraction * 100);
-  const short = formatResetRemaining(bucket.resetTime)?.replace(/^in /, "");
+  const short = formatResetRemaining(bucket.resetTime, nowFn)?.replace(/^in /, "");
   if (short && pct < 100) return `${prefix} ${pct}% (${short})`;
   return `${prefix} ${pct}%`;
 }
@@ -298,13 +305,13 @@ export function formatQuotaWindowPart(bucket: QuotaBucket): string {
 const ANSI_RED = "\x1b[31m";
 const ANSI_YELLOW = "\x1b[33m";
 const ANSI_DIM = "\x1b[90m";
-export const ANSI_FG_RESET = "\x1b[39m";
+const ANSI_FG_RESET = "\x1b[39m";
 
-export const QUOTA_WARN_PCT = 30;
-export const QUOTA_ALERT_PCT = 10;
+const QUOTA_WARN_PCT = 30;
+const QUOTA_ALERT_PCT = 10;
 
-export type QuotaColorTone = "error" | "warning" | "dim";
-export type QuotaColorizer = (tone: QuotaColorTone, text: string) => string;
+type QuotaColorTone = "error" | "warning" | "dim";
+type QuotaColorizer = (tone: QuotaColorTone, text: string) => string;
 export type QuotaColorStyle =
   | { fg: (tone: QuotaColorTone, text: string) => string }
   | QuotaColorizer;
@@ -318,7 +325,7 @@ function resolveColorizer(style?: QuotaColorStyle): QuotaColorizer {
   };
 }
 
-export function colorizeQuotaFooter(
+function colorizeQuotaFooter(
   footer: string | undefined,
   style?: QuotaColorStyle,
 ): string | undefined {
@@ -333,7 +340,7 @@ export function colorizeQuotaFooter(
 }
 
 // Colors each " · "-separated window part by its own percentage.
-export function colorizeQuotaFooterBoth(
+function colorizeQuotaFooterBoth(
   footer: string | undefined,
   style?: QuotaColorStyle,
 ): string | undefined {
@@ -346,8 +353,8 @@ export function colorizeQuotaFooterBoth(
     .join(sep);
 }
 
-export function previewQuotaFooterText(
-  coord: QuotaStatusCoordinator | undefined,
+function previewQuotaFooterText(
+  coord: QuotaStatus | undefined,
   modelId: string | undefined,
   mode: string,
   style?: QuotaColorStyle,
@@ -363,12 +370,12 @@ export function previewQuotaFooterText(
 // Namespaced by repo so no other extension (e.g. a personal-config "quota"
 // slot) can overwrite this footer slot, and vice versa.
 export const QUOTA_STATUS_KEY = "pi-provider-antigravity-footer-usage";
-export const QUOTA_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+const QUOTA_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 // Baselines older than this may straddle a quota reset (negative or
 // meaningless deltas), so cross-session calibration ignores them. An hour
 // caps the straddle risk at ~1/5 of the 5h window while an hour of active
 // use still dwarfs the noise guards below thousands-fold.
-export const MAX_OBSERVATION_AGE_MS = 60 * 60 * 1000;
+const MAX_OBSERVATION_AGE_MS = 60 * 60 * 1000;
 
 // Persisted Quota Pool calibration state (states.quota in the provider file).
 // The file shape is owned by the settings subsystem; the coordinator only sees
@@ -400,7 +407,7 @@ export function fileQuotaStatusStore(file = defaultConfigFile()): QuotaStatusSto
 }
 
 export function createQuotaFooterField(
-  quotaStatus?: QuotaStatusCoordinator,
+  quotaStatus?: QuotaStatus,
 ): SettingsFieldDef {
   return {
     key: "quotaFooter",
@@ -481,6 +488,7 @@ export interface FooterModeDef {
     modelId?: string,
     ratio?: number,
     style?: QuotaColorStyle,
+    nowFn?: () => number,
   ) => { plain?: string; colored?: string };
 }
 
@@ -492,18 +500,18 @@ export const FOOTER_MODES: Record<QuotaFooterMode, FooterModeDef> = Object.freez
   smart: {
     key: "smart",
     note: FOOTER_MODE_NOTES.smart,
-    render: (summary, modelId, ratio = DEFAULT_WEEKLY_TO_5H_RATIO, style) => {
+    render: (summary, modelId, ratio = DEFAULT_WEEKLY_TO_5H_RATIO, style, nowFn = Date.now) => {
       if (!summary) return {};
-      const plain = buildQuotaFooter(summary, modelId, ratio);
+      const plain = buildQuotaFooter(summary, modelId, ratio, nowFn);
       return { plain, colored: colorizeQuotaFooter(plain, style) };
     },
   },
   all: {
     key: "all",
     note: FOOTER_MODE_NOTES.all,
-    render: (summary, modelId, _ratio, style) => {
+    render: (summary, modelId, _ratio, style, nowFn = Date.now) => {
       if (!summary) return {};
-      const plain = buildQuotaFooterBoth(summary, modelId);
+      const plain = buildQuotaFooterBoth(summary, modelId, nowFn);
       return { plain, colored: colorizeQuotaFooterBoth(plain, style) };
     },
   },
@@ -513,26 +521,56 @@ export function isAntigravityModel(model?: { provider?: string }): boolean {
   return model?.provider === PROVIDER_ID;
 }
 
-export function paintQuotaStatus(coord: QuotaStatusCoordinator, ctx: QuotaStatusCtx): void {
-  coord.paint(ctx);
+export interface QuotaStatusDeps {
+  store?: QuotaStatusStore;
+  configFile?: string;
+  fetchQuotaSummary?: (token: string, signal?: AbortSignal) => Promise<any>;
+  now?: () => number;
+}
+
+export interface QuotaStatus {
+  readonly ratio: number;
+  mode(): QuotaFooterMode;
+  refreshAndPaint(ctx: QuotaStatusCtx): Promise<void>;
+  paint(ctx: QuotaStatusCtx): void;
+  inspectUsage(ctx: QuotaStatusCtx & { signal?: AbortSignal }): Promise<string>;
+  createSettingsField(): SettingsFieldDef;
+  ensurePreview(ctx: QuotaStatusCtx): Promise<QuotaSummary | undefined>;
+  refresh(ctx: QuotaStatusCtx, opts?: RefreshOptions): Promise<QuotaSummary | undefined>;
+  ingest(summary: any): void;
+  renderFooter(
+    modelId?: string,
+    mode?: QuotaFooterMode,
+    style?: QuotaColorStyle,
+  ): { plain?: string; colored?: string };
 }
 
 // In-memory throttle around the quota fetch: at most one network call per
 // QUOTA_REFRESH_INTERVAL_MS, with inflight dedup. Failures keep the stale
 // footer instead of flashing errors in the status bar.
-export class QuotaStatusCoordinator {
+export class QuotaStatusCoordinator implements QuotaStatus {
   private summary: QuotaSummary | undefined;
   private fetchedAt = 0;
   private inflight: Promise<QuotaSummary | undefined> | null = null;
   private weeklyTo5hRatio: number;
   private lastPairs: Record<string, WindowFractionPair> | undefined;
   private readonly store: QuotaStatusStore;
+  private readonly fetchSummaryOverride?: (token: string, signal?: AbortSignal) => Promise<any>;
+  private readonly nowFn: () => number;
 
-  constructor(storeOrFile?: string | QuotaStatusStore) {
-    if (typeof storeOrFile === "string" || !storeOrFile) {
-      this.store = fileQuotaStatusStore(storeOrFile || defaultConfigFile());
+  constructor(depsOrStoreOrFile?: QuotaStatusDeps | string | QuotaStatusStore) {
+    if (typeof depsOrStoreOrFile === "string" || !depsOrStoreOrFile) {
+      this.store = fileQuotaStatusStore(depsOrStoreOrFile || defaultConfigFile());
+      this.nowFn = Date.now;
+    } else if ("loadMode" in depsOrStoreOrFile) {
+      this.store = depsOrStoreOrFile;
+      this.nowFn = Date.now;
     } else {
-      this.store = storeOrFile;
+      this.store =
+        depsOrStoreOrFile.store ??
+        fileQuotaStatusStore(depsOrStoreOrFile.configFile || defaultConfigFile());
+      this.fetchSummaryOverride = depsOrStoreOrFile.fetchQuotaSummary;
+      this.nowFn = depsOrStoreOrFile.now ?? Date.now;
     }
     this.weeklyTo5hRatio = DEFAULT_WEEKLY_TO_5H_RATIO;
     this.loadPersisted();
@@ -548,7 +586,7 @@ export class QuotaStatusCoordinator {
   }
 
   footerFor(modelId?: string, mode: QuotaFooterMode = "smart"): string | undefined {
-    return FOOTER_MODES[mode]?.render(this.summary, modelId, this.weeklyTo5hRatio).plain;
+    return FOOTER_MODES[mode]?.render(this.summary, modelId, this.weeklyTo5hRatio, undefined, this.nowFn).plain;
   }
 
   renderFooter(
@@ -556,11 +594,11 @@ export class QuotaStatusCoordinator {
     mode: QuotaFooterMode = "smart",
     style?: QuotaColorStyle,
   ): { plain?: string; colored?: string } {
-    return FOOTER_MODES[mode]?.render(this.summary, modelId, this.weeklyTo5hRatio, style) ?? {};
+    return FOOTER_MODES[mode]?.render(this.summary, modelId, this.weeklyTo5hRatio, style, this.nowFn) ?? {};
   }
 
   get isFresh(): boolean {
-    return !!this.summary && Date.now() - this.fetchedAt < QUOTA_REFRESH_INTERVAL_MS;
+    return !!this.summary && this.nowFn() - this.fetchedAt < QUOTA_REFRESH_INTERVAL_MS;
   }
 
   refresh(ctx: QuotaStatusCtx, opts: RefreshOptions = {}): Promise<QuotaSummary | undefined> {
@@ -603,7 +641,11 @@ export class QuotaStatusCoordinator {
       throw new Error("Failed to fetch usage.");
     }
     this.paint(ctx);
-    return formatQuotaSummary(summary);
+    return formatQuotaSummary(summary, this.nowFn);
+  }
+
+  createSettingsField(): SettingsFieldDef {
+    return createQuotaFooterField(this);
   }
 
   // One fetch for preview purposes even when the footer slot is off or the
@@ -630,13 +672,20 @@ export class QuotaStatusCoordinator {
     try {
       const creds = await resolveCredentials(ctx);
       if (!creds) return undefined;
-      const rawSummary = await postAntigravityJson<any>({
-        auth: creds,
-        path: "v1internal:retrieveUserQuotaSummary",
-        body: { project: creds.projectId },
-        signal,
-      });
-      const summary = parseQuotaSummary(rawSummary);
+
+      let rawSummary: any;
+      if (this.fetchSummaryOverride) {
+        rawSummary = await this.fetchSummaryOverride(creds.token, signal);
+      } else {
+        rawSummary = await postAntigravityJson<any>({
+          auth: creds,
+          path: "v1internal:retrieveUserQuotaSummary",
+          body: { project: creds.projectId },
+          signal,
+        });
+      }
+      if (!rawSummary) return undefined;
+      const summary = rawSummary.groups ? parseQuotaSummary(rawSummary) : rawSummary;
       this.ingest(summary);
       return summary;
     } catch {
@@ -644,9 +693,14 @@ export class QuotaStatusCoordinator {
     }
   }
 
-  // Accepts an externally fetched summary into the shared cache: same
+  // Accepts an externally fetched summary or raw JSON into the shared cache: same
   // calibration, persistence, and freshness as fetch().
-  ingest(summary: QuotaSummary): void {
+  ingest(summaryOrRaw: any): void {
+    const summary: QuotaSummary =
+      summaryOrRaw && summaryOrRaw.groups && typeof summaryOrRaw.groups[0]?.buckets?.[0]?.remainingFraction === "number"
+        ? parseQuotaSummary(summaryOrRaw)
+        : summaryOrRaw;
+
     const calibrated = calibrateWeeklyTo5hRatio(
       this.lastPairs,
       extractWindowFractionPairs(summary),
@@ -655,7 +709,7 @@ export class QuotaStatusCoordinator {
     this.weeklyTo5hRatio = calibrated;
     this.lastPairs = extractWindowFractionPairs(summary);
     this.summary = summary;
-    this.fetchedAt = Date.now();
+    this.fetchedAt = this.nowFn();
     this.saveState();
   }
 
@@ -667,7 +721,7 @@ export class QuotaStatusCoordinator {
     }
     const at = entry?.updatedAt;
     this.lastPairs =
-      typeof at === "number" && Date.now() - at <= MAX_OBSERVATION_AGE_MS
+      typeof at === "number" && this.nowFn() - at <= MAX_OBSERVATION_AGE_MS
         ? validPairs(entry?.previousObservation)
         : undefined;
   }
@@ -679,10 +733,16 @@ export class QuotaStatusCoordinator {
       this.store.saveQuotaState({
         weeklyTo5hRatio: this.weeklyTo5hRatio,
         previousObservation: this.lastPairs ?? {},
-        updatedAt: Date.now(),
+        updatedAt: this.nowFn(),
       });
     } catch {
       // Cache is best-effort; a stale ratio is still usable.
     }
   }
+}
+
+export function createQuotaStatus(
+  deps?: QuotaStatusDeps | string | QuotaStatusStore,
+): QuotaStatus {
+  return new QuotaStatusCoordinator(deps);
 }
