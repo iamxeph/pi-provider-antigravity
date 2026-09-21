@@ -142,6 +142,18 @@ function normalizeToolCallId(id: string | undefined): string | undefined {
   return id.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 64);
 }
 
+/**
+ * Google Gemini API (and the v1internal wire protocol used by agy CLI) enforces
+ * a strict Protocol Buffers Schema definition for FunctionDeclaration.parameters.
+ *
+ * Unlike standard JSON Schema Draft 7/2020-12 (and Pi 0.86.0's strict-prefer
+ * constrainedSampling which introduces `additionalProperties: false`, `$schema`,
+ * `$defs`, etc.), the Google backend rejects any unknown keys with
+ * `400 INVALID_ARGUMENT: Cannot find field`.
+ *
+ * This allowlist restricts declaration properties strictly to Google's supported
+ * subset, while semantic mappings (e.g. `const` -> `enum: [val]`) preserve intent.
+ */
 const CUSTOM_TOOL_SCHEMA_ALLOW = new Set([
   "type",
   "description",
@@ -151,6 +163,10 @@ const CUSTOM_TOOL_SCHEMA_ALLOW = new Set([
   "enum",
 ]);
 
+/**
+ * Strips JSON Schema meta-keywords ($schema, $id, $defs) that are not part
+ * of Google's Protobuf Schema and cause 400 rejection on the wire.
+ */
 function stripMetaSchema(schema: unknown): unknown {
   if (!schema || typeof schema !== "object" || Array.isArray(schema)) return schema;
   const omit = new Set(["$schema", "$id", "$defs", "definitions"]);
@@ -161,6 +177,14 @@ function stripMetaSchema(schema: unknown): unknown {
   return out;
 }
 
+/**
+ * Recursively normalizes a JSON schema to conform to Google's FunctionDeclaration
+ * parameters specification:
+ * - Drops disallowed keys (e.g. `additionalProperties`, `patternProperties`)
+ * - Maps `const: "val"` to single-item `enum: ["val"]`
+ * - Normalizes type unions like `["string", "null"]` to scalar `"string"`
+ * - Filters out non-string enum values
+ */
 function normalizeCustomToolSchema(schema: unknown): unknown {
   if (!schema || typeof schema !== "object") return schema;
   if (Array.isArray(schema)) return schema.map(normalizeCustomToolSchema);
