@@ -1,7 +1,14 @@
 import { Type } from "@earendil-works/pi-ai";
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
-import { FALLBACK_PROJECT_ID, NOT_LOGGED_IN, resolveCredentials, type AntigravityCredentials } from "./auth.ts";
-import { postAntigravityJson } from "./protocol.ts";
+import {
+  NOT_LOGGED_IN,
+  AntigravityAuthError,
+  type CredentialSource,
+} from "./auth.ts";
+import {
+  type AntigravityClient,
+  defaultAntigravityClient,
+} from "./protocol.ts";
 
 export const WEB_SEARCH_TOOL_NAME = "antigravity_websearch";
 export const SEARCH_MODEL = "gemini-3.1-flash-lite";
@@ -157,8 +164,9 @@ function formatSearchResults(
  * replicating agy CLI's native search_web tool call.
  */
 async function performWebSearch(
-  creds: AntigravityCredentials,
+  source: CredentialSource,
   options: WebSearchOptions,
+  client: AntigravityClient = defaultAntigravityClient,
 ): Promise<SearchResult> {
   const createdAt = new Date().toISOString();
   let effectiveQuery = options.query.trim();
@@ -170,7 +178,6 @@ async function performWebSearch(
   }
 
   const reqBody = {
-    project: creds.projectId || FALLBACK_PROJECT_ID,
     request: {
       contents: [
         {
@@ -202,12 +209,12 @@ async function performWebSearch(
     requestType: "web_search",
   };
 
-  const resp = await postAntigravityJson<SearchApiResponse>({
-    auth: creds.token,
-    path: "v1internal:generateContent",
-    body: reqBody,
-    signal: options.signal,
-  });
+  const resp = await client.postJson<SearchApiResponse>(
+    source,
+    "v1internal:generateContent",
+    reqBody,
+    options.signal,
+  );
 
   const completedAt = new Date().toISOString();
   const candidate = resp.response?.candidates?.[0];
@@ -260,15 +267,8 @@ export function registerWebSearchTool(pi: ExtensionAPI): void {
       ),
     }),
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
-      const creds = await resolveCredentials(ctx);
-      if (!creds) {
-        return {
-          content: [{ type: "text", text: `Error: ${NOT_LOGGED_IN}` }],
-          details: { error: "not_logged_in" },
-        };
-      }
       try {
-        const result = await performWebSearch(creds, {
+        const result = await performWebSearch(ctx, {
           query: params.query,
           domain: params.domain,
           signal,
@@ -281,6 +281,12 @@ export function registerWebSearchTool(pi: ExtensionAPI): void {
           },
         };
       } catch (err: any) {
+        if (err instanceof AntigravityAuthError) {
+          return {
+            content: [{ type: "text", text: `Error: ${NOT_LOGGED_IN}` }],
+            details: { error: "not_logged_in" },
+          };
+        }
         return {
           content: [{ type: "text", text: `Search failed: ${err.message}` }],
           details: { error: err.message },
@@ -298,12 +304,6 @@ export async function executeWebSearchCommand(
   ctx: ExtensionCommandContext,
   query?: string,
 ): Promise<void> {
-  const creds = await resolveCredentials(ctx);
-  if (!creds) {
-    notifyUser(ctx, NOT_LOGGED_IN, "warning");
-    return;
-  }
-
   const trimmedQuery = (query || "").trim();
   if (!trimmedQuery) {
     notifyUser(ctx, "Usage: /antigravity websearch <query>", "warning");
@@ -312,12 +312,16 @@ export async function executeWebSearchCommand(
 
   try {
     if (ctx.hasUI) ctx.ui.notify(`Searching: "${trimmedQuery}"…`, "info");
-    const result = await performWebSearch(creds, {
+    const result = await performWebSearch(ctx, {
       query: trimmedQuery,
       signal: ctx.signal,
     });
     notifyUser(ctx, result.formattedOutput);
   } catch (err: any) {
+    if (err instanceof AntigravityAuthError) {
+      notifyUser(ctx, NOT_LOGGED_IN, "warning");
+      return;
+    }
     notifyUser(ctx, `Search failed: ${err.message}`, "error");
   }
 }

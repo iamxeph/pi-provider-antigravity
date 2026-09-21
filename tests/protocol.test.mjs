@@ -8,6 +8,8 @@ import {
   buildAntigravityHeaders,
   postAntigravityJson,
   postAntigravityStream,
+  createAntigravityClient,
+  AntigravityAuthError,
 } from "../src/protocol.ts";
 
 test("Seam Protocol: buildAntigravityHeaders matches wire fingerprint", () => {
@@ -182,6 +184,82 @@ test("Seam Protocol: postAntigravityStream throws AntigravityHttpError on HTTP f
         return true;
       }
     );
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Deep Protocol Client: fetchAvailableModels resolves credentials, injects project, and calls endpoint", async () => {
+  const realFetch = globalThis.fetch;
+  let seenUrl;
+  let seenBody;
+  let seenHeaders;
+
+  globalThis.fetch = async (url, init) => {
+    seenUrl = url;
+    seenBody = JSON.parse(init.body);
+    seenHeaders = init.headers;
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ models: [{ id: "model-1" }] }),
+    };
+  };
+
+  try {
+    const client = createAntigravityClient();
+    const creds = JSON.stringify({ token: "test-tok-abc", projectId: "test-proj-xyz" });
+    const res = await client.fetchAvailableModels(creds);
+
+    assert.deepEqual(res, { models: [{ id: "model-1" }] });
+    assert.equal(seenUrl, `${DEFAULT_ENDPOINT}/v1internal:fetchAvailableModels`);
+    assert.equal(seenBody.project, "test-proj-xyz");
+    assert.equal(seenHeaders["Authorization"], "Bearer test-tok-abc");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Deep Protocol Client: fetchAvailableModels throws AntigravityAuthError when unauthenticated", async () => {
+  const client = createAntigravityClient();
+  await assert.rejects(
+    async () => {
+      await client.fetchAvailableModels(null);
+    },
+    (err) => {
+      assert.ok(err instanceof AntigravityAuthError);
+      return true;
+    }
+  );
+});
+
+test("Deep Protocol Client: retrieveQuotaSummary returns undefined when unauthenticated", async () => {
+  const client = createAntigravityClient();
+  const res = await client.retrieveQuotaSummary(null);
+  assert.equal(res, undefined);
+});
+
+test("Deep Protocol Client: postJson injects project ID into payload", async () => {
+  const realFetch = globalThis.fetch;
+  let seenBody;
+
+  globalThis.fetch = async (url, init) => {
+    seenBody = JSON.parse(init.body);
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ result: "ok" }),
+    };
+  };
+
+  try {
+    const client = createAntigravityClient();
+    const creds = JSON.stringify({ token: "tok-123", projectId: "my-custom-project" });
+    const res = await client.postJson(creds, "v1internal:testPath", { customField: "hello" });
+
+    assert.deepEqual(res, { result: "ok" });
+    assert.equal(seenBody.project, "my-custom-project");
+    assert.equal(seenBody.customField, "hello");
   } finally {
     globalThis.fetch = realFetch;
   }

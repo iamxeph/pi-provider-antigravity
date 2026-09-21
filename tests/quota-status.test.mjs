@@ -838,3 +838,34 @@ test("Preview renders the footer sample per mode", async () => {
   }
 });
 
+test("QuotaStatus.bind subscribes to lifecycle events and repaints footer slot", async () => {
+  const handlers = new Map();
+  const mockPi = {
+    on(event, handler) {
+      handlers.set(event, handler);
+    },
+  };
+
+  const statuses = [];
+  const coord = createQuotaStatus({
+    store: memStore("smart").store,
+    fetchQuotaSummary: async () => quotaJson,
+  });
+
+  coord.bind(mockPi);
+
+  assert.ok(handlers.has("session_start"), "must register session_start");
+  assert.ok(handlers.has("model_select"), "must register model_select");
+  assert.ok(handlers.has("agent_settled"), "must register agent_settled");
+
+  // Fire session_start
+  const ctx = makeCtx(statuses);
+  await handlers.get("session_start")({}, ctx);
+  assert.ok(statuses.length > 0, "session_start should trigger footer painting");
+
+  // formatUsage delegates to inspectUsage
+  const usageText = await coord.formatUsage(ctx);
+  assert.match(usageText, /Gemini Models/);
+});
+
+

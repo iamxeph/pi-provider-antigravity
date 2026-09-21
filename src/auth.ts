@@ -1,6 +1,10 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { OAuthCredentials, OAuthLoginCallbacks } from "@earendil-works/pi-ai";
-import { postAntigravityJson, PROVIDER_ID } from "./protocol.ts";
+
+export const PROVIDER_ID = "antigravity";
+const DEFAULT_ENDPOINT = "https://daily-cloudcode-pa.googleapis.com";
+const DEFAULT_USER_AGENT =
+  "antigravity/cli/1.2.7 (aidev_client; os_type=linux; arch=amd64; cl=984112147; auth_method=consumer)";
 
 export interface AntigravityCredentials {
   token: string;
@@ -14,6 +18,17 @@ export type CredentialSource =
   | string
   | null
   | undefined;
+
+/**
+ * Structured error thrown when an operation requires Antigravity credentials
+ * but none are configured or resolvable from the context.
+ */
+export class AntigravityAuthError extends Error {
+  constructor(message = NOT_LOGGED_IN) {
+    super(message);
+    this.name = "AntigravityAuthError";
+  }
+}
 
 export const REDIRECT_URI = "https://antigravity.google/oauth-callback";
 export const AUTH_URL = "https://accounts.google.com/o/oauth2/auth";
@@ -78,14 +93,22 @@ function generatePKCE(): { verifier: string; challenge: string } {
 
 export async function fetchProjectId(token: string, signal?: AbortSignal): Promise<string> {
   try {
-    const data = await postAntigravityJson<{ cloudaicompanionProject?: string }>({
-      auth: token,
-      path: "v1internal:loadCodeAssist",
-      body: { metadata: { ideType: "ANTIGRAVITY" } },
+    const res = await fetch(`${DEFAULT_ENDPOINT}/v1internal:loadCodeAssist`, {
+      method: "POST",
+      headers: {
+        Host: "daily-cloudcode-pa.googleapis.com",
+        "User-Agent": DEFAULT_USER_AGENT,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ metadata: { ideType: "ANTIGRAVITY" } }),
       signal,
     });
-    if (data.cloudaicompanionProject) {
-      return data.cloudaicompanionProject;
+    if (res.ok) {
+      const data = (await res.json()) as { cloudaicompanionProject?: string };
+      if (data.cloudaicompanionProject) {
+        return data.cloudaicompanionProject;
+      }
     }
   } catch (err) {
     if (signal?.aborted) throw err;
@@ -295,7 +318,7 @@ export async function requireCredentials(
 ): Promise<AntigravityCredentials> {
   const creds = await resolveCredentials(source);
   if (!creds) {
-    throw new Error(errorMessage);
+    throw new AntigravityAuthError(errorMessage);
   }
   return creds;
 }
