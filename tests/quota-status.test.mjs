@@ -14,7 +14,6 @@ import {
   QUOTA_STATUS_KEY,
   QuotaStatusCoordinator,
   fileQuotaStatusStore,
-  createQuotaFooterField,
   isAntigravityModel,
 } from "../src/quota-status.ts";
 
@@ -769,9 +768,9 @@ test("Footer mode: settings.quotaFooter or off", () => {
   assert.equal(normalizeFooterMode(42), undefined);
 });
 
-test("Footer mode table: createQuotaFooterField derives options from FOOTER_MODES and notes from FOOTER_MODE_NOTES", () => {
+test("Footer mode table: createSettingsField derives options from FOOTER_MODES and notes from FOOTER_MODE_NOTES", () => {
   const coord = new QuotaStatusCoordinator(memStore("smart").store);
-  const quotaField = createQuotaFooterField(coord);
+  const quotaField = coord.createSettingsField();
   assert.ok(quotaField);
   assert.deepEqual(quotaField.options, Object.keys(FOOTER_MODES));
   assert.deepEqual(quotaField.optionNotes, FOOTER_MODE_NOTES);

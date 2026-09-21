@@ -2,7 +2,7 @@ import type { ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { resolveCredentials, NOT_LOGGED_IN, type AntigravityCredentials } from "./auth.ts";
 import { PROVIDER_ID } from "./protocol.ts";
 import { openSettings } from "./config.ts";
-import type { QuotaStatus } from "./quota-status.ts";
+import { createQuotaStatus, type QuotaStatus } from "./quota-status.ts";
 import type { ModelCatalog } from "./model-catalog.ts";
 import { performWebSearch } from "./search.ts";
 
@@ -61,7 +61,8 @@ export const SUBCOMMANDS: readonly SubcommandDef[] = Object.freeze([
     description: "Configure provider settings",
     aliases: Object.freeze(["setting"]),
     run: async ({ ctx, quotaStatus }) => {
-      await openSettings(ctx, { quotaStatus });
+      const qs = quotaStatus ?? createQuotaStatus();
+      await openSettings(ctx, [qs.createSettingsField()]);
     },
   },
   {
