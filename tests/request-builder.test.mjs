@@ -1898,3 +1898,126 @@ test("Seam 1: replay drops vacuous text parts (live Claude 400)", () => {
     ["thought", "391"]
   );
 });
+
+test("Seam 1 (Pi 0.86 Parity): strict tool schemas (constrainedSampling) normalize for Gemini", () => {
+  // Pi 0.86.0 enables strict-prefer JSON-schema sampling by default for built-in
+  // tools (read, bash, powershell, edit, write), which injects additionalProperties: false,
+  // const fields, $schema, and strict required arrays.
+  const strictReadTool = {
+    name: "read",
+    description: "Read file contents",
+    parameters: {
+      $schema: "http://json-schema.org/draft-07/schema#",
+      type: "object",
+      properties: {
+        path: { type: "string", description: "Path to the file" },
+        encoding: { type: "string", const: "utf-8", description: "File encoding" },
+        offset: { type: "integer", description: "1-indexed line offset" },
+        limit: { type: "integer", description: "Maximum lines to read" },
+      },
+      required: ["path"],
+      additionalProperties: false,
+    },
+  };
+
+  const strictEditTool = {
+    name: "edit",
+    description: "Edit file contents",
+    parameters: {
+      type: "object",
+      properties: {
+        path: { type: "string" },
+        edits: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              oldText: { type: "string" },
+              newText: { type: "string" },
+            },
+            required: ["oldText", "newText"],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: ["path", "edits"],
+      additionalProperties: false,
+    },
+  };
+
+  const body = buildAntigravityRequestBody({
+    projectId: "aicode-consumers",
+    plan: staticPlan("gemini-3.8-flash-high"),
+    context: {
+      messages: [{ role: "user", content: "read and edit" }],
+      tools: [strictReadTool, strictEditTool],
+    },
+  });
+
+  const decls = body.request.tools[0].functionDeclarations;
+  assert.equal(decls.length, 2);
+
+  // Gemini uses legacy parameters, never parametersJsonSchema
+  assert.equal(decls[0].parametersJsonSchema, undefined);
+  assert.equal(decls[1].parametersJsonSchema, undefined);
+
+  const readParams = decls[0].parameters;
+  // additionalProperties: false must be stripped
+  assert.equal(readParams.additionalProperties, undefined);
+  // $schema must be stripped
+  assert.equal(readParams.$schema, undefined);
+  // const: "utf-8" mapped to enum: ["utf-8"]
+  assert.deepEqual(readParams.properties.encoding.enum, ["utf-8"]);
+  assert.equal(readParams.properties.encoding.const, undefined);
+
+  const editParams = decls[1].parameters;
+  assert.equal(editParams.additionalProperties, undefined);
+  assert.equal(editParams.properties.edits.items.additionalProperties, undefined);
+
+  // Entire schema tree must strictly contain only allowlisted keys
+  const ALLOWED = new Set(["type", "description", "properties", "required", "items", "enum"]);
+  const verifyAllowed = (schema) => {
+    if (!schema || typeof schema !== "object") return;
+    for (const key of Object.keys(schema)) {
+      assert.ok(ALLOWED.has(key), `Disallowed key '${key}' found in normalized schema`);
+    }
+    if (schema.properties) {
+      for (const prop of Object.values(schema.properties)) {
+        verifyAllowed(prop);
+      }
+    }
+    if (schema.items) {
+      verifyAllowed(schema.items);
+    }
+  };
+
+  verifyAllowed(readParams);
+  verifyAllowed(editParams);
+});
+
+test("Seam 1 (Pi 0.86 Parity): prompt cache warming builds 1-token output budget request", () => {
+  // Pi 0.86.0 cache warming re-sends the request with a 1-token output budget
+  // shortly before prompt cache expiry.
+  const context = {
+    messages: [
+      { role: "user", content: "Keep this long prefix warm in cache" },
+    ],
+  };
+
+  const body = buildAntigravityRequestBody({
+    projectId: "aicode-consumers",
+    plan: staticPlan("gemini-3.8-flash-high"),
+    context,
+    maxOutputTokens: 1,
+  });
+
+  assert.equal(body.request.generationConfig.maxOutputTokens, 1);
+  assert.deepEqual(body.request.generationConfig.thinkingConfig, {
+    includeThoughts: true,
+    thinkingBudget: -1,
+  });
+  assert.ok(body.requestId);
+  assert.ok(body.request.sessionId);
+  assert.ok(body.request.labels.trajectory_id);
+});
+
