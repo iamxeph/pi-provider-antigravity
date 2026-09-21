@@ -2,7 +2,7 @@ import type { ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { resolveCredentials, NOT_LOGGED_IN, type AntigravityCredentials } from "./auth.ts";
 import { PROVIDER_ID } from "./protocol.ts";
 import { openSettings } from "./config.ts";
-import type { QuotaStatusCoordinator } from "./quota-status.ts";
+import type { QuotaStatus } from "./quota-status.ts";
 import type { ModelCatalog } from "./model-catalog.ts";
 import { performWebSearch } from "./search.ts";
 
@@ -21,7 +21,7 @@ export function emitOutput(
 
 export interface SubcommandContext {
   ctx: ExtensionCommandContext;
-  quotaStatus?: QuotaStatusCoordinator;
+  quotaStatus?: QuotaStatus;
   catalog: ModelCatalog;
   subArgs?: string;
 }
@@ -155,7 +155,7 @@ async function runModelsSubcommand(ctx: ExtensionCommandContext, catalog: ModelC
 
 async function runUsageSubcommand(
   ctx: ExtensionCommandContext,
-  quotaStatus?: QuotaStatusCoordinator,
+  quotaStatus?: QuotaStatus,
 ): Promise<void> {
   if ((await resolveCredentials(ctx)) === null) {
     emitOutput(ctx, NOT_LOGGED_IN, "warning");
@@ -232,7 +232,7 @@ async function runSearchSubcommand(
 export async function runAntigravitySubcommand(
   args: string,
   ctx: ExtensionCommandContext,
-  quotaStatus: QuotaStatusCoordinator | undefined,
+  quotaStatus: QuotaStatus | undefined,
   catalog: ModelCatalog,
 ): Promise<void> {
   const raw = (args || "").trim();

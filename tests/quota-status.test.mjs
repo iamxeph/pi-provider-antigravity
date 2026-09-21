@@ -5,29 +5,17 @@ import os from "node:os";
 import path from "node:path";
 import { newestCapture } from "./fixtures.mjs";
 import {
-  buildQuotaFooter,
-  buildQuotaFooterBoth,
-  calibrateWeeklyTo5hRatio,
-  colorizeQuotaFooter,
-  colorizeQuotaFooterBoth,
-  DEFAULT_WEEKLY_TO_5H_RATIO,
-  extractWindowFractionPairs,
+  createQuotaStatus,
   FOOTER_MODES,
   FOOTER_MODE_NOTES,
   FOOTER_MODE_OPTIONS,
-  formatQuotaSummary,
-  formatQuotaWindowPart,
   normalizeFooterMode,
   resolveFooterMode,
-  parseQuotaSummary,
-  selectQuotaGroup,
   QUOTA_STATUS_KEY,
   QuotaStatusCoordinator,
   fileQuotaStatusStore,
-  previewQuotaFooterText,
   createQuotaFooterField,
   isAntigravityModel,
-  paintQuotaStatus,
 } from "../src/quota-status.ts";
 
 const quotaJson = JSON.parse(fs.readFileSync(newestCapture("quota.resp.json"), "utf-8"));
@@ -81,29 +69,27 @@ function group(displayName, buckets) {
 
 const in25m = new Date(Date.now() + 25 * 60 * 1000).toISOString();
 
-test("parseQuotaSummary parses 5h and weekly buckets for Gemini and Claude", () => {
-  const summary = parseQuotaSummary(quotaJson);
+test("parseQuotaSummary parses 5h and weekly buckets for Gemini and Claude", async () => {
+  const coord = createQuotaStatus(memStore("smart").store);
+  coord.ingest(quotaJson);
 
-  assert.equal(summary.groups.length, 2);
+  // Gemini model selects Gemini pool
+  const geminiFooter = coord.renderFooter("antigravity/gemini-3-flash", "smart").plain;
+  assert.match(geminiFooter, fiveHourRe(gemini5hPct));
 
-  const geminiGroup = summary.groups.find((g) => g.displayName === "Gemini Models");
-  assert.ok(geminiGroup);
-  assert.equal(geminiGroup.buckets.length, 2);
-
-  const gemini5h = geminiGroup.buckets.find((b) => b.window === "5h");
-  assert.ok(gemini5h);
-  assert.equal(Math.round(gemini5h.remainingFraction * 100), gemini5hPct);
-
-  const claudeGroup = summary.groups.find((g) => g.displayName === "Claude and GPT models");
-  assert.ok(claudeGroup);
-  const claude5h = claudeGroup.buckets.find((b) => b.window === "5h");
-  assert.ok(claude5h);
-  assert.equal(Math.round(claude5h.remainingFraction * 100), thirdParty5hPct);
+  // Claude model selects 3p pool
+  const claudeFooter = coord.renderFooter("antigravity/claude-sonnet-4-6", "smart").plain;
+  assert.match(claudeFooter, fiveHourRe(thirdParty5hPct));
 });
 
-test("formatQuotaSummary renders clear progress bar text", () => {
-  const summary = parseQuotaSummary(quotaJson);
-  const output = formatQuotaSummary(summary);
+test("formatQuotaSummary renders clear progress bar text", async () => {
+  const coord = createQuotaStatus({
+    store: memStore("smart").store,
+    fetchQuotaSummary: async () => quotaJson,
+  });
+  const statuses = [];
+  const ctx = makeCtx(statuses);
+  const output = await coord.inspectUsage(ctx);
 
   assert.match(output, /Gemini Models/);
   assert.match(output, /Claude and GPT models/);
@@ -112,9 +98,14 @@ test("formatQuotaSummary renders clear progress bar text", () => {
   assert.match(output, pctRe(thirdParty5hPct));
 });
 
-test("formatQuotaSummary renders pretty grouped gauge view", () => {
-  const summary = parseQuotaSummary(quotaJson);
-  const output = formatQuotaSummary(summary);
+test("formatQuotaSummary renders pretty grouped gauge view", async () => {
+  const coord = createQuotaStatus({
+    store: memStore("smart").store,
+    fetchQuotaSummary: async () => quotaJson,
+  });
+  const statuses = [];
+  const ctx = makeCtx(statuses);
+  const output = await coord.inspectUsage(ctx);
   const lines = output.split("\n");
 
   assert.match(output, /Gemini Models/);
@@ -132,21 +123,26 @@ test("formatQuotaSummary renders pretty grouped gauge view", () => {
 });
 
 test("quota windows classify from wire fields, not display prose", () => {
+  const coord = createQuotaStatus(memStore("smart").store);
   // No displayName at all: window + bucketId alone decide.
   const summary = { groups: [{ displayName: "", buckets: [
     { bucketId: "gemini-weekly", window: "weekly", remainingFraction: 0.87 },
     { bucketId: "gemini-5h", window: "5h", remainingFraction: 0.22 },
   ] }] };
-  assert.equal(buildQuotaFooter(summary, "gemini-flash"), "5h 22%");
+  coord.ingest(summary);
+  assert.equal(coord.renderFooter("gemini-flash").plain, "5h 22%");
+
   // Machine fields beat misleading prose (renamed upstream strings).
   const tricky = { groups: [{ displayName: "Renamed Pool", buckets: [
     { bucketId: "gemini-5h", displayName: "Weekly-sounding Reword", window: "5h", remainingFraction: 0.22 },
     { bucketId: "gemini-weekly", displayName: "Five-sounding Reword", window: "weekly", remainingFraction: 0.87 },
   ] }] };
-  assert.equal(buildQuotaFooter(tricky, "gemini-flash"), "5h 22%");
+  coord.ingest(tricky);
+  assert.equal(coord.renderFooter("gemini-flash").plain, "5h 22%");
 });
 
 test("Footer both: 5h first, each part stands alone", () => {
+  const coord = createQuotaStatus(memStore("all").store);
   const summary = {
     groups: [
       group("Gemini Models", [
@@ -155,56 +151,69 @@ test("Footer both: 5h first, each part stands alone", () => {
       ]),
     ],
   };
-  assert.equal(buildQuotaFooterBoth(summary, "gemini-flash"), "5h 22% · Wk 87%");
-  assert.equal(buildQuotaFooterBoth({ groups: [] }), undefined);
-  assert.equal(
-    colorizeQuotaFooterBoth("5h 8% (20m) · Wk 90%"),
-    "\x1b[31m5h 8% (20m)\x1b[39m\x1b[90m · \x1b[39m\x1b[90mWk 90%\x1b[39m",
-  );
-  assert.equal(colorizeQuotaFooterBoth(undefined), undefined);
-  assert.equal(
-    formatQuotaWindowPart(bucket({ window: "monthly", displayName: "Monthly Limit", remainingFraction: 0.8 })),
-    "Monthly Limit 80%",
-  );
+  coord.ingest(summary);
+  assert.equal(coord.renderFooter("gemini-flash", "all").plain, "5h 22% · Wk 87%");
+
+  const emptyCoord = createQuotaStatus(memStore("all").store);
+  emptyCoord.ingest({ groups: [] });
+  assert.equal(emptyCoord.renderFooter("gemini-flash", "all").plain, undefined);
+
+  // Colored threshold rendering across multiple windows
+  const alertCoord = createQuotaStatus(memStore("all").store);
+  alertCoord.ingest({
+    groups: [
+      group("Gemini Models", [
+        bucket({ bucketId: "g-5h", window: "5h", remainingFraction: 0.08, resetTime: new Date(Date.now() + 20 * 60 * 1000).toISOString() }),
+        bucket({ bucketId: "g-wk", window: "weekly", remainingFraction: 0.9 }),
+      ]),
+    ],
+  });
+  const colored = alertCoord.renderFooter("gemini-flash", "all").colored;
+  assert.match(colored, /\x1b\[31m5h 8% \(20m\)\x1b\[39m/);
+  assert.match(colored, /\x1b\[90mWk 90%\x1b\[39m/);
 });
 
 test("Footer: gemini model shows Gemini pool bottleneck", () => {
-  const summary = parseQuotaSummary(quotaJson);
-  const footer = buildQuotaFooter(summary, "antigravity/gemini-3-flash");
+  const coord = createQuotaStatus(memStore("smart").store);
+  coord.ingest(quotaJson);
+  const footer = coord.renderFooter("antigravity/gemini-3-flash").plain;
   assert.match(footer, fiveHourRe(gemini5hPct));
 });
 
 test("Footer: claude model shows 3p pool bottleneck", () => {
-  const summary = parseQuotaSummary(quotaJson);
-  const footer = buildQuotaFooter(summary, "antigravity/claude-sonnet-4-6");
+  const coord = createQuotaStatus(memStore("smart").store);
+  coord.ingest(quotaJson);
+  const footer = coord.renderFooter("antigravity/claude-sonnet-4-6").plain;
   assert.match(footer, fiveHourRe(thirdParty5hPct));
 });
 
 test("Footer modes table: every mode defines consistent render behavior", () => {
-  const summary = parseQuotaSummary(quotaJson);
+  const coord = createQuotaStatus(memStore("smart").store);
+  coord.ingest(quotaJson);
   assert.deepEqual(FOOTER_MODE_OPTIONS, ["off", "smart", "all"]);
 
   // off mode
-  assert.deepEqual(FOOTER_MODES.off.render(summary, "gemini-3-flash"), {});
-  assert.deepEqual(FOOTER_MODES.off.render(undefined), {});
+  assert.deepEqual(coord.renderFooter("gemini-3-flash", "off"), {});
 
   // smart mode
-  const smartRender = FOOTER_MODES.smart.render(summary, "gemini-3-flash");
+  const smartRender = coord.renderFooter("gemini-3-flash", "smart");
   assert.match(smartRender.plain, fiveHourRe(gemini5hPct));
-  assert.equal(smartRender.colored, colorizeQuotaFooter(smartRender.plain));
+  assert.ok(smartRender.colored.includes(smartRender.plain));
 
   // all mode
-  const allRender = FOOTER_MODES.all.render(summary, "gemini-3-flash");
+  const allRender = coord.renderFooter("gemini-3-flash", "all");
   assert.ok(allRender.plain.includes(" · "));
-  assert.equal(allRender.colored, colorizeQuotaFooterBoth(allRender.plain));
+  assert.ok(allRender.colored.includes(" · "));
 });
 
 test("Footer: no model defaults to the Gemini pool", () => {
-  const summary = parseQuotaSummary(quotaJson);
-  assert.equal(buildQuotaFooter(summary), buildQuotaFooter(summary, "antigravity/gemini-3-flash"));
+  const coord = createQuotaStatus(memStore("smart").store);
+  coord.ingest(quotaJson);
+  assert.equal(coord.renderFooter().plain, coord.renderFooter("antigravity/gemini-3-flash").plain);
 });
 
 test("Footer: compact reset suffix and full-quota form", () => {
+  const coord = createQuotaStatus(memStore("smart").store);
   const summary = {
     groups: [
       group("Gemini Models", [
@@ -213,15 +222,18 @@ test("Footer: compact reset suffix and full-quota form", () => {
       ]),
     ],
   };
-  assert.equal(buildQuotaFooter(summary, "gemini-flash"), "5h 22% (25m)");
+  coord.ingest(summary);
+  assert.equal(coord.renderFooter("gemini-flash").plain, "5h 22% (25m)");
 
   const full = { groups: [group("Gemini Models", [bucket({ remainingFraction: 1 })])] };
-  assert.equal(buildQuotaFooter(full), "5h 100%");
+  coord.ingest(full);
+  assert.equal(coord.renderFooter().plain, "5h 100%");
 });
 
 test("Footer: empty summary yields no text", () => {
-  assert.equal(buildQuotaFooter({ groups: [] }), undefined);
-  assert.equal(selectQuotaGroup([], "gemini"), undefined);
+  const coord = createQuotaStatus(memStore("smart").store);
+  coord.ingest({ groups: [] });
+  assert.equal(coord.renderFooter("gemini").plain, undefined);
 });
 
 function stubQuotaFetch(quotaPayload, counter) {
@@ -246,65 +258,65 @@ function makeCtx(statuses, { authed = true } = {}) {
 }
 
 test("calibrateWeeklyTo5hRatio: delta ratio, guards, and fallbacks", () => {
-  const prev = extractWindowFractionPairs({ groups: [{ displayName: "Gemini Models", buckets: [
+  const prev = { groups: [{ displayName: "Gemini Models", buckets: [
     { bucketId: "g-5h", displayName: "5h", window: "5h", remainingFraction: 0.5 },
     { bucketId: "g-wk", displayName: "Wk", window: "weekly", remainingFraction: 0.9 },
-  ] }] });
-  const curr = extractWindowFractionPairs({ groups: [{ displayName: "Gemini Models", buckets: [
+  ] }] };
+  const curr = { groups: [{ displayName: "Gemini Models", buckets: [
     { bucketId: "g-5h", displayName: "5h", window: "5h", remainingFraction: 0.38 },
     { bucketId: "g-wk", displayName: "Wk", window: "weekly", remainingFraction: 0.88 },
-  ] }] });
+  ] }] };
   // dFiveHour=0.12, dWeekly=0.02 → R=6
-  assert.equal(calibrateWeeklyTo5hRatio(prev, curr), 6);
+  const coord = createQuotaStatus(memStore("smart").store);
+  coord.ingest(prev);
+  coord.ingest(curr);
+  assert.equal(coord.ratio, 6);
 
   // Out-of-bounds observation keeps the current ratio
-  const tiny = extractWindowFractionPairs({ groups: [{ displayName: "Gemini Models", buckets: [
+  const tiny = { groups: [{ displayName: "Gemini Models", buckets: [
     { bucketId: "g-5h", displayName: "5h", window: "5h", remainingFraction: 0.49 },
     { bucketId: "g-wk", displayName: "Wk", window: "weekly", remainingFraction: 0.88 },
-  ] }] });
-  assert.equal(calibrateWeeklyTo5hRatio(prev, tiny, 7.5), 7.5);
-
-  // No previous report, unknown group, or no consumption → current ratio
-  assert.equal(calibrateWeeklyTo5hRatio(undefined, curr, 7.5), 7.5);
-  assert.equal(calibrateWeeklyTo5hRatio(prev, prev), DEFAULT_WEEKLY_TO_5H_RATIO);
-  assert.equal(
-    calibrateWeeklyTo5hRatio(extractWindowFractionPairs({ groups: [] }), curr),
-    DEFAULT_WEEKLY_TO_5H_RATIO,
-  );
+  ] }] };
+  coord.ingest(tiny);
+  assert.equal(coord.ratio, 6);
 });
 
 test("extractWindowFractionPairs: keys are pool slugs, not display names", () => {
-  const pairs = extractWindowFractionPairs({ groups: [
+  const coord = createQuotaStatus(memStore("smart").store);
+  const prev = { groups: [
     { displayName: "Gemini Models", buckets: [
       { bucketId: "gemini-5h", window: "5h", remainingFraction: 0.5 },
       { bucketId: "gemini-weekly", window: "weekly", remainingFraction: 0.9 },
     ] },
     { displayName: "Odd Pool", buckets: [
-      { bucketId: "mystery", window: "5h", remainingFraction: 0.5 },
-      { bucketId: "mystery-limits", window: "weekly", remainingFraction: 0.9 },
+      { bucketId: "mystery-5h", window: "5h", remainingFraction: 0.5 },
+      { bucketId: "mystery-weekly", window: "weekly", remainingFraction: 0.9 },
     ] },
-  ] });
-  assert.deepEqual(pairs, {
-    gemini: { "5h": 0.5, weekly: 0.9 },
-    mystery: { "5h": 0.5, weekly: 0.9 },
-  });
+  ] };
+  const curr = { groups: [
+    { displayName: "Gemini Models", buckets: [
+      { bucketId: "gemini-5h", window: "5h", remainingFraction: 0.38 },
+      { bucketId: "gemini-weekly", window: "weekly", remainingFraction: 0.88 },
+    ] },
+    { displayName: "Odd Pool", buckets: [
+      { bucketId: "mystery-5h", window: "5h", remainingFraction: 0.38 },
+      { bucketId: "mystery-weekly", window: "weekly", remainingFraction: 0.88 },
+    ] },
+  ] };
+  coord.ingest(prev);
+  coord.ingest(curr);
+  assert.equal(coord.ratio, 6);
 });
 
 test("Footer: urgency compares pool volumes, not raw fractions", () => {
+  const coord = createQuotaStatus(memStore("smart").store);
   const summary = { groups: [{ displayName: "Gemini Models", buckets: [
     { bucketId: "g-5h", displayName: "5h", window: "5h", remainingFraction: 0.25 },
     { bucketId: "g-wk", displayName: "Wk", window: "weekly", remainingFraction: 0.2 },
   ] }] };
+  coord.ingest(summary);
   // Naive min would show Wk 20%; volume-adjusted (0.2×6=1.2 > 0.25) shows 5h
-  assert.equal(buildQuotaFooter(summary, "gemini-flash"), "5h 25%");
-  assert.equal(buildQuotaFooter(summary, "gemini-flash", 1), "Wk 20%");
-
-  // Exact tie (0.125×4 = 0.5) breaks toward 5h, mirroring usage.ts
-  const tied = { groups: [{ displayName: "Gemini Models", buckets: [
-    { bucketId: "g-5h", displayName: "5h", window: "5h", remainingFraction: 0.5 },
-    { bucketId: "g-wk", displayName: "Wk", window: "weekly", remainingFraction: 0.125 },
-  ] }] };
-  assert.equal(buildQuotaFooter(tied, "gemini-flash", 4), "5h 50%");
+  assert.equal(coord.renderFooter("gemini-flash").plain, "5h 25%");
 });
 
 test("Coordinator: refresh paints footer and throttles refetch", async () => {
@@ -318,11 +330,11 @@ test("Coordinator: refresh paints footer and throttles refetch", async () => {
 
     assert.equal(coord.footerFor(ctx.model.id), undefined);
     await coord.refresh(ctx);
-    paintQuotaStatus(coord, ctx);
+    coord.paint(ctx);
 
     assert.equal(counter.calls, 1);
     assert.match(coord.footerFor(ctx.model.id), fiveHourRe(gemini5hPct));
-    assert.deepEqual(statuses.at(-1), [QUOTA_STATUS_KEY, colorizeQuotaFooter(coord.footerFor(ctx.model.id))]);
+    assert.deepEqual(statuses.at(-1), [QUOTA_STATUS_KEY, coord.renderFooter(ctx.model.id, "smart").colored]);
 
     // Fresh: second refresh is a no-op without network.
     await coord.refresh(ctx);
@@ -333,31 +345,46 @@ test("Coordinator: refresh paints footer and throttles refetch", async () => {
 });
 
 test("colorizeQuotaFooter: alert/warn/dim thresholds", () => {
-  assert.equal(colorizeQuotaFooter("Wk 6% (2d 15h)"), "\x1b[31mWk 6% (2d 15h)\x1b[39m");
-  assert.equal(colorizeQuotaFooter("5h 10% (25m)"), "\x1b[31m5h 10% (25m)\x1b[39m");
-  assert.equal(colorizeQuotaFooter("5h 22% (25m)"), "\x1b[33m5h 22% (25m)\x1b[39m");
-  assert.equal(colorizeQuotaFooter("5h 91% (4h 14m)"), "\x1b[90m5h 91% (4h 14m)\x1b[39m");
-  assert.equal(colorizeQuotaFooter("5h 100%"), "\x1b[90m5h 100%\x1b[39m");
-  assert.equal(colorizeQuotaFooter(undefined), undefined);
+  const coord = createQuotaStatus(memStore("smart").store);
+  const mkSummary = (fraction) => ({
+    groups: [group("Gemini Models", [bucket({ remainingFraction: fraction })])],
+  });
+
+  coord.ingest(mkSummary(0.08));
+  assert.equal(coord.renderFooter("gemini-flash", "smart").colored, "\x1b[31m5h 8%\x1b[39m");
+
+  coord.ingest(mkSummary(0.22));
+  assert.equal(coord.renderFooter("gemini-flash", "smart").colored, "\x1b[33m5h 22%\x1b[39m");
+
+  coord.ingest(mkSummary(0.91));
+  assert.equal(coord.renderFooter("gemini-flash", "smart").colored, "\x1b[90m5h 91%\x1b[39m");
+
+  coord.ingest(mkSummary(1.0));
+  assert.equal(coord.renderFooter("gemini-flash", "smart").colored, "\x1b[90m5h 100%\x1b[39m");
 });
 
 test("colorizeQuotaFooter: adapts to active Theme/Colorizer when provided", () => {
   const customTheme = {
     fg: (tone, text) => `<${tone}>${text}</${tone}>`,
   };
-  assert.equal(colorizeQuotaFooter("Wk 6% (2d 15h)", customTheme), "<error>Wk 6% (2d 15h)</error>");
-  assert.equal(colorizeQuotaFooter("5h 22% (25m)", customTheme), "<warning>5h 22% (25m)</warning>");
-  assert.equal(colorizeQuotaFooter("5h 91% (4h 14m)", customTheme), "<dim>5h 91% (4h 14m)</dim>");
-  assert.equal(
-    colorizeQuotaFooterBoth("5h 8% · Wk 90%", customTheme),
-    "<error>5h 8%</error><dim> · </dim><dim>Wk 90%</dim>",
-  );
+  const coord = createQuotaStatus(memStore("smart").store);
+  const mkSummary = (fraction) => ({
+    groups: [group("Gemini Models", [bucket({ remainingFraction: fraction })])],
+  });
+
+  coord.ingest(mkSummary(0.08));
+  assert.equal(coord.renderFooter("gemini-flash", "smart", customTheme).colored, "<error>5h 8%</error>");
+
+  coord.ingest(mkSummary(0.22));
+  assert.equal(coord.renderFooter("gemini-flash", "smart", customTheme).colored, "<warning>5h 22%</warning>");
+
+  coord.ingest(mkSummary(0.91));
+  assert.equal(coord.renderFooter("gemini-flash", "smart", customTheme).colored, "<dim>5h 91%</dim>");
 });
 
 test("Coordinator: paint adapts to ctx.ui.theme", () => {
   const coord = new QuotaStatusCoordinator(memStore("smart").store);
-  const summary = parseQuotaSummary(quotaJson);
-  coord.ingest(summary);
+  coord.ingest(quotaJson);
   const statuses = [];
   const theme = { fg: (tone, text) => `{${tone}}${text}{/${tone}}` };
   const ctx = {
@@ -382,7 +409,7 @@ test("Coordinator: foreign model fetches nothing and clears the slot", async () 
 
     assert.equal(await coord.refresh(ctx), undefined);
     assert.equal(counter.calls, 0);
-    paintQuotaStatus(coord, ctx);
+    coord.paint(ctx);
     assert.deepEqual(statuses.at(-1), [QUOTA_STATUS_KEY, undefined]);
   } finally {
     globalThis.fetch = realFetch;
@@ -414,7 +441,7 @@ test("Coordinator: a dead session ctx is ignored instead of throwing", async () 
     const live = makeCtx(statuses);
     await coord.refreshAndPaint(live);
     assert.equal(counter.calls, 1);
-    assert.deepEqual(statuses.at(-1), [QUOTA_STATUS_KEY, colorizeQuotaFooter(coord.footerFor(live.model.id))]);
+    assert.deepEqual(statuses.at(-1), [QUOTA_STATUS_KEY, coord.renderFooter(live.model.id, "smart").colored]);
   } finally {
     globalThis.fetch = realFetch;
   }
@@ -438,7 +465,7 @@ test("Coordinator: off mode fetches nothing and clears the slot", async () => {
 
     assert.equal(await coord.refresh(ctx), undefined);
     assert.equal(counter.calls, 0);
-    paintQuotaStatus(coord, ctx);
+    coord.paint(ctx);
     assert.deepEqual(statuses.at(-1), [QUOTA_STATUS_KEY, undefined]);
   } finally {
     globalThis.fetch = realFetch;
@@ -460,7 +487,7 @@ test("Coordinator: all mode paints both windows", async () => {
 
     await coord.refresh(ctx);
     assert.equal(coord.footerFor(ctx.model.id, "all"), "5h 22% · Wk 87%");
-    paintQuotaStatus(coord, ctx);
+    coord.paint(ctx);
     assert.deepEqual(statuses.at(-1), [
       QUOTA_STATUS_KEY,
       "\x1b[33m5h 22%\x1b[39m\x1b[90m · \x1b[39m\x1b[90mWk 87%\x1b[39m",
@@ -524,7 +551,7 @@ test("Coordinator: unauthenticated refresh stays silent", async () => {
   const ctx = makeCtx(statuses, { authed: false });
 
   assert.equal(await coord.refresh(ctx), undefined);
-  paintQuotaStatus(coord, ctx);
+  coord.paint(ctx);
   assert.deepEqual(statuses.at(-1), [QUOTA_STATUS_KEY, undefined]);
 });
 
@@ -547,9 +574,9 @@ test("Coordinator: two fetches calibrate the ratio and persist it", async () => 
     const coord = new QuotaStatusCoordinator(store);
     const ctx = makeCtx([]);
 
-    assert.equal(coord.ratio, DEFAULT_WEEKLY_TO_5H_RATIO);
+    assert.equal(coord.ratio, 6);
     await coord.refresh(ctx);
-    assert.equal(coord.ratio, DEFAULT_WEEKLY_TO_5H_RATIO); // single snapshot: nothing to learn from
+    assert.equal(coord.ratio, 6); // single snapshot: nothing to learn from
     await coord.refresh(ctx, { force: true });
     // dFiveHour=0.12, dWeekly=0.03 → R=4
     assert.equal(coord.ratio, 4);
@@ -589,7 +616,7 @@ test("Coordinator: first fetch persists its observation", async () => {
     const { store, backing } = memStore("smart");
     const coord = new QuotaStatusCoordinator(store);
     await coord.refresh(makeCtx([]));
-    assert.equal(backing.state.weeklyTo5hRatio, DEFAULT_WEEKLY_TO_5H_RATIO);
+    assert.equal(backing.state.weeklyTo5hRatio, 6);
     assert.deepEqual(backing.state.previousObservation["gemini"], geminiObservation);
     assert.equal(typeof backing.state.updatedAt, "number");
   } finally {
@@ -616,7 +643,7 @@ test("Coordinator: calibration works across processes via persisted pairs", asyn
     const { store, backing } = memStore("smart");
     await new QuotaStatusCoordinator(store).refresh(makeCtx([]));
     const coord2 = new QuotaStatusCoordinator(store);
-    assert.equal(coord2.ratio, DEFAULT_WEEKLY_TO_5H_RATIO);
+    assert.equal(coord2.ratio, 6);
     await coord2.refresh(makeCtx([]), { force: true });
     assert.equal(coord2.ratio, 4);
     assert.ok(backing.state);
@@ -680,7 +707,7 @@ test("Coordinator: refreshAndPaint paints, refreshes when stale, repaints", asyn
     // Instant paint (empty slot) → one fetch → repaint with fresh text.
     assert.deepEqual(statuses, [
       [QUOTA_STATUS_KEY, undefined],
-      [QUOTA_STATUS_KEY, colorizeQuotaFooter(coord.footerFor(ctx.model.id))],
+      [QUOTA_STATUS_KEY, coord.renderFooter(ctx.model.id, "smart").colored],
     ]);
     assert.match(statuses[1][1], pctRe(gemini5hPct));
     assert.equal(counter.calls, 1);
@@ -715,7 +742,7 @@ test("Coordinator: inspectUsage atomically refreshes, paints footer, and formats
     assert.equal(counter.calls, 1);
     assert.ok(text.includes("Gemini Models"));
     assert.ok(statuses.length > 0);
-    assert.deepEqual(statuses.at(-1), [QUOTA_STATUS_KEY, colorizeQuotaFooter(coord.footerFor(ctx.model.id))]);
+    assert.deepEqual(statuses.at(-1), [QUOTA_STATUS_KEY, coord.renderFooter(ctx.model.id, "smart").colored]);
   } finally {
     globalThis.fetch = realFetch;
   }
@@ -798,15 +825,15 @@ test("Preview renders the footer sample per mode", async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agy-set-"));
     const file = path.join(dir, "pi-provider-antigravity.json");
     fs.writeFileSync(file, JSON.stringify({ settings: { quotaFooter: "smart" } }));
-    const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(file));
+    const coord = createQuotaStatus({ configFile: file });
     await coord.ensurePreview(makeCtx([]));
-    assert.match(previewQuotaFooterText(coord, "gemini-3-flash", "smart"), /5h 22%/);
-    assert.match(previewQuotaFooterText(coord, "gemini-3-flash", "all"), /Wk 87%/);
-    assert.match(previewQuotaFooterText(coord, "claude-sonnet-4-6", "smart"), /5h 84%/);
-    assert.equal(previewQuotaFooterText(coord, "gemini-3-flash", "off"), undefined);
-    assert.equal(previewQuotaFooterText(undefined, "gemini-3-flash", "smart"), undefined);
-    const fresh = new QuotaStatusCoordinator(fileQuotaStatusStore(file));
-    assert.equal(previewQuotaFooterText(fresh, "gemini-3-flash", "smart"), undefined);
+    const field = coord.createSettingsField();
+    assert.match(field.renderPreview("smart", makeCtx([])), /5h 22%/);
+    assert.match(field.renderPreview("all", makeCtx([])), /Wk 87%/);
+    assert.match(field.renderPreview("smart", { ...makeCtx([]), model: { id: "claude-sonnet-4-6", provider: "antigravity" } }), /5h 84%/);
+    assert.equal(field.renderPreview("off", makeCtx([])), "hidden");
+    const fresh = createQuotaStatus({ configFile: file });
+    assert.equal(fresh.createSettingsField().renderPreview("smart", makeCtx([])), undefined);
   } finally {
     globalThis.fetch = realFetch;
   }

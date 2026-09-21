@@ -3,7 +3,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import type { ExtensionCommandContext, Theme } from "@earendil-works/pi-coding-agent";
 import { SettingsList, type SettingItem, type SettingsListTheme } from "@earendil-works/pi-tui";
-import { createQuotaFooterField, type QuotaStatusCoordinator } from "./quota-status.ts";
+import { createQuotaFooterField, type QuotaStatus } from "./quota-status.ts";
 
 export const ANSI_FG_RESET = "\x1b[39m";
 
@@ -143,7 +143,7 @@ export interface SettingsFieldDef {
 }
 
 export interface OpenSettingsDeps {
-  quotaStatus?: QuotaStatusCoordinator;
+  quotaStatus?: QuotaStatus;
   fields?: readonly SettingsFieldDef[];
 }
 
@@ -158,6 +158,9 @@ export function resolveFields(
   }
   const quotaStatus =
     depsOrFields && "quotaStatus" in depsOrFields ? depsOrFields.quotaStatus : undefined;
+  if (quotaStatus?.createSettingsField) {
+    return [quotaStatus.createSettingsField()];
+  }
   return [createQuotaFooterField(quotaStatus)];
 }
 
