@@ -406,7 +406,7 @@ export function fileQuotaStatusStore(file = defaultConfigFile()): QuotaStatusSto
   };
 }
 
-export function createQuotaFooterField(
+function createQuotaFooterField(
   quotaStatus?: QuotaStatus,
 ): SettingsFieldDef {
   return {

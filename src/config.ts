@@ -3,7 +3,6 @@ import * as os from "node:os";
 import * as path from "node:path";
 import type { ExtensionCommandContext, Theme } from "@earendil-works/pi-coding-agent";
 import { SettingsList, type SettingItem, type SettingsListTheme } from "@earendil-works/pi-tui";
-import { createQuotaFooterField, type QuotaStatus } from "./quota-status.ts";
 
 export const ANSI_FG_RESET = "\x1b[39m";
 
@@ -142,28 +141,6 @@ export interface SettingsFieldDef {
   prepare?: (ctx: ExtensionCommandContext) => Promise<void>;
 }
 
-export interface OpenSettingsDeps {
-  quotaStatus?: QuotaStatus;
-  fields?: readonly SettingsFieldDef[];
-}
-
-export function resolveFields(
-  depsOrFields?: OpenSettingsDeps | readonly SettingsFieldDef[],
-): readonly SettingsFieldDef[] {
-  if (Array.isArray(depsOrFields)) {
-    return depsOrFields;
-  }
-  if (depsOrFields && "fields" in depsOrFields && Array.isArray(depsOrFields.fields)) {
-    return depsOrFields.fields;
-  }
-  const quotaStatus =
-    depsOrFields && "quotaStatus" in depsOrFields ? depsOrFields.quotaStatus : undefined;
-  if (quotaStatus?.createSettingsField) {
-    return [quotaStatus.createSettingsField()];
-  }
-  return [createQuotaFooterField(quotaStatus)];
-}
-
 export function fieldDisplayValue(
   config: ProviderFileConfig | undefined,
   field: SettingsFieldDef,
@@ -207,7 +184,7 @@ function writeFailedMessage(file: string): string {
 
 export function buildSettingsItems(
   config: ProviderFileConfig | undefined,
-  fields: readonly SettingsFieldDef[] = resolveFields(),
+  fields: readonly SettingsFieldDef[],
 ): SettingItem[] {
   return fields.map((f) => ({
     id: f.key,
@@ -235,9 +212,8 @@ async function settingsListTheme(theme: Theme): Promise<SettingsListTheme> {
 
 export async function openSettings(
   ctx: ExtensionCommandContext,
-  depsOrFields?: OpenSettingsDeps | readonly SettingsFieldDef[],
+  fields: readonly SettingsFieldDef[],
 ): Promise<void> {
-  const fields = resolveFields(depsOrFields);
   const file = defaultConfigFile();
   if (ctx.mode === "tui" && ctx.hasUI) {
     await openSettingsDialog(ctx, fields, file);
