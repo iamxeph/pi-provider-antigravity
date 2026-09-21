@@ -22,35 +22,13 @@ Use Google Antigravity models directly in [Pi](https://pi.dev).
 
 ## Requirements
 
-- Pi >= 0.86.0 (For Pi 0.80.0 ~ 0.85.x, see [Legacy Pi Support](#legacy-pi-support))
+- **Pi >= 0.86.0** (Pi 0.86+ introduced breaking changes; older versions are no longer supported. Please upgrade Pi, or pin to `0.13.0` via `pi install npm:pi-provider-antigravity@0.13.0` if using Pi 0.80 ~ 0.85.)
 - A Google account with Antigravity access
 
 ## Installation
 
 ```bash
 pi install npm:pi-provider-antigravity
-```
-
-Or try it without installing:
-
-```bash
-pi -e npm:pi-provider-antigravity
-```
-
-### Legacy Pi Support
-
-We strongly recommend upgrading to Pi >= 0.86.0 to take advantage of the latest SDK capabilities, streaming reliability improvements, and full feature parity.
-
-However, if you are unable to upgrade your Pi installation just yet (for environment or workflow reasons), you can pin to the compatible `0.13.0` release for Pi 0.80.0 ~ 0.85.x:
-
-```bash
-pi install npm:pi-provider-antigravity@0.13.0
-```
-
-Or try it without installing:
-
-```bash
-pi -e npm:pi-provider-antigravity@0.13.0
 ```
 
 ## Quick Start
