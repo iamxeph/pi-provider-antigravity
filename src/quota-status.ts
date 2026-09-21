@@ -1,6 +1,6 @@
 import type { ExtensionCommandContext, ExtensionContext, Theme } from "@earendil-works/pi-coding-agent";
 import { resolveCredentials } from "./auth.ts";
-import { classifyModelFamily } from "./model-identity.ts";
+import { getModelProfile } from "./model-identity.ts";
 import { postAntigravityJson, PROVIDER_ID } from "./protocol.ts";
 import {
   defaultConfigFile,
@@ -168,8 +168,8 @@ function isGeminiQuotaGroup(group: QuotaGroup): boolean {
 
 function selectQuotaGroup(groups: QuotaGroup[], modelId?: string): QuotaGroup | undefined {
   if (groups.length === 0) return undefined;
-  const family = classifyModelFamily(modelId);
-  if (family === "claude" || family === "gpt") {
+  const profile = getModelProfile(modelId);
+  if (profile.quotaPoolKind === "3p") {
     const found = groups.find((g) => !isGeminiQuotaGroup(g));
     if (found) return found;
   }

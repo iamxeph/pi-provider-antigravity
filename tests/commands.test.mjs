@@ -4,12 +4,7 @@ import fs from "node:fs";
 import { newestCapture } from "./fixtures.mjs";
 import os from "node:os";
 import path from "node:path";
-import {
-  runAntigravitySubcommand,
-  SUBCOMMANDS,
-  buildUsageText,
-  completeSubcommands,
-} from "../src/commands.ts";
+import { createAntigravityCommands } from "../src/commands.ts";
 import { createCatalogStore, refreshCatalog } from "../src/model-catalog.ts";
 import initExtension from "../src/index.ts";
 import { QuotaStatusCoordinator, fileQuotaStatusStore } from "../src/quota-status.ts";
@@ -45,6 +40,10 @@ function memStore(mode = "smart") {
 // refresh hook does in production.
 const store = () => createCatalogStore();
 
+function commands(quotaStatus, catalog = store()) {
+  return createAntigravityCommands({ quotaStatus, catalog });
+}
+
 function makeCtx(outputs, { authed = true, refresh, hasUI = true, mode, selectImpl, customImpl } = {}) {
   return {
     hasUI,
@@ -69,7 +68,8 @@ test("Subcommand: usage prints Quota Pool groups", async () => {
   globalThis.fetch = stubFetchRouter();
   try {
     const outputs = [];
-    await runAntigravitySubcommand("usage", makeCtx(outputs), new QuotaStatusCoordinator(memStore()), store());
+    const cmds = commands(new QuotaStatusCoordinator(memStore()), store());
+    await cmds.handle("usage", makeCtx(outputs));
     const all = outputs.join("\n");
     assert.match(all, /Fetching quota summary/);
     assert.match(all, /Gemini Models/);
@@ -94,7 +94,8 @@ test("Subcommand: models without a cached generation reports fetch failure", asy
           stored: {},
         }, catalog),
     });
-    await runAntigravitySubcommand("models", ctx, undefined, catalog);
+    const cmds = commands(undefined, catalog);
+    await cmds.handle("models", ctx);
     assert.match(outputs.join("\n"), /Failed to fetch models/);
   } finally {
     globalThis.fetch = realFetch;
@@ -118,7 +119,8 @@ test("Subcommand: models prints Model Catalog", async () => {
         }, catalog);
       },
     });
-    await runAntigravitySubcommand("models", ctx, undefined, catalog);
+    const cmds = commands(undefined, catalog);
+    await cmds.handle("models", ctx);
     assert.equal(refreshCalls.length, 1);
     assert.deepEqual(refreshCalls[0].providers, ["antigravity"]);
     assert.match(outputs.join("\n"), /Available Antigravity Models/);
@@ -141,7 +143,8 @@ test("Subcommand: models shows the retained list with a warning when refresh fai
     const ctx = makeCtx(outputs, {
       refresh: async () => refreshCatalog({ allowNetwork: true, credential, stored: {} }, catalog),
     });
-    await runAntigravitySubcommand("models", ctx, undefined, catalog);
+    const cmds = commands(undefined, catalog);
+    await cmds.handle("models", ctx);
     const all = outputs.join("\n");
     assert.match(all, /showing last known list/);
     assert.match(all, /Available Antigravity Models/);
@@ -152,7 +155,8 @@ test("Subcommand: models shows the retained list with a warning when refresh fai
 
 test("Subcommand: fetch twins share the auth guard", async () => {
   const outputs = [];
-  await runAntigravitySubcommand("usage", makeCtx(outputs, { authed: false }), undefined, store());
+  const cmds = commands(undefined, store());
+  await cmds.handle("usage", makeCtx(outputs, { authed: false }));
   assert.match(outputs.join("\n"), /Not logged in/);
 });
 
@@ -173,7 +177,8 @@ test("Subcommand: refresh delegates to the model registry", async () => {
         }, catalog);
       },
     });
-    await runAntigravitySubcommand("refresh", ctx, undefined, catalog);
+    const cmds = commands(undefined, catalog);
+    await cmds.handle("refresh", ctx);
     assert.equal(calls.length, 1);
     assert.deepEqual(calls[0].providers, ["antigravity"]);
     assert.match(outputs.join("\n"), /refreshed successfully/);
@@ -199,7 +204,8 @@ test("Subcommand: refresh warns but keeps the retained list when refresh fails",
         await refreshCatalog({ allowNetwork: true, credential, stored: {} }, catalog);
       },
     });
-    await runAntigravitySubcommand("refresh", ctx, undefined, catalog);
+    const cmds = commands(undefined, catalog);
+    await cmds.handle("refresh", ctx);
     assert.equal(calls.length, 1);
     assert.match(outputs.join("\n"), /keeping last known list/);
   } finally {
@@ -221,7 +227,8 @@ test("Subcommand: settings picks mode in a dialog and applies it", async () => {
       };
       const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(file));
       const outputs = [];
-      await runAntigravitySubcommand("settings", makeCtx(outputs, { selectImpl }), coord, store());
+      const cmds = commands(coord, store());
+      await cmds.handle("settings", makeCtx(outputs, { selectImpl }));
       assert.deepEqual(seen, [["Quota footer (current: off)", ["off", "smart", "all"]]]);
       const all = outputs.join("\n");
       assert.match(all, /Quota footer set to smart\./);
@@ -239,7 +246,9 @@ test("Subcommand: settings dismiss changes nothing", async () => {
   await withAgentDir(async (dir) => {
     const file = path.join(dir, "pi-provider-antigravity.json");
     const outputs = [];
-    await runAntigravitySubcommand("settings", makeCtx(outputs), new QuotaStatusCoordinator(fileQuotaStatusStore(file)), store());
+    const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(file));
+    const cmds = commands(coord, store());
+    await cmds.handle("settings", makeCtx(outputs));
     assert.equal(outputs.length, 0);
     assert.equal(fs.existsSync(file), false);
   });
@@ -259,7 +268,8 @@ test("Subcommand: settings without UI prints text", async () => {
           return "all";
         },
       });
-      await runAntigravitySubcommand("settings", ctx, undefined, store());
+      const cmds = commands(undefined, store());
+      await cmds.handle("settings", ctx);
     } finally {
       console.log = originalLog;
     }
@@ -279,7 +289,9 @@ test("Subcommand: settings opens the cycling dialog in TUI mode", async () => {
       let factory;
       const outputs = [];
       const ctx = makeCtx(outputs, { mode: "tui", customImpl: async (f) => { factory = f; } });
-      await runAntigravitySubcommand("settings", ctx, new QuotaStatusCoordinator(fileQuotaStatusStore(file)), store());
+      const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(file));
+      const cmds = commands(coord, store());
+      await cmds.handle("settings", ctx);
       assert.ok(factory);
       let closed = 0;
       const comp = await factory({ requestRender() {} }, { fg: (c, s) => s, bold: (s) => s }, {}, () => { closed++; });
@@ -302,7 +314,8 @@ test("Subcommand: setting is an alias of settings", async () => {
       seen.push([title, options]);
       return undefined;
     };
-    await runAntigravitySubcommand("setting", makeCtx(outputs, { selectImpl }), undefined, store());
+    const cmds = commands(undefined, store());
+    await cmds.handle("setting", makeCtx(outputs, { selectImpl }));
     assert.equal(seen.length, 1);
     assert.match(seen[0][0], /Quota footer/);
   });
@@ -328,58 +341,43 @@ test("Command: tab completion offers subcommands", () => {
   assert.equal(def.getArgumentCompletions("set x"), null);
 });
 
-test("Subcommand registry: commands, usage text, and completion stay consistent", () => {
-  assert.ok(SUBCOMMANDS.length >= 5);
+test("Subcommand registry: commands, usage text, and completion stay consistent through the seam", async () => {
+  const cmds = commands();
+  const completions = cmds.complete("");
+  assert.ok(completions && completions.length >= 5);
+
   const names = new Set();
-  const allAliases = new Set();
-
-  for (const cmd of SUBCOMMANDS) {
-    assert.ok(cmd.name && typeof cmd.name === "string");
-    assert.ok(cmd.description && typeof cmd.description === "string");
-    assert.equal(typeof cmd.run, "function");
-    assert.equal(names.has(cmd.name), false, `duplicate command name: ${cmd.name}`);
-    names.add(cmd.name);
-
-    if (cmd.aliases) {
-      for (const alias of cmd.aliases) {
-        assert.equal(names.has(alias), false, `alias collides with command name: ${alias}`);
-        assert.equal(allAliases.has(alias), false, `duplicate alias: ${alias}`);
-        allAliases.add(alias);
-      }
-    }
+  for (const c of completions) {
+    assert.ok(c.value && typeof c.value === "string");
+    assert.ok(c.description && typeof c.description === "string");
+    assert.equal(names.has(c.value), false, `duplicate completion: ${c.value}`);
+    names.add(c.value);
   }
 
-  // buildUsageText derives lines covering all commands
-  const usage = buildUsageText();
-  for (const cmd of SUBCOMMANDS) {
-    assert.ok(usage.includes(cmd.name), `usage text missing command: ${cmd.name}`);
-    assert.ok(usage.includes(cmd.description), `usage text missing description for: ${cmd.name}`);
-    if (cmd.aliases?.length) {
-      assert.ok(usage.includes(cmd.aliases.join(", ")), `usage text missing alias for: ${cmd.name}`);
-    }
-  }
+  // Calling handle with unknown command triggers the usage text
+  const outputs = [];
+  await cmds.handle("bogus", makeCtx(outputs));
+  const usage = outputs.join("\n");
 
-  // completeSubcommands reflects all canonical commands
-  const completions = completeSubcommands("");
-  assert.deepEqual(
-    completions.map((c) => c.value),
-    SUBCOMMANDS.map((c) => c.name),
-  );
+  for (const name of names) {
+    assert.ok(usage.includes(name), `usage text missing command: ${name}`);
+  }
 
   // README documents every subcommand name verbatim
   const readme = fs.readFileSync("README.md", "utf-8");
-  for (const cmd of SUBCOMMANDS) {
+  for (const name of names) {
     assert.match(
       readme,
-      new RegExp(`\\|\\s*\`${cmd.name}\`\\s*\\|`),
-      `README.md missing documentation for subcommand: ${cmd.name}`,
+      new RegExp(`\\|\\s*\`${name}\`\\s*\\|`),
+      `README.md missing documentation for subcommand: ${name}`,
     );
   }
 });
 
 test("Subcommand: unknown subcommand shows usage", async () => {
   const outputs = [];
-  await runAntigravitySubcommand("bogus", makeCtx(outputs), undefined, store());
+  const cmds = commands();
+  await cmds.handle("bogus", makeCtx(outputs));
   assert.match(outputs.join("\n"), /Usage: \/antigravity/);
 });
 
@@ -392,7 +390,8 @@ test("Subcommand: usage feeds the shared cache and footer", async () => {
       fs.writeFileSync(file, JSON.stringify({ settings: { quotaFooter: "smart" } }));
       const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(file));
       const outputs = [];
-      await runAntigravitySubcommand("usage", makeCtx(outputs), coord, store());
+      const cmds = commands(coord, store());
+      await cmds.handle("usage", makeCtx(outputs));
       const all = outputs.join("\n");
       assert.match(all, /Gemini Models/); // full quota text still printed
       assert.match(all, new RegExp(`\\[pi-provider-antigravity-footer-usage\\].*5h ${gemini5h}`)); // footer repainted from the same fetch
@@ -428,12 +427,9 @@ test("Subcommand: settings picks the value via select fallback", async () => {
         return "smart";
       };
       const outputs = [];
-      await runAntigravitySubcommand(
-        "settings",
-        makeCtx(outputs, { selectImpl }),
-        new QuotaStatusCoordinator(fileQuotaStatusStore(file)),
-        store(),
-      );
+      const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(file));
+      const cmds = commands(coord, store());
+      await cmds.handle("settings", makeCtx(outputs, { selectImpl }));
       assert.deepEqual(calls, [["Quota footer (current: off)", ["off", "smart", "all"]]]);
       const saved = JSON.parse(fs.readFileSync(file, "utf-8"));
       assert.equal(saved.settings.quotaFooter, "smart");

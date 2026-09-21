@@ -12,7 +12,6 @@ import {
   requireCredentials,
 } from "../src/auth.ts";
 import initExtension from "../src/index.ts";
-import { resolveToken } from "../src/commands.ts";
 
 
 const loginFixture = JSON.parse(fs.readFileSync(newestCapture("auth_login_params.json"), "utf-8"));
@@ -72,7 +71,7 @@ test("Seam Auth: extractCodeFromInput throws on empty input", () => {
   assert.throws(() => extractCodeFromInput("code=   "), /No authorization code/);
 });
 
-test("Seam Auth: resolveToken extracts credentials from getApiKeyForProvider", async () => {
+test("Seam Auth: resolveCredentials extracts credentials from getApiKeyForProvider", async () => {
   const mockCtx = {
     modelRegistry: {
       getApiKeyForProvider: async (provider) => {
@@ -83,17 +82,17 @@ test("Seam Auth: resolveToken extracts credentials from getApiKeyForProvider", a
       },
     },
   };
-  const result = await resolveToken(mockCtx);
+  const result = await resolveCredentials(mockCtx);
   assert.deepEqual(result, { token: "test_token_123", projectId: "test_proj_456" });
 });
 
-test("Seam Auth: resolveToken returns null when unauthenticated", async () => {
+test("Seam Auth: resolveCredentials returns null when unauthenticated", async () => {
   const mockCtx = {
     modelRegistry: {
       getApiKeyForProvider: async () => undefined,
     },
   };
-  const result = await resolveToken(mockCtx);
+  const result = await resolveCredentials(mockCtx);
   assert.equal(result, null);
 });
 

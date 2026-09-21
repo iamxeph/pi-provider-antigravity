@@ -3,8 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { newestCapture } from "./fixtures.mjs";
 import {
-  classifyModelFamily,
-  isCompatibleFamily,
+  getModelProfile,
 } from "../src/model-identity.ts";
 import {
   createModelCatalog,
@@ -160,34 +159,67 @@ test("Seam 3: buildDynamicPublicModels returns empty array on empty or missing c
   }
 });
 
-test("Seam 3: isCompatibleFamily groups Runtime Model IDs by Model Family", () => {
+test("Seam 3: getModelProfile resolves replay compatibility by Model Family", () => {
+  const geminiTarget = getModelProfile("gemini-3.8-flash-high");
   // same id always replays
-  assert.equal(isCompatibleFamily("gemini-3.8-flash-high", "gemini-3.8-flash-high"), true);
+  assert.equal(geminiTarget.isReplayCompatible("gemini-3.8-flash-high"), true);
   // any Gemini pair shares signatures across versions and tiers
-  assert.equal(isCompatibleFamily("gemini-3.7-flash-low", "gemini-3.8-flash-high"), true);
+  assert.equal(geminiTarget.isReplayCompatible("gemini-3.7-flash-low"), true);
+
+  const claudeTarget = getModelProfile("claude-opus-4-6-thinking");
   // Claude replays within the Claude family (1.1.27 stream_turn8/9)
-  assert.equal(isCompatibleFamily("claude-sonnet-4-6", "claude-opus-4-6-thinking"), true);
+  assert.equal(claudeTarget.isReplayCompatible("claude-sonnet-4-6"), true);
+
+  const gptTarget = getModelProfile("gpt-oss-120b-medium");
   // GPT-OSS replays within its family
-  assert.equal(isCompatibleFamily("gpt-oss-120b", "gpt-oss-120b-medium"), true);
+  assert.equal(gptTarget.isReplayCompatible("gpt-oss-120b"), true);
+
   // cross-family never replays
-  assert.equal(isCompatibleFamily("gemini-3.8-flash-high", "claude-sonnet-4-6"), false);
-  assert.equal(isCompatibleFamily("claude-sonnet-4-6", "gpt-oss-120b"), false);
-  assert.equal(isCompatibleFamily("gpt-oss-120b", "gemini-3.8-flash-high"), false);
+  assert.equal(geminiTarget.isReplayCompatible("claude-sonnet-4-6"), false);
+  assert.equal(claudeTarget.isReplayCompatible("gpt-oss-120b"), false);
+  assert.equal(gptTarget.isReplayCompatible("gemini-3.8-flash-high"), false);
   // missing history model defaults to replay (first turn)
-  assert.equal(isCompatibleFamily(undefined, "gemini-3.8-flash-high"), true);
+  assert.equal(geminiTarget.isReplayCompatible(undefined), true);
 });
 
-test("Seam 3: classifyModelFamily unifies identity across ID spaces", () => {
-  assert.equal(classifyModelFamily("gemini-3.8-flash-high"), "gemini");
-  assert.equal(classifyModelFamily("gemini-3.8-flash"), "gemini");
-  assert.equal(classifyModelFamily("gemini-pro-agent"), "gemini");
-  assert.equal(classifyModelFamily("antigravity/gemini-3-flash"), "gemini");
-  assert.equal(classifyModelFamily("claude-sonnet-4-6"), "claude");
-  assert.equal(classifyModelFamily("antigravity/claude-sonnet-4-6"), "claude");
-  assert.equal(classifyModelFamily("gpt-oss-120b-medium"), "gpt");
-  assert.equal(classifyModelFamily("nova-1"), "unknown");
-  assert.equal(classifyModelFamily(undefined), "unknown");
-  assert.equal(classifyModelFamily(""), "unknown");
+test("Seam 3: getModelProfile unifies identity and capabilities across ID spaces", () => {
+  const gemini = getModelProfile("gemini-3.8-flash-high");
+  assert.equal(gemini.family, "gemini");
+  assert.equal(gemini.isGemini, true);
+  assert.equal(gemini.isNonGemini, false);
+  assert.equal(gemini.quotaPoolKind, "gemini");
+  assert.equal(gemini.replaysReasoningHistory, true);
+  assert.equal(gemini.defaultContextWindow, 1048576);
+
+  assert.equal(getModelProfile("gemini-3.8-flash").family, "gemini");
+  assert.equal(getModelProfile("gemini-pro-agent").family, "gemini");
+  assert.equal(getModelProfile("antigravity/gemini-3-flash").family, "gemini");
+
+  const claude = getModelProfile("claude-sonnet-4-6");
+  assert.equal(claude.family, "claude");
+  assert.equal(claude.isClaude, true);
+  assert.equal(claude.isNonGemini, true);
+  assert.equal(claude.quotaPoolKind, "3p");
+  assert.equal(claude.replaysReasoningHistory, true);
+  assert.equal(claude.defaultContextWindow, 250000);
+  assert.equal(claude.defaultMaxOutputTokens, 64000);
+  assert.equal(getModelProfile("antigravity/claude-sonnet-4-6").family, "claude");
+
+  const gpt = getModelProfile("gpt-oss-120b-medium");
+  assert.equal(gpt.family, "gpt");
+  assert.equal(gpt.isGpt, true);
+  assert.equal(gpt.isNonGemini, true);
+  assert.equal(gpt.quotaPoolKind, "3p");
+  assert.equal(gpt.replaysReasoningHistory, false);
+  assert.equal(gpt.defaultContextWindow, 128000);
+  assert.equal(gpt.defaultMaxOutputTokens, 32768);
+
+  const unknown = getModelProfile("nova-1");
+  assert.equal(unknown.family, "unknown");
+  assert.equal(unknown.isGemini, false);
+  assert.equal(unknown.isNonGemini, true);
+  assert.equal(getModelProfile(undefined).family, "unknown");
+  assert.equal(getModelProfile("").family, "unknown");
 });
 
 test("Seam 3: formatModelDisplayName strips all parenthesized tiers", () => {

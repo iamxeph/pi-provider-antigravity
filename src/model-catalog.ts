@@ -1,7 +1,7 @@
 import type { Model, RefreshModelsContext } from "@earendil-works/pi-ai";
 import { resolveCredentials, type AntigravityCredentials } from "./auth.ts";
 import { DEFAULT_ENDPOINT, postAntigravityJson, PROVIDER_ID } from "./protocol.ts";
-import { classifyModelFamily } from "./model-identity.ts";
+import { getModelProfile } from "./model-identity.ts";
 
 export const PRIVATE_SNAPSHOT_KEY = "pi-provider-antigravity";
 
@@ -436,13 +436,13 @@ export function resolveModelPlan(
         `Run /antigravity refresh, then pick a current model.`
     );
   }
-  const family = classifyModelFamily(runtimeModelId);
+  const profile = getModelProfile(runtimeModelId);
   return {
     runtimeModelId,
     modelEnum,
     thinkingConfig: resolveThinkingConfig(runtimeModelId, snapshot),
-    isNonGemini: family !== "gemini",
-    isClaude: family === "claude",
+    isNonGemini: profile.isNonGemini,
+    isClaude: profile.isClaude,
   };
 }
 
@@ -479,15 +479,9 @@ function synthesizeDynamicModel(baseId: string, items: AvailableModelItem[]): Mo
       : { high: null }),
   };
 
-  const family = classifyModelFamily(baseId);
-  const isFlash = baseId.includes("flash");
-  const isClaude = family === "claude";
-  const isGpt = family === "gpt";
-
-  const defaultContext = isFlash ? 1048576 : isClaude ? 250000 : isGpt ? 128000 : 1048576;
-  const defaultMaxOutput = isClaude ? 64000 : isGpt ? 32768 : 65536;
-
-  const promptCache = isClaude ? { short: 300, long: 3600 } : { short: 300 };
+  const profile = getModelProfile(baseId);
+  const defaultContext = profile.defaultContextWindow;
+  const defaultMaxOutput = profile.defaultMaxOutputTokens;
 
   return {
     id: baseId,
@@ -499,7 +493,7 @@ function synthesizeDynamicModel(baseId: string, items: AvailableModelItem[]): Mo
     thinkingLevelMap,
     input: repItem?.supportsImages ? ["text", "image"] : ["text"],
     cost: estimateModelCost(baseId),
-    promptCache,
+    promptCache: profile.promptCache,
     contextWindow: repItem?.maxTokens || defaultContext,
     maxTokens: repItem?.maxOutputTokens || defaultMaxOutput,
   };

@@ -6,7 +6,37 @@ import { createQuotaStatus, type QuotaStatus } from "./quota-status.ts";
 import type { ModelCatalog } from "./model-catalog.ts";
 import { executeWebSearchCommand } from "./search.ts";
 
-export function emitOutput(
+export interface SubcommandCompletion {
+  value: string;
+  label: string;
+  description: string;
+}
+
+export interface AntigravityCommandsDeps {
+  quotaStatus?: QuotaStatus;
+  catalog: ModelCatalog;
+}
+
+export interface AntigravityCommands {
+  handle(args: string, ctx: ExtensionCommandContext): Promise<void>;
+  complete(prefix: string): SubcommandCompletion[] | null;
+}
+
+interface SubcommandContext {
+  ctx: ExtensionCommandContext;
+  quotaStatus?: QuotaStatus;
+  catalog: ModelCatalog;
+  subArgs?: string;
+}
+
+interface SubcommandDef {
+  name: string;
+  description: string;
+  aliases?: readonly string[];
+  run: (deps: SubcommandContext) => Promise<void> | void;
+}
+
+function emitOutput(
   ctx: ExtensionCommandContext,
   text: string,
   type: "info" | "warning" | "error" = "info",
@@ -19,27 +49,7 @@ export function emitOutput(
   }
 }
 
-export interface SubcommandContext {
-  ctx: ExtensionCommandContext;
-  quotaStatus?: QuotaStatus;
-  catalog: ModelCatalog;
-  subArgs?: string;
-}
-
-export interface SubcommandDef {
-  name: string;
-  description: string;
-  aliases?: readonly string[];
-  run: (deps: SubcommandContext) => Promise<void> | void;
-}
-
-export interface SubcommandCompletion {
-  value: string;
-  label: string;
-  description: string;
-}
-
-export const SUBCOMMANDS: readonly SubcommandDef[] = Object.freeze([
+const SUBCOMMANDS: readonly SubcommandDef[] = Object.freeze([
   {
     name: "usage",
     description: "Show remaining 5h and weekly quota",
@@ -77,7 +87,7 @@ export const SUBCOMMANDS: readonly SubcommandDef[] = Object.freeze([
   },
 ]);
 
-export function buildUsageText(commands: readonly SubcommandDef[] = SUBCOMMANDS): string {
+function buildUsageText(commands: readonly SubcommandDef[] = SUBCOMMANDS): string {
   const maxNameLen = Math.max(...commands.map((c) => c.name.length));
   const lines = commands.map((c) => {
     const aliasPart = c.aliases?.length ? ` (alias: ${c.aliases.join(", ")})` : "";
@@ -86,9 +96,9 @@ export function buildUsageText(commands: readonly SubcommandDef[] = SUBCOMMANDS)
   return `Usage: /antigravity <command>\n\nCommands:\n${lines.join("\n")}`;
 }
 
-export const USAGE_TEXT = buildUsageText();
+const USAGE_TEXT = buildUsageText();
 
-export function completeSubcommands(
+function completeSubcommands(
   prefix: string,
   commands: readonly SubcommandDef[] = SUBCOMMANDS,
 ): SubcommandCompletion[] | null {
@@ -107,7 +117,7 @@ export function completeSubcommands(
     }));
 }
 
-export function parseAntigravitySubcommand(
+function parseAntigravitySubcommand(
   args: string,
   commands: readonly SubcommandDef[] = SUBCOMMANDS,
 ): string {
@@ -118,12 +128,6 @@ export function parseAntigravitySubcommand(
     }
   }
   return sub;
-}
-
-export async function resolveToken(
-  ctx: ExtensionCommandContext
-): Promise<AntigravityCredentials | null> {
-  return resolveCredentials(ctx);
 }
 
 async function runModelsSubcommand(ctx: ExtensionCommandContext, catalog: ModelCatalog): Promise<void> {
@@ -202,21 +206,34 @@ function runLoginSubcommand(ctx: ExtensionCommandContext): void {
   }
 }
 
-export async function runAntigravitySubcommand(
-  args: string,
-  ctx: ExtensionCommandContext,
-  quotaStatus: QuotaStatus | undefined,
-  catalog: ModelCatalog,
-): Promise<void> {
-  const raw = (args || "").trim();
-  const parts = raw.split(/\s+/).filter(Boolean);
-  const sub = parseAntigravitySubcommand(parts[0] || "");
-  const subArgs = raw.slice(parts[0]?.length || 0).trim();
-  const cmd = SUBCOMMANDS.find((c) => c.name === sub);
-  if (cmd) {
-    await cmd.run({ ctx, quotaStatus, catalog, subArgs });
-    return;
-  }
+/**
+ * Creates the deep Antigravity Command Dispatcher module, encapsulating
+ * subcommand routing, argument parsing, alias resolution, usage help formatting,
+ * and execution behind a single authoritative seam.
+ */
+export function createAntigravityCommands(deps: AntigravityCommandsDeps): AntigravityCommands {
+  return {
+    async handle(args: string, ctx: ExtensionCommandContext): Promise<void> {
+      const raw = (args || "").trim();
+      const parts = raw.split(/\s+/).filter(Boolean);
+      const sub = parseAntigravitySubcommand(parts[0] || "");
+      const subArgs = raw.slice(parts[0]?.length || 0).trim();
+      const cmd = SUBCOMMANDS.find((c) => c.name === sub);
+      if (cmd) {
+        await cmd.run({
+          ctx,
+          quotaStatus: deps.quotaStatus,
+          catalog: deps.catalog,
+          subArgs,
+        });
+        return;
+      }
 
-  emitOutput(ctx, USAGE_TEXT);
+      emitOutput(ctx, USAGE_TEXT);
+    },
+
+    complete(prefix: string): SubcommandCompletion[] | null {
+      return completeSubcommands(prefix);
+    },
+  };
 }

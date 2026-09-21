@@ -10,7 +10,7 @@ import {
 // Load-bearing: re-exported for private/ tests without requiring private/node_modules
 export { normalizeContext };
 import type { ModelPlan } from "./model-catalog.ts";
-import { classifyModelFamily, isCompatibleFamily } from "./model-identity.ts";
+import { getModelProfile } from "./model-identity.ts";
 import { PROVIDER_ID } from "./protocol.ts";
 
 export interface BuildRequestBodyParams {
@@ -255,15 +255,16 @@ function translateTurnTrace(
   const contents: Array<any> = [];
   const messages = conversation || [];
 
+  const runtimeProfile = getModelProfile(runtimeModelId);
   // The sentinel is Gemini-specific evidence: the probe shows a Claude runtime model
   // accepts the same unsigned foreign functionCall with no sentinel at all (and merely
   // tolerates the sentinel), so Claude/GPT requests keep today's shape.
-  const isGeminiRequest = classifyModelFamily(runtimeModelId) === "gemini";
+  const isGeminiRequest = runtimeProfile.isGemini;
   // GPT requests carry no reasoning history on the wire: a replay sends
   // the response as plain text only, no thought part and no signature.
   // Gemini and Claude both replay reasoning, so a gpt request drops the
   // block instead of serializing it.
-  const isGptRequest = classifyModelFamily(runtimeModelId) === "gpt";
+  const isGptRequest = runtimeProfile.isGpt;
 
   for (const msg of messages) {
     if (msg.role === "user") {
@@ -293,7 +294,7 @@ function translateTurnTrace(
       }
 
       const isSameProvider = !msg.provider || msg.provider === PROVIDER_ID;
-      const isSameModel = isCompatibleFamily(msg.model, runtimeModelId);
+      const isSameModel = runtimeProfile.isReplayCompatible(msg.model);
       const isSameProviderAndModel = isSameProvider && isSameModel;
 
       const parts: Array<any> = [];
