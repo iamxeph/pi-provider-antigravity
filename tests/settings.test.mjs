@@ -12,10 +12,7 @@ import {
   saveSettingValue,
   loadSubsystemState,
   saveSubsystemState,
-  SettingsRegistry,
-  defaultSettingsRegistry,
-  registerSettingField,
-  getRegisteredSettingFields,
+  resolveFields,
 } from "../src/config.ts";
 import {
   FOOTER_MODES,
@@ -26,7 +23,6 @@ import {
   QuotaStatusCoordinator,
   fileQuotaStatusStore,
   createQuotaFooterField,
-  registerQuotaSettings,
 } from "../src/quota-status.ts";
 import { runAntigravitySubcommand } from "../src/commands.ts";
 import { createCatalogStore } from "../src/model-catalog.ts";
@@ -75,27 +71,17 @@ function makeCtx(outputs, { authed = true } = {}) {
 const factories = [];
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
-test("SettingsRegistry: registers, retrieves, and clears fields", () => {
-  const registry = new SettingsRegistry();
-  assert.equal(registry.getFields().length, 0);
+test("resolveFields: resolves default provider fields and custom overrides", () => {
+  const defaultFields = resolveFields();
+  assert.equal(defaultFields.length, 1);
+  assert.equal(defaultFields[0].key, "quotaFooter");
 
-  const field1 = { key: "foo", label: "Foo", options: ["1", "2"] };
-  registry.register(field1);
-  assert.equal(registry.getFields().length, 1);
-  assert.equal(registry.getFields()[0].key, "foo");
+  const probe = { key: "probe", label: "Probe", options: ["a", "b"] };
+  const custom = resolveFields([probe]);
+  assert.deepEqual(custom, [probe]);
 
-  // Re-register replaces
-  const field1Updated = { key: "foo", label: "Foo Updated", options: ["1", "2"] };
-  registry.register(field1Updated);
-  assert.equal(registry.getFields().length, 1);
-  assert.equal(registry.getFields()[0].label, "Foo Updated");
-
-  registry.unregister("foo");
-  assert.equal(registry.getFields().length, 0);
-
-  registry.register(field1);
-  registry.clear();
-  assert.equal(registry.getFields().length, 0);
+  const withDeps = resolveFields({ fields: [probe] });
+  assert.deepEqual(withDeps, [probe]);
 });
 
 test("File config: default path mirrors Pi, garbage is unconfigured", () => {

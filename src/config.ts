@@ -3,6 +3,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import type { ExtensionCommandContext, Theme } from "@earendil-works/pi-coding-agent";
 import { SettingsList, type SettingItem, type SettingsListTheme } from "@earendil-works/pi-tui";
+import { createQuotaFooterField, type QuotaStatusCoordinator } from "./quota-status.ts";
 
 export const ANSI_FG_RESET = "\x1b[39m";
 
@@ -141,39 +142,23 @@ export interface SettingsFieldDef {
   prepare?: (ctx: ExtensionCommandContext) => Promise<void>;
 }
 
-export class SettingsRegistry {
-  private fields: SettingsFieldDef[] = [];
-
-  register(field: SettingsFieldDef): void {
-    const existingIndex = this.fields.findIndex((f) => f.key === field.key);
-    if (existingIndex >= 0) {
-      this.fields[existingIndex] = field;
-    } else {
-      this.fields.push(field);
-    }
-  }
-
-  unregister(key: string): void {
-    this.fields = this.fields.filter((f) => f.key !== key);
-  }
-
-  getFields(): readonly SettingsFieldDef[] {
-    return [...this.fields];
-  }
-
-  clear(): void {
-    this.fields = [];
-  }
+export interface OpenSettingsDeps {
+  quotaStatus?: QuotaStatusCoordinator;
+  fields?: readonly SettingsFieldDef[];
 }
 
-export const defaultSettingsRegistry = new SettingsRegistry();
-
-export function registerSettingField(field: SettingsFieldDef): void {
-  defaultSettingsRegistry.register(field);
-}
-
-export function getRegisteredSettingFields(): readonly SettingsFieldDef[] {
-  return defaultSettingsRegistry.getFields();
+export function resolveFields(
+  depsOrFields?: OpenSettingsDeps | readonly SettingsFieldDef[],
+): readonly SettingsFieldDef[] {
+  if (Array.isArray(depsOrFields)) {
+    return depsOrFields;
+  }
+  if (depsOrFields && "fields" in depsOrFields && Array.isArray(depsOrFields.fields)) {
+    return depsOrFields.fields;
+  }
+  const quotaStatus =
+    depsOrFields && "quotaStatus" in depsOrFields ? depsOrFields.quotaStatus : undefined;
+  return [createQuotaFooterField(quotaStatus)];
 }
 
 export function fieldDisplayValue(
@@ -219,7 +204,7 @@ function writeFailedMessage(file: string): string {
 
 export function buildSettingsItems(
   config: ProviderFileConfig | undefined,
-  fields: readonly SettingsFieldDef[] = getRegisteredSettingFields(),
+  fields: readonly SettingsFieldDef[] = resolveFields(),
 ): SettingItem[] {
   return fields.map((f) => ({
     id: f.key,
@@ -245,21 +230,11 @@ async function settingsListTheme(theme: Theme): Promise<SettingsListTheme> {
   }
 }
 
-function resolveFields(
-  registryOrFields?: SettingsRegistry | readonly SettingsFieldDef[],
-): readonly SettingsFieldDef[] {
-  if (!registryOrFields) return getRegisteredSettingFields();
-  if ("getFields" in registryOrFields && typeof (registryOrFields as any).getFields === "function") {
-    return (registryOrFields as SettingsRegistry).getFields();
-  }
-  return registryOrFields as readonly SettingsFieldDef[];
-}
-
 export async function openSettings(
   ctx: ExtensionCommandContext,
-  registryOrFields?: SettingsRegistry | readonly SettingsFieldDef[],
+  depsOrFields?: OpenSettingsDeps | readonly SettingsFieldDef[],
 ): Promise<void> {
-  const fields = resolveFields(registryOrFields);
+  const fields = resolveFields(depsOrFields);
   const file = defaultConfigFile();
   if (ctx.mode === "tui" && ctx.hasUI) {
     await openSettingsDialog(ctx, fields, file);

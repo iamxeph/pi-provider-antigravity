@@ -7,7 +7,6 @@ import {
   loadProviderConfig,
   loadSubsystemState,
   saveSubsystemState,
-  registerSettingField,
   type ProviderFileConfig,
   type SettingsFieldDef,
 } from "./config.ts";
@@ -401,7 +400,7 @@ export function fileQuotaStatusStore(file = defaultConfigFile()): QuotaStatusSto
 }
 
 export function createQuotaFooterField(
-  quotaStatus: QuotaStatusCoordinator,
+  quotaStatus?: QuotaStatusCoordinator,
 ): SettingsFieldDef {
   return {
     key: "quotaFooter",
@@ -410,25 +409,27 @@ export function createQuotaFooterField(
     options: FOOTER_MODE_OPTIONS,
     defaultValue: "off",
     optionNotes: FOOTER_MODE_NOTES,
-    renderPreview: (mode, ctx, theme) => {
-      if (mode === "off") return "hidden";
-      const activeTheme = theme || (ctx.ui as { theme?: Theme })?.theme;
-      return previewQuotaFooterText(quotaStatus, ctx.model?.id, mode, activeTheme);
-    },
-    prepare: async (ctx) => {
-      await quotaStatus.ensurePreview(ctx);
-    },
-    onChange: async (ctx, _value) => {
-      if (quotaStatus.mode() !== "off") {
-        await quotaStatus.refresh(ctx, { ignoreMode: true });
-      }
-      quotaStatus.paint(ctx);
-    },
+    renderPreview: quotaStatus
+      ? (mode, ctx, theme) => {
+          if (mode === "off") return "hidden";
+          const activeTheme = theme || (ctx.ui as { theme?: Theme })?.theme;
+          return previewQuotaFooterText(quotaStatus, ctx.model?.id, mode, activeTheme);
+        }
+      : undefined,
+    prepare: quotaStatus
+      ? async (ctx) => {
+          await quotaStatus.ensurePreview(ctx);
+        }
+      : undefined,
+    onChange: quotaStatus
+      ? async (ctx, _value) => {
+          if (quotaStatus.mode() !== "off") {
+            await quotaStatus.refresh(ctx, { ignoreMode: true });
+          }
+          quotaStatus.paint(ctx);
+        }
+      : undefined,
   };
-}
-
-export function registerQuotaSettings(quotaStatus: QuotaStatusCoordinator): void {
-  registerSettingField(createQuotaFooterField(quotaStatus));
 }
 
 export interface RefreshOptions {
