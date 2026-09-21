@@ -572,6 +572,58 @@ test("Seam 2: thinking-only STOP is rejected as no answer, MAX_TOKENS keeps leng
   assert.equal(truncated.rawStopReason, "MAX_TOKENS");
 });
 
+test("Seam 2: premature or empty STOP with no answer triggers auto-retryable error", async () => {
+  const runWithSse = async (sse) => {
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = stubFetchWithSse(sse, 64);
+    try {
+      return await streamAntigravity(
+        {
+          id: "gemini-3.8-flash",
+          provider: "antigravity",
+          api: "antigravity-api",
+          maxTokens: 65536,
+          cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+        },
+        normalizeContext({ messages: [{ role: "user", content: "hello" }] }),
+        { apiKey: JSON.stringify({ token: "test-token", projectId: "test-project" }) },
+        store,
+      ).result();
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  };
+
+  // Case 1: completely empty STOP (reasoning 0, no content)
+  const emptySse = [
+    'data: {"response": {"candidates": [{"finishReason": "STOP"}], "usageMetadata": {"promptTokenCount": 10, "candidatesTokenCount": 0, "thoughtsTokenCount": 0}, "responseId": "inline-empty"}, "traceId": "inline-empty"}',
+  ].join("\n");
+
+  const emptyStopped = await runWithSse(emptySse);
+  assert.equal(emptyStopped.stopReason, "error");
+  assert.ok(emptyStopped.errorMessage?.includes("Antigravity returned an empty response with no answer"));
+  assert.ok(emptyStopped.errorMessage?.includes("reasoning 0 of 65536"));
+  assert.ok(emptyStopped.errorMessage?.includes("Please retry your request"));
+  assert.equal(isRetryableAssistantError(emptyStopped), true, "empty STOP must trigger Pi's auto-retry");
+  assert.equal(isContextOverflow(emptyStopped, 1048576), false);
+  assert.equal(isRecoverableLength(emptyStopped, 65536), false);
+
+  // Case 2: small reasoning + whitespace text STOP (reasoning 1522, text "\n")
+  const whitespaceSse = [
+    'data: {"response": {"candidates": [{"content": {"role": "model", "parts": [{"thought": true, "text": "Deliberating briefly.", "thoughtSignature": "sig_brief"}]}}], "usageMetadata": {"promptTokenCount": 10, "candidatesTokenCount": 0, "thoughtsTokenCount": 1522}, "responseId": "inline-ws"}, "traceId": "inline-ws"}',
+    'data: {"response": {"candidates": [{"content": {"role": "model", "parts": [{"text": "\\n"}]}, "finishReason": "STOP"}], "usageMetadata": {"promptTokenCount": 10, "candidatesTokenCount": 1, "thoughtsTokenCount": 1522}, "responseId": "inline-ws"}, "traceId": "inline-ws"}',
+  ].join("\n");
+
+  const wsStopped = await runWithSse(whitespaceSse);
+  assert.equal(wsStopped.stopReason, "error");
+  assert.ok(wsStopped.errorMessage?.includes("Antigravity returned an empty response with no answer"));
+  assert.ok(wsStopped.errorMessage?.includes("reasoning 1522 of 65536"));
+  assert.ok(wsStopped.errorMessage?.includes("Please retry your request"));
+  assert.equal(isRetryableAssistantError(wsStopped), true, "whitespace STOP must trigger Pi's auto-retry");
+  assert.equal(isContextOverflow(wsStopped, 1048576), false);
+  assert.equal(isRecoverableLength(wsStopped, 65536), false);
+});
+
 test("Seam 2 (M4 Fix): streamAntigravity stops with aborted reason on AbortSignal", async () => {
   const realFetch = globalThis.fetch;
   const controller = new AbortController();

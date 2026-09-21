@@ -511,36 +511,41 @@ export function streamAntigravity(
         );
       }
 
-      // A STOP turn whose only content is thinking answered nothing: the model
-      // deliberated to the end and sent no text and no tool call. Pi treats a
-      // `stop` turn with no tool calls as complete, so the turn would end in
-      // silence — with its one output block hidden behind `hideThinkingBlock`.
-      // The MAX_TOKENS variant of the same pathology is recovered by Pi's
-      // recoverable-length compaction; this is the complement of that path, so
-      // `length` is deliberately left alone here.
-      // Wording matters twice: the message must not match Pi's retryable-error
-      // patterns (`retry your request`, `ended without`, ...), because
-      // re-requesting an identical deliberate-to-the-budget turn just burns the
-      // same budget again, nor its overflow patterns, which would reroute the
-      // failure into compaction. tests/stream-adapter.test.mjs pins both.
+      // A STOP turn carrying no answer (neither a tool call nor non-empty text)
+      // answered nothing. Pi treats a `stop` turn with no tool calls as complete,
+      // so the turn would end in silence — with any thinking block hidden behind
+      // `hideThinkingBlock`.
       //
-      // PROVISIONAL (2026-09-21): observed once in 15,541 archived antigravity
-      // assistant turns, and not reproducible on demand — 14 replays of the exact
-      // failing request produced 0 answer-less STOPs (evidence and method: the
-      // private archive's captures/pi_probe_no_answer/README.md). What the
-      // official CLI does with this shape is uncaptured, so this is our policy,
-      // not a copied fingerprint.
+      // Two distinct pathologies produce this shape:
+      // 1. Deliberated to the budget: the model spent its output budget on thinking
+      //    (reasoning near maxOutputTokens) and had no room left for text. This is
+      //    deterministic; re-requesting the exact same budget burns tokens again.
+      //    The error is non-retryable and asks the user to lower the thinking level.
+      // 2. Premature or empty STOP: the model ended abruptly with reasoning: 0
+      //    or only brief deliberation (e.g. whitespace-only text). This is a transient
+      //    sampling/stream glitch; re-requesting succeeds immediately.
+      //    The error includes Pi's retryable pattern ("Please retry your request")
+      //    so Pi automatically retries and recovers without manual user intervention.
       //
-      // Revisit: if a capture shows agy reacting differently, or if the shape
-      // never recurs, delete this guard, the `hasAnswerContent` helper above (this
-      // guard is its only caller, and `noUnusedLocals` is off — the leftover would
-      // not fail typecheck), and its adapter test. The parser test that pins the
-      // wire-faithful `stop` shape stands on its own and can stay.
+      // Both wordings avoid Pi's overflow patterns (`context_length_exceeded`,
+      // `prompt is too long`) so they are never rerouted into compaction.
       if (output.stopReason === "stop" && !hasAnswerContent(output.content)) {
+        const reasoningTokens = output.usage.reasoning ?? 0;
+        const budgetThreshold = Math.max(1, Math.floor(maxOutputTokens * 0.9));
+        const isDeliberatedToBudget = reasoningTokens >= budgetThreshold;
+
+        if (isDeliberatedToBudget) {
+          throw new Error(
+            `Antigravity returned no answer: the turn ended after thinking only ` +
+              `(reasoning ${reasoningTokens} of ${maxOutputTokens} max output tokens). ` +
+              `Lower the thinking level or prompt again.`,
+          );
+        }
+
         throw new Error(
-          `Antigravity returned no answer: the turn ended after thinking only ` +
-            `(reasoning ${output.usage.reasoning} of ${maxOutputTokens} max output tokens). ` +
-            `Lower the thinking level or prompt again.`,
+          `Antigravity returned an empty response with no answer ` +
+            `(reasoning ${reasoningTokens} of ${maxOutputTokens} max output tokens). ` +
+            `Please retry your request.`,
         );
       }
 
