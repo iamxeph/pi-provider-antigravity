@@ -42,25 +42,5 @@ export default function (pi: ExtensionAPI): void {
   });
 
   registerWebSearchTool(pi);
-
-  // Footer quota slot: paint cached text instantly, refresh in background.
-  pi.on("session_start", async (_event, ctx) => {
-    await quotaStatus.refreshAndPaint(ctx);
-  });
-
-  // Model switch changes which Quota Pool backs the footer — repaint instantly,
-  // then fill in fresh text when switching (back) to an Antigravity model.
-  pi.on("model_select", async (event, ctx) => {
-    const modelCtx = {
-      ui: ctx.ui,
-      modelRegistry: ctx.modelRegistry,
-      model: event.model || ctx.model,
-    };
-    await quotaStatus.refreshAndPaint(modelCtx);
-  });
-
-  // Turn settled: refresh only when the throttle window expired.
-  pi.on("agent_settled", async (_event, ctx) => {
-    await quotaStatus.refreshAndPaint(ctx);
-  });
+  quotaStatus.bind(pi);
 }

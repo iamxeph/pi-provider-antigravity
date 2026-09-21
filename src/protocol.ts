@@ -1,3 +1,12 @@
+import {
+  type CredentialSource,
+  resolveCredentials,
+  requireCredentials,
+  AntigravityAuthError,
+} from "./auth.ts";
+
+export { AntigravityAuthError };
+
 export const DEFAULT_ENDPOINT = "https://daily-cloudcode-pa.googleapis.com";
 export const DEFAULT_USER_AGENT =
   "antigravity/cli/1.2.7 (aidev_client; os_type=linux; arch=amd64; cl=984112147; auth_method=consumer)";
@@ -102,4 +111,131 @@ export function buildAntigravityHeaders(token: string, userAgent = DEFAULT_USER_
     Authorization: `Bearer ${token}`,
   };
 }
+
+/**
+ * Protocol Client: the deep module encapsulating Wire Fingerprint endpoint routing,
+ * canonical HTTP headers, status code verification, structured error representation
+ * (AntigravityHttpError / AntigravityAuthError), and JSON/stream payload decoding.
+ */
+export interface AntigravityClient {
+  readonly endpoint: string;
+  readonly userAgent: string;
+
+  /**
+   * Fetches available models catalog from Google Antigravity backend.
+   * Encapsulates 'v1internal:fetchAvailableModels' routing and project ID injection.
+   */
+  fetchAvailableModels(source?: CredentialSource, signal?: AbortSignal): Promise<any>;
+
+  /**
+   * Retrieves quota summary from Google Antigravity backend.
+   * Encapsulates 'v1internal:retrieveUserQuotaSummary' routing and project ID injection.
+   * Returns undefined when source is unauthenticated.
+   */
+  retrieveQuotaSummary(source?: CredentialSource, signal?: AbortSignal): Promise<any>;
+
+  /**
+   * Streams generation content (SSE) from Google Antigravity backend.
+   * Encapsulates 'v1internal:streamGenerateContent?alt=sse' routing.
+   */
+  streamGenerateContent(params: {
+    source: CredentialSource;
+    body: unknown;
+    endpoint?: string;
+    headers?: Record<string, string>;
+    signal?: AbortSignal;
+  }): Promise<AntigravityStreamResult>;
+
+  /**
+   * Issues a single-shot JSON POST request to Google Antigravity backend,
+   * automatically resolving credentials, injecting project ID, and validating HTTP response.
+   */
+  postJson<T>(
+    source: CredentialSource,
+    path: string,
+    body?: unknown,
+    signal?: AbortSignal,
+    headers?: Record<string, string>,
+  ): Promise<T>;
+}
+
+export function createAntigravityClient(options?: {
+  endpoint?: string;
+  userAgent?: string;
+}): AntigravityClient {
+  const endpoint = options?.endpoint || DEFAULT_ENDPOINT;
+  const userAgent = options?.userAgent || DEFAULT_USER_AGENT;
+
+  return {
+    endpoint,
+    userAgent,
+
+    async fetchAvailableModels(source?: CredentialSource, signal?: AbortSignal): Promise<any> {
+      const creds = await requireCredentials(source);
+      return postAntigravityJson<any>({
+        auth: creds.token,
+        endpoint,
+        path: "v1internal:fetchAvailableModels",
+        body: { project: creds.projectId },
+        signal,
+      });
+    },
+
+    async retrieveQuotaSummary(source?: CredentialSource, signal?: AbortSignal): Promise<any> {
+      const creds = await resolveCredentials(source);
+      if (!creds) return undefined;
+      return postAntigravityJson<any>({
+        auth: creds.token,
+        endpoint,
+        path: "v1internal:retrieveUserQuotaSummary",
+        body: { project: creds.projectId },
+        signal,
+      });
+    },
+
+    async streamGenerateContent(params: {
+      source: CredentialSource;
+      body: unknown;
+      endpoint?: string;
+      headers?: Record<string, string>;
+      signal?: AbortSignal;
+    }): Promise<AntigravityStreamResult> {
+      const creds = await requireCredentials(params.source);
+      return postAntigravityStream({
+        auth: creds.token,
+        endpoint: params.endpoint || endpoint,
+        path: "v1internal:streamGenerateContent?alt=sse",
+        headers: params.headers,
+        body: params.body,
+        signal: params.signal,
+      });
+    },
+
+    async postJson<T>(
+      source: CredentialSource,
+      path: string,
+      body: unknown = {},
+      signal?: AbortSignal,
+      headers?: Record<string, string>,
+    ): Promise<T> {
+      const creds = await requireCredentials(source);
+      const effectiveBody =
+        body && typeof body === "object" && !Array.isArray(body)
+          ? { project: creds.projectId, ...(body as Record<string, unknown>) }
+          : body;
+
+      return postAntigravityJson<T>({
+        auth: creds.token,
+        endpoint,
+        path,
+        body: effectiveBody,
+        headers,
+        signal,
+      });
+    },
+  };
+}
+
+export const defaultAntigravityClient = createAntigravityClient();
+
 

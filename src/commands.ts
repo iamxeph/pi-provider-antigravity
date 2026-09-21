@@ -172,7 +172,7 @@ async function runUsageSubcommand(
   }
   try {
     if (ctx.hasUI) ctx.ui.notify("Fetching quota summary…", "info");
-    const text = await quotaStatus.inspectUsage(ctx);
+    const text = await quotaStatus.formatUsage(ctx);
     emitOutput(ctx, text);
   } catch (err: any) {
     emitOutput(ctx, `Failed to fetch usage: ${err.message}`, "error");

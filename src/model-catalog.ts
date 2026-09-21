@@ -1,6 +1,11 @@
 import type { Model, RefreshModelsContext } from "@earendil-works/pi-ai";
-import { resolveCredentials, type AntigravityCredentials } from "./auth.ts";
-import { DEFAULT_ENDPOINT, postAntigravityJson, PROVIDER_ID } from "./protocol.ts";
+import { type CredentialSource, type AntigravityCredentials } from "./auth.ts";
+import {
+  type AntigravityClient,
+  defaultAntigravityClient,
+  DEFAULT_ENDPOINT,
+  PROVIDER_ID,
+} from "./protocol.ts";
 import { getModelProfile } from "./model-identity.ts";
 
 export const PRIVATE_SNAPSHOT_KEY = "pi-provider-antigravity";
@@ -318,16 +323,11 @@ export function parseAvailableModels(data: any): AvailableModelsCatalog {
 }
 
 async function fetchAvailableModelsCatalog(
-  token: string | AntigravityCredentials,
-  projectId: string,
-  signal?: AbortSignal
+  source: CredentialSource,
+  signal?: AbortSignal,
+  client: AntigravityClient = defaultAntigravityClient,
 ): Promise<AvailableModelsCatalog> {
-  const json = await postAntigravityJson<any>({
-    auth: token,
-    path: "v1internal:fetchAvailableModels",
-    body: { project: projectId },
-    signal,
-  });
+  const json = await client.fetchAvailableModels(source, signal);
   return parseAvailableModels(json);
 }
 
@@ -592,7 +592,8 @@ function formatModelsList(catalog: AvailableModelsCatalog): string {
 /**
  * Creates the authoritative deep Model Catalog interface.
  */
-export function createModelCatalog(): ModelCatalog {
+export function createModelCatalog(deps?: { client?: AntigravityClient }): ModelCatalog {
+  const client = deps?.client ?? defaultAntigravityClient;
   let generation: CatalogGeneration = { snapshot: EMPTY_SNAPSHOT(), version: 0 };
 
   const record = (catalogOrRaw: unknown) => {
@@ -650,10 +651,7 @@ export function createModelCatalog(): ModelCatalog {
     if (!context.allowNetwork) return storedModels();
 
     try {
-      const creds = await resolveCredentials(context);
-      if (!creds) return storedModels();
-
-      const catalog = await fetchAvailableModelsCatalog(creds, creds.projectId, context.signal);
+      const catalog = await fetchAvailableModelsCatalog(context, context.signal, client);
       record(catalog);
 
       const dynamicModels = buildDynamicPublicModels(catalog);

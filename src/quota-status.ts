@@ -1,7 +1,11 @@
-import type { ExtensionCommandContext, ExtensionContext, Theme } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext, Theme } from "@earendil-works/pi-coding-agent";
 import { resolveCredentials } from "./auth.ts";
 import { getModelProfile } from "./model-identity.ts";
-import { postAntigravityJson, PROVIDER_ID } from "./protocol.ts";
+import {
+  type AntigravityClient,
+  defaultAntigravityClient,
+  PROVIDER_ID,
+} from "./protocol.ts";
 import {
   defaultConfigFile,
   loadProviderConfig,
@@ -354,7 +358,7 @@ function colorizeQuotaFooterBoth(
 }
 
 function previewQuotaFooterText(
-  coord: QuotaStatus | undefined,
+  coord: QuotaStatusCoordinator | undefined,
   modelId: string | undefined,
   mode: string,
   style?: QuotaColorStyle,
@@ -407,7 +411,7 @@ export function fileQuotaStatusStore(file = defaultConfigFile()): QuotaStatusSto
 }
 
 function createQuotaFooterField(
-  quotaStatus?: QuotaStatus,
+  quotaStatus?: QuotaStatusCoordinator,
 ): SettingsFieldDef {
   return {
     key: "quotaFooter",
@@ -525,24 +529,40 @@ export interface QuotaStatusDeps {
   store?: QuotaStatusStore;
   configFile?: string;
   fetchQuotaSummary?: (token: string, signal?: AbortSignal) => Promise<any>;
+  client?: AntigravityClient;
   now?: () => number;
 }
 
+/**
+ * Quota Status: the deep module encapsulating Quota Pool wire parsing,
+ * footer slot painting, urgent-window ratio self-calibration, and cache
+ * throttling behind a single lifecycle interface, delegating persistence
+ * to the Provider Config Seam.
+ */
 export interface QuotaStatus {
-  readonly ratio: number;
-  mode(): QuotaFooterMode;
-  refreshAndPaint(ctx: QuotaStatusCtx): Promise<void>;
-  paint(ctx: QuotaStatusCtx): void;
+  /**
+   * Binds the Quota Status subsystem to Pi's lifecycle events:
+   * session_start, model_select, and agent_settled, automatically updating
+   * and throttling status bar footer painting.
+   */
+  bind(pi: ExtensionAPI): void;
+
+  /**
+   * Formats a complete human-readable quota usage summary for the /antigravity usage command.
+   * Atomically refreshes cached status and repaints the footer slot.
+   */
+  formatUsage(ctx: ExtensionCommandContext & { signal?: AbortSignal }): Promise<string>;
+
+  /**
+   * Backward-compatible alias for formatUsage.
+   */
   inspectUsage(ctx: QuotaStatusCtx & { signal?: AbortSignal }): Promise<string>;
+
+  /**
+   * Creates the settings field definition for configuring quota footer mode
+   * in /antigravity settings.
+   */
   createSettingsField(): SettingsFieldDef;
-  ensurePreview(ctx: QuotaStatusCtx): Promise<QuotaSummary | undefined>;
-  refresh(ctx: QuotaStatusCtx, opts?: RefreshOptions): Promise<QuotaSummary | undefined>;
-  ingest(summary: any): void;
-  renderFooter(
-    modelId?: string,
-    mode?: QuotaFooterMode,
-    style?: QuotaColorStyle,
-  ): { plain?: string; colored?: string };
 }
 
 // In-memory throttle around the quota fetch: at most one network call per
@@ -556,20 +576,24 @@ export class QuotaStatusCoordinator implements QuotaStatus {
   private lastPairs: Record<string, WindowFractionPair> | undefined;
   private readonly store: QuotaStatusStore;
   private readonly fetchSummaryOverride?: (token: string, signal?: AbortSignal) => Promise<any>;
+  private readonly client: AntigravityClient;
   private readonly nowFn: () => number;
 
   constructor(depsOrStoreOrFile?: QuotaStatusDeps | string | QuotaStatusStore) {
     if (typeof depsOrStoreOrFile === "string" || !depsOrStoreOrFile) {
       this.store = fileQuotaStatusStore(depsOrStoreOrFile || defaultConfigFile());
+      this.client = defaultAntigravityClient;
       this.nowFn = Date.now;
     } else if ("loadMode" in depsOrStoreOrFile) {
       this.store = depsOrStoreOrFile;
+      this.client = defaultAntigravityClient;
       this.nowFn = Date.now;
     } else {
       this.store =
         depsOrStoreOrFile.store ??
         fileQuotaStatusStore(depsOrStoreOrFile.configFile || defaultConfigFile());
       this.fetchSummaryOverride = depsOrStoreOrFile.fetchQuotaSummary;
+      this.client = depsOrStoreOrFile.client ?? defaultAntigravityClient;
       this.nowFn = depsOrStoreOrFile.now ?? Date.now;
     }
     this.weeklyTo5hRatio = DEFAULT_WEEKLY_TO_5H_RATIO;
@@ -583,6 +607,31 @@ export class QuotaStatusCoordinator implements QuotaStatus {
   // Single source of truth for the mode: the injected store.
   mode(): QuotaFooterMode {
     return this.store.loadMode();
+  }
+
+  bind(pi: ExtensionAPI): void {
+    if (typeof pi?.on !== "function") return;
+
+    pi.on("session_start", async (_event, ctx) => {
+      await this.refreshAndPaint(ctx);
+    });
+
+    pi.on("model_select", async (event, ctx) => {
+      const modelCtx = {
+        ui: ctx.ui,
+        modelRegistry: ctx.modelRegistry,
+        model: event.model || ctx.model,
+      };
+      await this.refreshAndPaint(modelCtx);
+    });
+
+    pi.on("agent_settled", async (_event, ctx) => {
+      await this.refreshAndPaint(ctx);
+    });
+  }
+
+  formatUsage(ctx: ExtensionCommandContext & { signal?: AbortSignal }): Promise<string> {
+    return this.inspectUsage(ctx);
   }
 
   footerFor(modelId?: string, mode: QuotaFooterMode = "smart"): string | undefined {
@@ -670,19 +719,13 @@ export class QuotaStatusCoordinator implements QuotaStatus {
     signal?: AbortSignal,
   ): Promise<QuotaSummary | undefined> {
     try {
-      const creds = await resolveCredentials(ctx);
-      if (!creds) return undefined;
-
       let rawSummary: any;
       if (this.fetchSummaryOverride) {
+        const creds = await resolveCredentials(ctx);
+        if (!creds) return undefined;
         rawSummary = await this.fetchSummaryOverride(creds.token, signal);
       } else {
-        rawSummary = await postAntigravityJson<any>({
-          auth: creds,
-          path: "v1internal:retrieveUserQuotaSummary",
-          body: { project: creds.projectId },
-          signal,
-        });
+        rawSummary = await this.client.retrieveQuotaSummary(ctx, signal);
       }
       if (!rawSummary) return undefined;
       const summary = rawSummary.groups ? parseQuotaSummary(rawSummary) : rawSummary;

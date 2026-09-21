@@ -12,7 +12,11 @@ import {
 } from "@earendil-works/pi-ai";
 import { requireCredentials } from "./auth.ts";
 import { buildAntigravityRequestBody } from "./builder.ts";
-import { DEFAULT_ENDPOINT, postAntigravityStream } from "./protocol.ts";
+import {
+  type AntigravityClient,
+  defaultAntigravityClient,
+  DEFAULT_ENDPOINT,
+} from "./protocol.ts";
 import type { ModelCatalog } from "./model-catalog.ts";
 
 /**
@@ -409,6 +413,7 @@ export function streamAntigravity(
   context: TranscriptContext,
   options: SimpleStreamOptions | undefined,
   catalog: ModelCatalog,
+  client: AntigravityClient = defaultAntigravityClient,
 ): AssistantMessageEventStream {
   const stream = createAssistantMessageEventStream();
 
@@ -476,10 +481,9 @@ export function streamAntigravity(
         }
       }
 
-      const { response, stream: streamBody } = await postAntigravityStream({
-        auth: token,
+      const { response, stream: streamBody } = await client.streamGenerateContent({
+        source: options,
         endpoint,
-        path: "v1internal:streamGenerateContent?alt=sse",
         headers: mergedHeaders,
         body: requestBody,
         signal: options?.signal,
