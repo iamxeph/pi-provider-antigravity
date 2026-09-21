@@ -105,3 +105,25 @@ test("Seam 2: parseWhole attaches lone thoughtSignature to text block when no th
   assert.equal(result.usage.reasoning, 123);
   assert.equal(result.stopReason, "stop");
 });
+
+// The wire shape behind the no-answer guard: a turn that ends with thinking and
+// nothing else. Parsing stays faithful to the wire (`stop`), because only the
+// delivery module can tell "the model answered with thinking" from "the model
+// answered at all" — that verdict is the adapter's, not the parser's.
+test("Seam 2: parseWhole keeps a thinking-only STOP turn as wire-faithful thinking", () => {
+  const rawSse = [
+    'data: {"response": {"candidates": [{"content": {"role": "model", "parts": [{"thought": true, "text": "Ready to present the candidates. "}]}}], "usageMetadata": {"promptTokenCount": 10, "candidatesTokenCount": 0, "thoughtsTokenCount": 310}}, "traceId": "thinking-only"}\n\n',
+    'data: {"response": {"candidates": [{"content": {"role": "model", "parts": [{"thought": true, "text": "Still deliberating.", "thoughtSignature": "sig_thinking_only"}]}, "finishReason": "STOP"}], "usageMetadata": {"promptTokenCount": 10, "candidatesTokenCount": 0, "thoughtsTokenCount": 62911}}, "traceId": "thinking-only"}\n\n',
+  ].join("");
+
+  const result = parseWhole(rawSse);
+
+  assert.equal(result.stopReason, "stop");
+  assert.equal(result.usage.reasoning, 62911);
+  assert.equal(result.usage.output, 62911);
+  assert.equal(result.content.length, 1, "one block, and it is not an answer");
+  assert.equal(result.content[0].type, "thinking");
+  assert.equal(result.content[0].thinking, "Ready to present the candidates. Still deliberating.");
+  assert.equal(result.content[0].thinkingSignature, "sig_thinking_only");
+  assert.equal(result.content.some((b) => b.type === "text" || b.type === "toolCall"), false);
+});

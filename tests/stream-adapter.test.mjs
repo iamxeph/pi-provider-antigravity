@@ -6,6 +6,7 @@ import { streamAntigravity, normalizeOverflowError } from "../src/stream.ts";
 import { buildAntigravityRequestBody } from "../src/builder.ts";
 import { createModelCatalog } from "../src/model-catalog.ts";
 import { normalizeContext } from "@earendil-works/pi-ai";
+import { isContextOverflow, isRecoverableLength, isRetryableAssistantError } from "@earendil-works/pi-ai/compat";
 
 const sseTurn5 = fs.readFileSync(newestCapture("stream_turn5_multiturn.resp.sse"), "utf-8");
 // A lone-signature turn: visible text plus a signature carrier, nothing else. Whether a
@@ -510,6 +511,65 @@ test("Seam 2 (M2 Fix): streamAntigravity throws on in-stream SSE error payload",
   } finally {
     globalThis.fetch = realFetch;
   }
+});
+
+// The two wire spellings of one pathology: a turn that spends its output budget on
+// thinking and returns no answer. Pi recovers the MAX_TOKENS spelling on its own
+// (recoverable-length compaction + one retry); the STOP spelling used to slip
+// through as a completed turn whose only content was hidden thinking, ending the
+// session in silence. This pins the guard to exactly the complement of Pi's
+// recovery: `length` must stay untouched, and the error must stay non-retryable
+// so a deliberate-to-the-budget turn is not re-requested over and over.
+const thinkingOnlySse = (finishReason) =>
+  [
+    'data: {"response": {"candidates": [{"content": {"role": "model", "parts": [{"thought": true, "text": "Ready to present the candidates. "}]}}], "usageMetadata": {"promptTokenCount": 10, "candidatesTokenCount": 0, "thoughtsTokenCount": 310}, "responseId": "inline-thinking-only"}, "traceId": "inline-thinking-only"}',
+    `data: {"response": {"candidates": [{"content": {"role": "model", "parts": [{"thought": true, "text": "Still deliberating.", "thoughtSignature": "sig_thinking_only"}]}, "finishReason": "${finishReason}"}], "usageMetadata": {"promptTokenCount": 10, "candidatesTokenCount": 0, "thoughtsTokenCount": 62911}, "responseId": "inline-thinking-only"}, "traceId": "inline-thinking-only"}`,
+  ].join("\n");
+
+const runThinkingOnly = async (finishReason) => {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = stubFetchWithSse(thinkingOnlySse(finishReason), 64); // tiny chunks: boundaries land mid-line
+  try {
+    return await streamAntigravity(
+      {
+        id: "gemini-3.8-flash",
+        provider: "antigravity",
+        api: "antigravity-api",
+        maxTokens: 65536,
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+      },
+      normalizeContext({ messages: [{ role: "user", content: "hello" }] }),
+      { apiKey: JSON.stringify({ token: "test-token", projectId: "test-project" }) },
+      store,
+    ).result();
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+};
+
+test("Seam 2: thinking-only STOP is rejected as no answer, MAX_TOKENS keeps length recovery", async () => {
+  const stopped = await runThinkingOnly("STOP");
+
+  assert.equal(stopped.stopReason, "error");
+  assert.ok(stopped.errorMessage?.includes("Antigravity returned no answer"), "error must name the failure");
+  assert.ok(stopped.errorMessage?.includes("reasoning 62911"), "error must carry the reasoning count");
+  assert.ok(stopped.errorMessage?.includes("Lower the thinking level"), "error must say what to do next");
+  // Pi retries only errors matching its retryable patterns; this failure is deterministic.
+  assert.equal(isRetryableAssistantError(stopped), false, "no-answer must not trigger Pi's auto-retry");
+  // The wording must stay out of Pi's other error routers too, or this failure would be
+  // silently rerouted: overflow patterns send it into compaction, length into a retry.
+  assert.equal(isContextOverflow(stopped, 1048576), false, "no-answer must not read as context overflow");
+  assert.equal(isRecoverableLength(stopped, 65536), false, "no-answer must not read as a recoverable length stop");
+  // The thinking that was streamed stays on the message, so the UI can show it next to the error.
+  assert.equal(stopped.content.length, 1);
+  assert.equal(stopped.content[0].type, "thinking");
+  assert.equal(stopped.content[0].thinkingSignature, "sig_thinking_only");
+  assert.equal(stopped.usage.reasoning, 62911);
+
+  const truncated = await runThinkingOnly("MAX_TOKENS");
+
+  assert.equal(truncated.stopReason, "length", "MAX_TOKENS must still reach Pi's compaction recovery");
+  assert.equal(truncated.rawStopReason, "MAX_TOKENS");
 });
 
 test("Seam 2 (M4 Fix): streamAntigravity stops with aborted reason on AbortSignal", async () => {
