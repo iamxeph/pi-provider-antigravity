@@ -4,7 +4,7 @@ import { PROVIDER_ID } from "./protocol.ts";
 import { openSettings } from "./config.ts";
 import { createQuotaStatus, type QuotaStatus } from "./quota-status.ts";
 import type { ModelCatalog } from "./model-catalog.ts";
-import { performWebSearch } from "./search.ts";
+import { executeWebSearchCommand } from "./search.ts";
 
 export function emitOutput(
   ctx: ExtensionCommandContext,
@@ -68,7 +68,7 @@ export const SUBCOMMANDS: readonly SubcommandDef[] = Object.freeze([
   {
     name: "websearch",
     description: "Search the web using Google Search Grounding",
-    run: async ({ ctx, subArgs }) => runSearchSubcommand(ctx, subArgs),
+    run: async ({ ctx, subArgs }) => executeWebSearchCommand(ctx, subArgs),
   },
   {
     name: "login",
@@ -199,34 +199,6 @@ function runLoginSubcommand(ctx: ExtensionCommandContext): void {
     ctx.ui.notify("Press Enter to log in to Antigravity.", "info");
   } else {
     emitOutput(ctx, "Please run /login antigravity to authenticate.");
-  }
-}
-
-async function runSearchSubcommand(
-  ctx: ExtensionCommandContext,
-  query?: string,
-): Promise<void> {
-  const creds = await resolveCredentials(ctx);
-  if (!creds) {
-    emitOutput(ctx, NOT_LOGGED_IN, "warning");
-    return;
-  }
-
-  const trimmedQuery = (query || "").trim();
-  if (!trimmedQuery) {
-    emitOutput(ctx, "Usage: /antigravity websearch <query>", "warning");
-    return;
-  }
-
-  try {
-    if (ctx.hasUI) ctx.ui.notify(`Searching: "${trimmedQuery}"…`, "info");
-    const result = await performWebSearch(creds, {
-      query: trimmedQuery,
-      signal: ctx.signal,
-    });
-    emitOutput(ctx, result.formattedOutput);
-  } catch (err: any) {
-    emitOutput(ctx, `Search failed: ${err.message}`, "error");
   }
 }
 
