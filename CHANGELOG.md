@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.16.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.15.0...v0.16.0) (2026-09-21)
+
+
+### Features
+
+* **compatibility:** verify wire compatibility with agy CLI 1.2.7 ([#26](https://github.com/iamxeph/pi-provider-antigravity/issues/26)) ([35dd58a](https://github.com/iamxeph/pi-provider-antigravity/commit/35dd58a8aa5e0bb1402a10d24433548f1e850f65))
+
+
+### Bug Fixes
+
+* **ci:** trigger npm publish only when release is created ([#24](https://github.com/iamxeph/pi-provider-antigravity/issues/24)) ([b4d377e](https://github.com/iamxeph/pi-provider-antigravity/commit/b4d377ef4bfd1d72d8d182735e4fe447b04da009))
+* **stream:** make premature or empty STOP auto-retryable in Pi ([#33](https://github.com/iamxeph/pi-provider-antigravity/issues/33)) ([fee1baa](https://github.com/iamxeph/pi-provider-antigravity/commit/fee1baad503aa3445356144a5ff864042b69d1fc))
+* **stream:** surface answer-less STOP turns instead of ending in silence ([#30](https://github.com/iamxeph/pi-provider-antigravity/issues/30)) ([da825d8](https://github.com/iamxeph/pi-provider-antigravity/commit/da825d890d9efaee389373758882acdde3fce739))
+
 ## [0.15.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.14.0...v0.15.0) (2026-09-20)
 
 
