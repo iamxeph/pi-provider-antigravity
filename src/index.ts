@@ -1,14 +1,13 @@
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { loginAntigravity, refreshAntigravityToken, getApiKey } from "./auth.ts";
-import { DEFAULT_ENDPOINT, PROVIDER_ID } from "./protocol.ts";
+import { DEFAULT_ENDPOINT, PROVIDER_ID, PROVIDER_NAME } from "./constants.ts";
 import { createModelCatalog } from "./model-catalog.ts";
 import { createQuotaStatus } from "./quota-status.ts";
 import { streamAntigravity } from "./stream.ts";
 import { createAntigravityCommands } from "./commands.ts";
 import { registerWebSearchTool } from "./search.ts";
 
-export { PROVIDER_ID };
-export const PROVIDER_NAME = "Antigravity";
+export { PROVIDER_ID, PROVIDER_NAME };
 
 export default function (pi: ExtensionAPI): void {
   const quotaStatus = createQuotaStatus();
