@@ -1,10 +1,14 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { OAuthCredentials, OAuthLoginCallbacks } from "@earendil-works/pi-ai";
+import {
+  PROVIDER_ID,
+  DEFAULT_HOST,
+  DEFAULT_ENDPOINT,
+  DEFAULT_USER_AGENT,
+  FALLBACK_PROJECT_ID,
+} from "./constants.ts";
 
-export const PROVIDER_ID = "antigravity";
-const DEFAULT_ENDPOINT = "https://daily-cloudcode-pa.googleapis.com";
-const DEFAULT_USER_AGENT =
-  "antigravity/cli/1.2.7 (aidev_client; os_type=linux; arch=amd64; cl=984112147; auth_method=consumer)";
+export { PROVIDER_ID, FALLBACK_PROJECT_ID };
 
 export interface AntigravityCredentials {
   token: string;
@@ -34,7 +38,6 @@ export const REDIRECT_URI = "https://antigravity.google/oauth-callback";
 export const AUTH_URL = "https://accounts.google.com/o/oauth2/auth";
 export const TOKEN_URL = "https://oauth2.googleapis.com/token";
 export const OAUTH_CALLBACK_TIMEOUT_MS = 5 * 60 * 1000;
-export const FALLBACK_PROJECT_ID = "aicode-consumers";
 
 export const SCOPES = [
   "https://www.googleapis.com/auth/cloud-platform",
@@ -96,7 +99,7 @@ export async function fetchProjectId(token: string, signal?: AbortSignal): Promi
     const res = await fetch(`${DEFAULT_ENDPOINT}/v1internal:loadCodeAssist`, {
       method: "POST",
       headers: {
-        Host: "daily-cloudcode-pa.googleapis.com",
+        Host: DEFAULT_HOST,
         "User-Agent": DEFAULT_USER_AGENT,
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,

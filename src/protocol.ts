@@ -4,14 +4,24 @@ import {
   requireCredentials,
   AntigravityAuthError,
 } from "./auth.ts";
+import {
+  PROVIDER_ID,
+  PROVIDER_NAME,
+  DEFAULT_HOST,
+  DEFAULT_ENDPOINT,
+  DEFAULT_USER_AGENT,
+  FALLBACK_PROJECT_ID,
+} from "./constants.ts";
 
-export { AntigravityAuthError };
-
-export const DEFAULT_ENDPOINT = "https://daily-cloudcode-pa.googleapis.com";
-export const DEFAULT_USER_AGENT =
-  "antigravity/cli/1.2.7 (aidev_client; os_type=linux; arch=amd64; cl=984112147; auth_method=consumer)";
-
-export const PROVIDER_ID = "antigravity";
+export {
+  AntigravityAuthError,
+  PROVIDER_ID,
+  PROVIDER_NAME,
+  DEFAULT_HOST,
+  DEFAULT_ENDPOINT,
+  DEFAULT_USER_AGENT,
+  FALLBACK_PROJECT_ID,
+};
 
 /**
  * Structured error thrown when an Antigravity HTTP endpoint responds with a non-2xx status code.
@@ -105,7 +115,7 @@ export async function postAntigravityStream(
  */
 export function buildAntigravityHeaders(token: string, userAgent = DEFAULT_USER_AGENT): Record<string, string> {
   return {
-    Host: "daily-cloudcode-pa.googleapis.com",
+    Host: DEFAULT_HOST,
     "User-Agent": userAgent,
     "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,

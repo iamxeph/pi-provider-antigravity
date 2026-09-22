@@ -3,7 +3,7 @@
   "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse",
   "headers": {
     "Host": "daily-cloudcode-pa.googleapis.com",
-    "User-Agent": "antigravity/cli/1.2.7 (aidev_client; os_type=linux; arch=amd64; cl=984112147; auth_method=consumer)",
+    "User-Agent": "antigravity/cli/1.2.8 (aidev_client; os_type=linux; arch=amd64; cl=985603393; auth_method=consumer)",
     "Transfer-Encoding": "chunked",
     "Authorization": "Bearer <REDACTED_ACCESS_TOKEN>",
     "Content-Type": "application/json",
@@ -27,13 +27,13 @@
           "parts": [
             {
               "functionCall": {
-                "id": "call_721962",
+                "id": "call_89725",
                 "name": "write_to_file",
                 "args": {
                   "CodeContent": "Hello Antigravity.",
-                  "Description": "Create /tmp/agy-capture/notes.txt with the requested text",
+                  "Description": "Create notes.txt with the requested text",
                   "Overwrite": true,
-                  "TargetFile": "/tmp/agy-capture/notes.txt",
+                  "TargetFile": "/tmp/work/notes.txt",
                   "toolAction": "Creating notes.txt",
                   "toolSummary": "File creation"
                 }
@@ -47,10 +47,10 @@
           "parts": [
             {
               "functionResponse": {
-                "id": "call_721962",
+                "id": "call_89725",
                 "name": "write_to_file",
                 "response": {
-                  "output": "Created At: 2026-09-21T08:22:29+09:00\nCompleted At: 2026-09-21T08:22:29+09:00\nCreated file file:///tmp/agy-capture/notes.txt with requested content.\nIf relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission."
+                  "output": "Created At: 2026-09-22T20:52:26+09:00\nCompleted At: 2026-09-22T20:52:26+09:00\nCreated file file:///tmp/work/notes.txt with requested content.\nIf relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission."
                 }
               }
             }

@@ -3,7 +3,7 @@
   "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse",
   "headers": {
     "Host": "daily-cloudcode-pa.googleapis.com",
-    "User-Agent": "antigravity/cli/1.2.7 (aidev_client; os_type=linux; arch=amd64; cl=984112147; auth_method=consumer)",
+    "User-Agent": "antigravity/cli/1.2.8 (aidev_client; os_type=linux; arch=amd64; cl=985603393; auth_method=consumer)",
     "Transfer-Encoding": "chunked",
     "Authorization": "Bearer <REDACTED_ACCESS_TOKEN>",
     "Content-Type": "application/json",
@@ -27,12 +27,12 @@
           "parts": [
             {
               "functionCall": {
-                "id": "call_964750",
+                "id": "call_69853",
                 "name": "view_file",
                 "args": {
                   "AbsolutePath": "/tmp/agy-no-such-file-xyz.txt",
-                  "toolAction": "Reading file",
-                  "toolSummary": "File reading"
+                  "toolAction": "Viewing file contents",
+                  "toolSummary": "View file"
                 }
               },
               "thoughtSignature": "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDA0"
@@ -44,10 +44,10 @@
           "parts": [
             {
               "functionResponse": {
-                "id": "call_964750",
+                "id": "call_69853",
                 "name": "view_file",
                 "response": {
-                  "output": "Created At: 2026-09-21T08:23:10+09:00\nCompleted At: 2026-09-21T08:23:10+09:00\nEncountered error in tool execution: declaring permissions: cortex tool view_file: convert tool call for permissions: model output error: invalid tool call error (invalid_args) failed to read file: stat /tmp/agy-no-such-file-xyz.txt: no such file or directory"
+                  "output": "Created At: 2026-09-22T20:53:50+09:00\nCompleted At: 2026-09-22T20:53:50+09:00\nEncountered error in tool execution: declaring permissions: cortex tool view_file: convert tool call for permissions: model output error: invalid tool call error (invalid_args) failed to read file: stat /tmp/agy-no-such-file-xyz.txt: no such file or directory"
                 }
               }
             }

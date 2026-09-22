@@ -7,75 +7,92 @@
           "parts": [
             {
               "thoughtSignature": "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDA5",
-              "text": "As of September 20, 2026, here is the latest news and key developments in artificial intelligence:\n\n### **Government & Regulation**\n*   **Trump’s \"AI Force\":** Former President Donald Trump has announced plans to create a new \"AI Force\" and appoint an \"AI Czar\" to lead it, modeling the initiative after the existing Space Force.\n*   **Australia’s Regulation Efforts:** Australian Prime Minister Anthony Albanese is seeking support from global tech leaders, including Apple's Tim Cook, to advance AI regulation and improve online safety. Australia intends to introduce new AI standards by the end of this year.\n\n### **Industry & Research**\n*   **OpenAI's Navier-Stokes Claim:** Following OpenAI’s September 8 announcement that its AI agents solved the Navier-Stokes problem—a major mathematical challenge—the scientific community remains divided. Critics have raised concerns over the potential \"misuse\" of human mathematicians' prior work and questions regarding the autonomy and true utility of the AI's achievement.\n*   **Google Gemini Security Test:** Reports indicate that Google’s Gemini AI was able to access protected systems at three real-world companies during a cybersecurity stress test, highlighting both the power of AI in security and the risks of potential misuse.\n*   **Europe's Infrastructure Gap:** European Central Bank President Christine Lagarde warned that Europe may face up to €600 billion in costs over the next decade to close an widening AI infrastructure gap. Data center capacity is projected to fall significantly short of demand by 2036 without substantial investment.\n\n### **Economic & Workplace Impact**\n*   **Employment Debate:** Despite growing public anxiety about AI displacing workers, new research from the Budget Lab at Yale suggests there is currently no direct connection between the rapid adoption of AI and broader shifts in national employment rates.\n*   **Productivity Gains:** While concerns persist, data suggests AI adoption is expanding rapidly, with over 50% of euro-area workers now utilizing the technology on the job. Economists estimate this could lift productivity by 1–4% over the coming decade.\n\n### **Commentary**\n*   **Bill Gates on AI's Future:** In a recent piece, Bill Gates emphasized that the choices made regarding AI today are critical. He highlighted the monumental challenge of ensuring AI acts as an \"equalizer\" rather than a source of injustice, stressing that global leaders are currently not sufficiently prepared for the turbulent transition AI will bring."
+              "text": "As of September 22, 2026, the artificial intelligence sector is experiencing a period of intense activity characterized by rapid model releases, heightened global concern over safety, and significant infrastructure investments.\n\n### **Key Developments (September 22, 2026)**\n*   **Global Safety Concerns:** A UN-backed panel has warned that safeguards for advanced AI agents are failing to keep pace with the technology's rapid evolution. Separately, leaders from more than 20 countries have issued a joint call for binding international safety measures, noting that advanced models pose serious security risks if mishandled. Notably, the U.S. and China were not among the initial signatories.\n*   **Alibaba's New Hardware & Models:** Ahead of a high-profile state visit to the U.S., China’s Alibaba unveiled the \"Zhenwu V900\" AI chip, which the company claims is the most powerful in China and triples the performance of its predecessor. The company also announced plans to train future AI models at a scale of 5 to 10 trillion parameters.\n*   **Corporate & Industrial AI Integration:**\n    *   **Cognex Acquisition:** Cognex Corporation announced its acquisition of RealSense to expand its capabilities in robotic perception and \"Physical AI\".\n    *   **Volvo & Google Cloud:** Volvo Cars has partnered with Accenture and Google Cloud to launch \"Horizon,\" an open-source platform designed to streamline software and AI-assisted development for the automotive industry.\n    *   **Defense AI:** Dassault Aviation successfully flight-tested new sovereign AI algorithms on the Rafale fighter jet.\n\n### **Context: A Record-Breaking Month**\nSeptember 2026 has been described as one of the busiest months of the year for the AI industry. \n*   **Model Proliferation:** The first half of the month saw a flurry of releases from major labs, including **OpenAI’s GPT-6 Astra**, **Anthropic’s Claude Fable 5.1 and Mythos 5.1**, and **Google’s Gemini 3.8 Flash** series. \n*   **Xiaomi's Contribution:** Xiaomi recently released the \"MiMo-V2.6-Pro-RL\" model, a trillion-parameter mixture-of-experts model that has shown performance competitive with Grok 4.7.\n*   **Economic Impact:** Gartner reports that worldwide AI spending is expected to grow by nearly 50% in 2026, reaching $2.7 trillion, driven largely by the massive infrastructure build-out required for data centers."
             }
           ]
         },
         "finishReason": "STOP",
         "groundingMetadata": {
           "webSearchQueries": [
-            "latest artificial intelligence AI news September 20 2026",
-            "top AI news today"
+            "AI artificial intelligence news September 22 2026",
+            "major AI developments September 2026"
           ],
           "searchEntryPoint": {
-            "renderedContent": "<style>\n.container {\n  align-items: center;\n  border-radius: 8px;\n  display: flex;\n  font-family: Google Sans, Roboto, sans-serif;\n  font-size: 14px;\n  line-height: 20px;\n  padding: 8px 12px;\n}\n.chip {\n  display: inline-block;\n  border: solid 1px;\n  border-radius: 16px;\n  min-width: 14px;\n  padding: 5px 16px;\n  text-align: center;\n  user-select: none;\n  margin: 0 8px;\n  -webkit-tap-highlight-color: transparent;\n}\n.carousel {\n  overflow: auto;\n  scrollbar-width: none;\n  white-space: nowrap;\n  margin-right: -12px;\n}\n.headline {\n  display: flex;\n  margin-right: 4px;\n}\n.gradient-container {\n  position: relative;\n}\n.gradient {\n  position: absolute;\n  transform: translate(3px, -9px);\n  height: 36px;\n  width: 9px;\n}\n@media (prefers-color-scheme: light) {\n  .container {\n    background-color: #fafafa;\n    box-shadow: 0 0 0 1px #0000000f;\n  }\n  .headline-label {\n    color: #1f1f1f;\n  }\n  .chip {\n    background-color: #ffffff;\n    border-color: #d2d2d2;\n    color: #5e5e5e;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #f2f2f2;\n  }\n  .chip:focus {\n    background-color: #f2f2f2;\n  }\n  .chip:active {\n    background-color: #d8d8d8;\n    border-color: #b6b6b6;\n  }\n  .logo-dark {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #fafafa 15%, #fafafa00 100%);\n  }\n}\n@media (prefers-color-scheme: dark) {\n  .container {\n    background-color: #1f1f1f;\n    box-shadow: 0 0 0 1px #ffffff26;\n  }\n  .headline-label {\n    color: #fff;\n  }\n  .chip {\n    background-color: #2c2c2c;\n    border-color: #3c4043;\n    color: #fff;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #353536;\n  }\n  .chip:focus {\n    background-color: #353536;\n  }\n  .chip:active {\n    background-color: #464849;\n    border-color: #53575b;\n  }\n  .logo-light {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #1f1f1f 15%, #1f1f1f00 100%);\n  }\n}\n</style>\n<div class=\"container\">\n  <div class=\"headline\">\n    <svg class=\"logo-light\" width=\"18\" height=\"18\" viewBox=\"9 9 35 35\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M42.8622 27.0064C42.8622 25.7839 42.7525 24.6084 42.5487 23.4799H26.3109V30.1568H35.5897C35.1821 32.3041 33.9596 34.1222 32.1258 35.3448V39.6864H37.7213C40.9814 36.677 42.8622 32.2571 42.8622 27.0064V27.0064Z\" fill=\"#4285F4\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 43.8555C30.9659 43.8555 34.8687 42.3195 37.7213 39.6863L32.1258 35.3447C30.5898 36.3792 28.6306 37.0061 26.3109 37.0061C21.8282 37.0061 18.0195 33.9811 16.6559 29.906H10.9194V34.3573C13.7563 39.9841 19.5712 43.8555 26.3109 43.8555V43.8555Z\" fill=\"#34A853\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M16.6559 29.8904C16.3111 28.8559 16.1074 27.7588 16.1074 26.6146C16.1074 25.4704 16.3111 24.3733 16.6559 23.3388V18.8875H10.9194C9.74388 21.2072 9.06992 23.8247 9.06992 26.6146C9.06992 29.4045 9.74388 32.022 10.9194 34.3417L15.3864 30.8621L16.6559 29.8904V29.8904Z\" fill=\"#FBBC05\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 16.2386C28.85 16.2386 31.107 17.1164 32.9095 18.8091L37.8466 13.8719C34.853 11.082 30.9659 9.3736 26.3109 9.3736C19.5712 9.3736 13.7563 13.245 10.9194 18.8875L16.6559 23.3388C18.0195 19.2636 21.8282 16.2386 26.3109 16.2386V16.2386Z\" fill=\"#EA4335\"/>\n    </svg>\n    <svg class=\"logo-dark\" width=\"18\" height=\"18\" viewBox=\"0 0 48 48\" xmlns=\"http://www.w3.org/2000/svg\">\n      <circle cx=\"24\" cy=\"23\" fill=\"#FFF\" r=\"22\"/>\n      <path d=\"M33.76 34.26c2.75-2.56 4.49-6.37 4.49-11.26 0-.89-.08-1.84-.29-3H24.01v5.99h8.03c-.4 2.02-1.5 3.56-3.07 4.56v.75l3.91 2.97h.88z\" fill=\"#4285F4\"/>\n      <path d=\"M15.58 25.77A8.845 8.845 0 0 0 24 31.86c1.92 0 3.62-.46 4.97-1.31l4.79 3.71C31.14 36.7 27.65 38 24 38c-5.93 0-11.01-3.4-13.45-8.36l.17-1.01 4.06-2.85h.8z\" fill=\"#34A853\"/>\n      <path d=\"M15.59 20.21a8.864 8.864 0 0 0 0 5.58l-5.03 3.86c-.98-2-1.53-4.25-1.53-6.64 0-2.39.55-4.64 1.53-6.64l1-.22 3.81 2.98.22 1.08z\" fill=\"#FBBC05\"/>\n      <path d=\"M24 14.14c2.11 0 4.02.75 5.52 1.98l4.36-4.36C31.22 9.43 27.81 8 24 8c-5.93 0-11.01 3.4-13.45 8.36l5.03 3.85A8.86 8.86 0 0 1 24 14.14z\" fill=\"#EA4335\"/>\n    </svg>\n    <div class=\"gradient-container\"><div class=\"gradient\"></div></div>\n  </div>\n  <div class=\"carousel\">\n<a class=\"chip\" href=\"https://www.google.com/search?q=latest+artificial+intelligence+AI+news+September+20+2026&client=app-vertex-grounding&safesearch=active\">latest artificial intelligence AI news September 20 2026</a>\n<a class=\"chip\" href=\"https://www.google.com/search?q=top+AI+news+today&client=app-vertex-grounding&safesearch=active\">top AI news today</a>\n  </div>\n</div>"
+            "renderedContent": "<style>\n.container {\n  align-items: center;\n  border-radius: 8px;\n  display: flex;\n  font-family: Google Sans, Roboto, sans-serif;\n  font-size: 14px;\n  line-height: 20px;\n  padding: 8px 12px;\n}\n.chip {\n  display: inline-block;\n  border: solid 1px;\n  border-radius: 16px;\n  min-width: 14px;\n  padding: 5px 16px;\n  text-align: center;\n  user-select: none;\n  margin: 0 8px;\n  -webkit-tap-highlight-color: transparent;\n}\n.carousel {\n  overflow: auto;\n  scrollbar-width: none;\n  white-space: nowrap;\n  margin-right: -12px;\n}\n.headline {\n  display: flex;\n  margin-right: 4px;\n}\n.gradient-container {\n  position: relative;\n}\n.gradient {\n  position: absolute;\n  transform: translate(3px, -9px);\n  height: 36px;\n  width: 9px;\n}\n@media (prefers-color-scheme: light) {\n  .container {\n    background-color: #fafafa;\n    box-shadow: 0 0 0 1px #0000000f;\n  }\n  .headline-label {\n    color: #1f1f1f;\n  }\n  .chip {\n    background-color: #ffffff;\n    border-color: #d2d2d2;\n    color: #5e5e5e;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #f2f2f2;\n  }\n  .chip:focus {\n    background-color: #f2f2f2;\n  }\n  .chip:active {\n    background-color: #d8d8d8;\n    border-color: #b6b6b6;\n  }\n  .logo-dark {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #fafafa 15%, #fafafa00 100%);\n  }\n}\n@media (prefers-color-scheme: dark) {\n  .container {\n    background-color: #1f1f1f;\n    box-shadow: 0 0 0 1px #ffffff26;\n  }\n  .headline-label {\n    color: #fff;\n  }\n  .chip {\n    background-color: #2c2c2c;\n    border-color: #3c4043;\n    color: #fff;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #353536;\n  }\n  .chip:focus {\n    background-color: #353536;\n  }\n  .chip:active {\n    background-color: #464849;\n    border-color: #53575b;\n  }\n  .logo-light {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #1f1f1f 15%, #1f1f1f00 100%);\n  }\n}\n</style>\n<div class=\"container\">\n  <div class=\"headline\">\n    <svg class=\"logo-light\" width=\"18\" height=\"18\" viewBox=\"9 9 35 35\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M42.8622 27.0064C42.8622 25.7839 42.7525 24.6084 42.5487 23.4799H26.3109V30.1568H35.5897C35.1821 32.3041 33.9596 34.1222 32.1258 35.3448V39.6864H37.7213C40.9814 36.677 42.8622 32.2571 42.8622 27.0064V27.0064Z\" fill=\"#4285F4\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 43.8555C30.9659 43.8555 34.8687 42.3195 37.7213 39.6863L32.1258 35.3447C30.5898 36.3792 28.6306 37.0061 26.3109 37.0061C21.8282 37.0061 18.0195 33.9811 16.6559 29.906H10.9194V34.3573C13.7563 39.9841 19.5712 43.8555 26.3109 43.8555V43.8555Z\" fill=\"#34A853\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M16.6559 29.8904C16.3111 28.8559 16.1074 27.7588 16.1074 26.6146C16.1074 25.4704 16.3111 24.3733 16.6559 23.3388V18.8875H10.9194C9.74388 21.2072 9.06992 23.8247 9.06992 26.6146C9.06992 29.4045 9.74388 32.022 10.9194 34.3417L15.3864 30.8621L16.6559 29.8904V29.8904Z\" fill=\"#FBBC05\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 16.2386C28.85 16.2386 31.107 17.1164 32.9095 18.8091L37.8466 13.8719C34.853 11.082 30.9659 9.3736 26.3109 9.3736C19.5712 9.3736 13.7563 13.245 10.9194 18.8875L16.6559 23.3388C18.0195 19.2636 21.8282 16.2386 26.3109 16.2386V16.2386Z\" fill=\"#EA4335\"/>\n    </svg>\n    <svg class=\"logo-dark\" width=\"18\" height=\"18\" viewBox=\"0 0 48 48\" xmlns=\"http://www.w3.org/2000/svg\">\n      <circle cx=\"24\" cy=\"23\" fill=\"#FFF\" r=\"22\"/>\n      <path d=\"M33.76 34.26c2.75-2.56 4.49-6.37 4.49-11.26 0-.89-.08-1.84-.29-3H24.01v5.99h8.03c-.4 2.02-1.5 3.56-3.07 4.56v.75l3.91 2.97h.88z\" fill=\"#4285F4\"/>\n      <path d=\"M15.58 25.77A8.845 8.845 0 0 0 24 31.86c1.92 0 3.62-.46 4.97-1.31l4.79 3.71C31.14 36.7 27.65 38 24 38c-5.93 0-11.01-3.4-13.45-8.36l.17-1.01 4.06-2.85h.8z\" fill=\"#34A853\"/>\n      <path d=\"M15.59 20.21a8.864 8.864 0 0 0 0 5.58l-5.03 3.86c-.98-2-1.53-4.25-1.53-6.64 0-2.39.55-4.64 1.53-6.64l1-.22 3.81 2.98.22 1.08z\" fill=\"#FBBC05\"/>\n      <path d=\"M24 14.14c2.11 0 4.02.75 5.52 1.98l4.36-4.36C31.22 9.43 27.81 8 24 8c-5.93 0-11.01 3.4-13.45 8.36l5.03 3.85A8.86 8.86 0 0 1 24 14.14z\" fill=\"#EA4335\"/>\n    </svg>\n    <div class=\"gradient-container\"><div class=\"gradient\"></div></div>\n  </div>\n  <div class=\"carousel\">\n<a class=\"chip\" href=\"https://www.google.com/search?q=AI+artificial+intelligence+news+September+22+2026&client=app-vertex-grounding&safesearch=active\">AI artificial intelligence news September 22 2026</a>\n<a class=\"chip\" href=\"https://www.google.com/search?q=major+AI+developments+September+2026&client=app-vertex-grounding&safesearch=active\">major AI developments September 2026</a>\n  </div>\n</div>"
           },
           "groundingChunks": [
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHs4BS0Qf8QQSYuNhVwSNAFlarJkhrHyB4I59Pi0pTkpdBsYZ7cDhvWfLuibeclGwEFNeYXyfpsSrrQwBtgcgySezRouSqVzIPZ5MEH-8RgkwW_67OXO1bkgXqX7B8t1OqTysA49eTA4M-tmb0A2KsVMYoSPmJ0ya9Ej3DIT1X_-BkTMM7ACQQkpQ==",
-                "title": "foxnews.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHN-IRU2Lc0ccg2JdMSWsuvOUa0OA0nLDWkboJ5UwULBhHd8ANaKLJEEAocxuO3OYHnZ1xV5fz3SdLtqtBI3DvXmA9huqFbmfd_Ycp4dBVD9bS8QNXrOB7ELwxof9c85VqgxAOZF2QqqLbe",
+                "title": "aiweekly.co"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEw5AxXqp4ZxftNuqc1NvCYzh_oCMb6nTYSk_bFsboNGUvSi_kegwCP7v9juL2zCHFtMQ0JNJ_KWLhRGsiIbtE1MIhd3hO9rmkl-AMwp5LePYuUGK8yGkGAvZKwxQBpBNS2otv12-hXwydOs9iEc4LvAS1r5BbQR8R5ASIGF9FEugUAHQM=",
-                "title": "gizmodo.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEzLDkM0nR_r669_yimUbQhme9kGi6dgxLm2vr6GkIiAFNfZlejq99lFkjAV_pvsI60vtvV7buD4aAeJdrziiet5PognTWrMs-yjyuFBBdSFo03Sxl9hc1Ofm0UOdmNtsfrTV-Udx_Dv65ledgJ0tSlz3M-tXL14_GTdNJxVQoYyAJmUbUOjKePv-Eg4GrTAn-Y0SVWHEGBsxkGtM5mXnSdm-lx7kvmZR-DwV7PSj4F3fk8",
+                "title": "medium.com"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFvmdwgKTYrucGirGgUWe8rfOSszYXzuqMXnDIn-QE6dXWz1JeXJ5I7OErVLQx2wsFEQUiq4fYP6fvm7OHwSURzAmBp3bf8L0S5uRSrh75t6iMchmXT1jkzdyDZFJwgbdHMmO4uG7tpdKVmHUwEMu927YaDJghqIa88mR6kc7SxFpnSoyg_o5p28ekCx6WixZOaMr0SRQ==",
-                "title": "pymnts.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGLKMPbBOUDvZgs14JEEhGs_lD2R7nzVxrB0wnqtvKVteTG9TPLyWyoRI4yJXB-2Y-oSOz56ymPdZNAkf449aEsbRx15zTU2nqhF10WDn6P8NCp7EgK9xIZEn538eF1KHRwYE0xuy6E32N1yjDBaOv6IvzHMXom7RGw9Lq5pjQMTo5GfD3EZmwBMuKKk0oxAchgTxcSAVHNGrzSxS_kLNnbHDKdT_dmekr3AfWFp407zePzF7OYsZGPQ1gHOFWaUg==",
+                "title": "gartner.com"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGmr5tjs1gSrRMSKU6VdUgOLev4pJAr1EidxIZ_Xm0WIUg6oWTkRl4nU6isqbQyTThqBO0hHfTTOhmjSG-rH2OFQEeXE-FpztA4iD2n6HQJkHtq2C6IdkXZXrGAixb00blZOsSMtNHWcE1135GKNg11Y8tr6bWmZ57uiXjgnHiQgv0l1AIDvOkFCIDpIY2mW5SIKIHdoMPtGFqAlJkiQqgO2w==",
-                "title": "aljazeera.com"
-              }
-            },
-            {
-              "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHeFly5OGBOWB96tLzlp6gG6Wtq7oCFBwI-b3OGx6vNd6I4VroWZNUHJ_56KeMm9tm0n7SavZ2k5r1DocqrBnFLvgau7_mABxNcQdckNFIiaW98Qna2LK_6fuk4yzSeIGeGa3HMPwb3pzqnQhm90A_ST6XolunNODrmKUzG3mhzMbw5g9llu87xB10eTFyFV5o2hp-4R_n1zR6gNJgXX--XE0cOQwWVbBoi5BEf9NVaWsD1l2MjN3cB_E_7HaE2ybF9i21dm4RWKp7ZCJIq_CUnyqO9qXh6liaXfys=",
-                "title": "theguardian.com"
-              }
-            },
-            {
-              "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHPP_oOi9BJ2GAfHSH6Clp29r3h4O3yvcpTAxzuzI9d4LFgHbJRDMf_wvkJ140JKCt40yyKKF7voxFS4Fx1kK0PrlRzZmkDTsx1FZhfYpGKg_HPwchDgYYj0SQHzoMMPGK5",
-                "title": "youtube.com"
-              }
-            },
-            {
-              "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQF9kldhnBtftpzlGti3dJlrBMOiJ7d9kOU8aCh1i4zv41uBLXzz87TKZ6lZvXXoFmzwSvWLokslx0zbpX31mS70EMR532Rx93WbhckRzmfWEMWQM7fKFTyXhO8=",
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHku7KzsME0QJnHPDkvyNtsBF-EMYvXYBJknwrK5ZH3eZenwEy90rD8-8OzFwm9ojv8jgPspqyJYpunWA1BynVJFY2RZJkUuRl5bHJmEqGYcnZB8qYZcYgbNUs2SUMIgA==",
                 "title": "sana.sy"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHC0lm7qJmB0MIQKoL6Yb2fQupgNHV4t_sD9JswqadSQN4o69Na8XA7V4W75vb3HYZACuR3L2R-hl7PsOthuVMRhRul6fOz4vJ8RioM0CpNsGpVNhCvyE4fGUnLUqI5yeWKLJZkxM23wkuHeh-N9tK_8RkiH8oLu1LvbzLsAPwHttV3DSPaZMAuCeETlEtaRFlnEq4qdzvIJGsdhDQhRhdsGKSiqMQJ",
-                "title": "gatesnotes.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHGERvX5-HT1mTTfeL5QqedKvBWpVHBL_y4C-BdZCpLcKsM2DZHmuyxusZuL_aNerv4RXkCCWgrGqfO4yqfF1bqhEnuLtYIEXDQtr3U9cs-kxXMcFwSPtg6E-Coskuzu3AuTzEdc3fEDEtauAOtnAcEVKj1yABKQRGVduT-EdpxW6ppCtTu_UumE19vRD40rgpbYeR3qfq20OJ7Asq-xNzsOAqWNBs8GKAbs9ukpIY0pUAc1mkNJceMkXyL2QdUon9y-EU9Eg==",
+                "title": "bnnbloomberg.ca"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFy3gV2DjN35LPRQF_j6zSsB7xjeFJMeeRdF_JfBXGUJoiVANZPYv8e611Lj1UZjcfyreFxpvDNu6ml2qdIHo2SBzvlQSDLFXXQC34U7C1ztHZbFX62Mst2rl-hiIPl4YeL4ZeYZtQOYigonYnPvexz0rHAZlw0MIPpig5jguFuzaUZYy91PIO_7rxMAki8GkNnKRWQKy0vQSqQp2qRaqX7z0GoX4JySckK-WlllUAe_PNDptfxkJIZ0Rsg_3FpQg7pEoPqoRjUQNB16tkSNZn5zfTnyAzo2gMU",
+                "title": "prnewswire.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFugjPNM1L4U0eKr1MdoCdE9rjB-SwZcr-w4wJ-2cpgDMqBr0NP1isoGLR0flBvwM_TCxutEMbe_Xh8eWH8tHn5mURx7kVFcOvtAnSOCU0vrqdWMoe-8vjlS9IXWekM1FCYTBFb5BaiGkPAHwtzmWwC-Xmt9iFoE1h4MkCRPlc5hYQ8gUFdb-7mxEj0DF-SuEwyINrgNA18z2oHHuX28FSQwWCnajMdM1wB4jrbLbYyzSA=",
+                "title": "googlecloudpresscorner.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEuH0pg-LtUgm0pWrR7bK66aMIVN88X7Bq0iiLy_9KYqf2C_PqQB-F9UmG1OJ3SB4cIDyRHc81BqCJpXEvjlMOTkq3Pa7zp5hWVCAecZy-zxRc-NbJImQWJgjNsIld9jkWt6P6OHUiHbLIFns2RvIrl18bUhSdmmm4whAsYFUEbfBrXPpc418oFaRLiRnVyx5ugBzEP-gqb5B5UHaeitakWihnQtch82k03rsPifJyZO1B32xRAi-sf",
+                "title": "businessinsider.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEkWpTY_cE0Nz7EwEgC5iz4TzHs1cb08d6S9cA3QtYzMdTU6g0OxUqln-OCr6VVOWoMx7CuJPHakvPaLqUFk0o6xMjLjFTrlQnaV3jR0WoeoPjjrIfVW0RK7KoT4sZI-jsEr5P0bqH1KZhoBddRFsmZCMF9xYa0DT5ETSZpY8Ol",
+                "title": "af.net"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQESSmWM-UOG917HQ44PTWb9YPJVM5xjUzyeI5HhcoUK1yhFiBKSTxkhC5deLconVnFWZiXBZSX5mULLqVEQfC4FFWAFU9X8xAil0vTFREXauLFK8xLLlwYUNsN7RAZygOUIdbKq7PVWy0KcRSH-H-1Ud_Jw8gOb_Xc=",
+                "title": "aiforesight360.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFkJPXtr5GPBIrVRfrTHnz9hQS4bRyQcjWlpytGEgQSYxHK9wgiP_whw0i4yzqGY5A9jbPpGYAqpefUvnBV5X9phzfaFhFiofJGfg7TWj2YtM8LiTG-ZyZu-Dj_uHXHIPZU",
+                "title": "youtube.com"
               }
             }
           ],
           "groundingSupports": [
             {
               "segment": {
-                "startIndex": 100,
-                "endIndex": 330,
-                "text": "### **Government & Regulation**\n*   **Trump’s \"AI Force\":** Former President Donald Trump has announced plans to create a new \"AI Force\" and appoint an \"AI Czar\" to lead it, modeling the initiative after the existing Space Force"
+                "endIndex": 226,
+                "text": "As of September 22, 2026, the artificial intelligence sector is experiencing a period of intense activity characterized by rapid model releases, heightened global concern over safety, and significant infrastructure investments"
               },
               "groundingChunkIndices": [
                 0,
@@ -85,70 +102,9 @@
             },
             {
               "segment": {
-                "startIndex": 542,
-                "endIndex": 613,
-                "text": "Australia intends to introduce new AI standards by the end of this year"
-              },
-              "groundingChunkIndices": [
-                3
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 616,
-                "endIndex": 855,
-                "text": "### **Industry & Research**\n*   **OpenAI's Navier-Stokes Claim:** Following OpenAI’s September 8 announcement that its AI agents solved the Navier-Stokes problem—a major mathematical challenge—the scientific community remains divided"
-              },
-              "groundingChunkIndices": [
-                4
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 857,
-                "endIndex": 1027,
-                "text": "Critics have raised concerns over the potential \"misuse\" of human mathematicians' prior work and questions regarding the autonomy and true utility of the AI's achievement"
-              },
-              "groundingChunkIndices": [
-                4
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 1029,
-                "endIndex": 1291,
-                "text": "*   **Google Gemini Security Test:** Reports indicate that Google’s Gemini AI was able to access protected systems at three real-world companies during a cybersecurity stress test, highlighting both the power of AI in security and the risks of potential misuse"
-              },
-              "groundingChunkIndices": [
-                0,
-                5
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 1293,
-                "endIndex": 1501,
-                "text": "*   **Europe's Infrastructure Gap:** European Central Bank President Christine Lagarde warned that Europe may face up to €600 billion in costs over the next decade to close an widening AI infrastructure gap"
-              },
-              "groundingChunkIndices": [
-                6
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 1503,
-                "endIndex": 1613,
-                "text": "Data center capacity is projected to fall significantly short of demand by 2036 without substantial investment"
-              },
-              "groundingChunkIndices": [
-                6
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 1616,
-                "endIndex": 1909,
-                "text": "### **Economic & Workplace Impact**\n*   **Employment Debate:** Despite growing public anxiety about AI displacing workers, new research from the Budget Lab at Yale suggests there is currently no direct connection between the rapid adoption of AI and broader shifts in national employment rates"
+                "startIndex": 229,
+                "endIndex": 437,
+                "text": "### **Key Developments (September 22, 2026)**\n*   **Global Safety Concerns:** A UN-backed panel has warned that safeguards for advanced AI agents are failing to keep pace with the technology's rapid evolution"
               },
               "groundingChunkIndices": [
                 0
@@ -156,9 +112,59 @@
             },
             {
               "segment": {
-                "startIndex": 2087,
-                "endIndex": 2168,
-                "text": "Economists estimate this could lift productivity by 1–4% over the coming decade"
+                "startIndex": 439,
+                "endIndex": 624,
+                "text": "Separately, leaders from more than 20 countries have issued a joint call for binding international safety measures, noting that advanced models pose serious security risks if mishandled"
+              },
+              "groundingChunkIndices": [
+                3
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 626,
+                "endIndex": 692,
+                "text": "Notably, the U.S. and China were not among the initial signatories"
+              },
+              "groundingChunkIndices": [
+                3
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 694,
+                "endIndex": 939,
+                "text": "*   **Alibaba's New Hardware & Models:** Ahead of a high-profile state visit to the U.S., China’s Alibaba unveiled the \"Zhenwu V900\" AI chip, which the company claims is the most powerful in China and triples the performance of its predecessor"
+              },
+              "groundingChunkIndices": [
+                4
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 941,
+                "endIndex": 1041,
+                "text": "The company also announced plans to train future AI models at a scale of 5 to 10 trillion parameters"
+              },
+              "groundingChunkIndices": [
+                4
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 1043,
+                "endIndex": 1246,
+                "text": "*   **Corporate & Industrial AI Integration:**\n    *   **Cognex Acquisition:** Cognex Corporation announced its acquisition of RealSense to expand its capabilities in robotic perception and \"Physical AI\""
+              },
+              "groundingChunkIndices": [
+                5
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 1252,
+                "endIndex": 1471,
+                "text": "*   **Volvo & Google Cloud:** Volvo Cars has partnered with Accenture and Google Cloud to launch \"Horizon,\" an open-source platform designed to streamline software and AI-assisted development for the automotive industry"
               },
               "groundingChunkIndices": [
                 6
@@ -166,9 +172,9 @@
             },
             {
               "segment": {
-                "startIndex": 2171,
-                "endIndex": 2319,
-                "text": "### **Commentary**\n*   **Bill Gates on AI's Future:** In a recent piece, Bill Gates emphasized that the choices made regarding AI today are critical"
+                "startIndex": 1477,
+                "endIndex": 1595,
+                "text": "*   **Defense AI:** Dassault Aviation successfully flight-tested new sovereign AI algorithms on the Rafale fighter jet"
               },
               "groundingChunkIndices": [
                 7
@@ -176,12 +182,65 @@
             },
             {
               "segment": {
-                "startIndex": 2321,
-                "endIndex": 2546,
-                "text": "He highlighted the monumental challenge of ensuring AI acts as an \"equalizer\" rather than a source of injustice, stressing that global leaders are currently not sufficiently prepared for the turbulent transition AI will bring"
+                "startIndex": 1598,
+                "endIndex": 1733,
+                "text": "### **Context: A Record-Breaking Month**\nSeptember 2026 has been described as one of the busiest months of the year for the AI industry"
               },
               "groundingChunkIndices": [
-                7
+                1
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 1736,
+                "endIndex": 1871,
+                "text": "*   **Model Proliferation:** The first half of the month saw a flurry of releases from major labs, including **OpenAI’s GPT-6 Astra**"
+              },
+              "groundingChunkIndices": [
+                8,
+                9
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 1736,
+                "endIndex": 1922,
+                "text": "*   **Model Proliferation:** The first half of the month saw a flurry of releases from major labs, including **OpenAI’s GPT-6 Astra**, **Anthropic’s Claude Fable 5.1 and Mythos 5.1**"
+              },
+              "groundingChunkIndices": [
+                1,
+                9
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 1736,
+                "endIndex": 1966,
+                "text": "*   **Model Proliferation:** The first half of the month saw a flurry of releases from major labs, including **OpenAI’s GPT-6 Astra**, **Anthropic’s Claude Fable 5.1 and Mythos 5.1**, and **Google’s Gemini 3.8 Flash** series"
+              },
+              "groundingChunkIndices": [
+                10,
+                9
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 2038,
+                "endIndex": 2153,
+                "text": "6-Pro-RL\" model, a trillion-parameter mixture-of-experts model that has shown performance competitive with Grok 4.7"
+              },
+              "groundingChunkIndices": [
+                0
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 2155,
+                "endIndex": 2370,
+                "text": "*   **Economic Impact:** Gartner reports that worldwide AI spending is expected to grow by nearly 50% in 2026, reaching $2.7 trillion, driven largely by the massive infrastructure build-out required for data centers"
+              },
+              "groundingChunkIndices": [
+                2
               ]
             }
           ]
@@ -189,9 +248,9 @@
       }
     ],
     "usageMetadata": {
-      "promptTokenCount": 69,
-      "candidatesTokenCount": 600,
-      "totalTokenCount": 669
+      "promptTokenCount": 75,
+      "candidatesTokenCount": 672,
+      "totalTokenCount": 747
     },
     "modelVersion": "gemini-3.1-flash-lite",
     "responseId": "mock-response-id-0004"
