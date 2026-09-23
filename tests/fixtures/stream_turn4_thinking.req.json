@@ -3,7 +3,7 @@
   "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse",
   "headers": {
     "Host": "daily-cloudcode-pa.googleapis.com",
-    "User-Agent": "antigravity/cli/1.2.8 (aidev_client; os_type=linux; arch=amd64; cl=985603393; auth_method=consumer)",
+    "User-Agent": "antigravity/cli/1.2.9 (aidev_client; os_type=linux; arch=amd64; cl=986394137; auth_method=consumer)",
     "Transfer-Encoding": "chunked",
     "Authorization": "Bearer <REDACTED_ACCESS_TOKEN>",
     "Content-Type": "application/json",
@@ -27,15 +27,15 @@
           "parts": [
             {
               "functionCall": {
-                "id": "call_89725",
+                "id": "call_14872",
                 "name": "write_to_file",
                 "args": {
                   "CodeContent": "Hello Antigravity.",
-                  "Description": "Create notes.txt with the requested text",
+                  "Description": "Create /tmp/work/notes.txt with the specified content",
                   "Overwrite": true,
                   "TargetFile": "/tmp/work/notes.txt",
-                  "toolAction": "Creating notes.txt",
-                  "toolSummary": "File creation"
+                  "toolAction": "Creating file",
+                  "toolSummary": "Create notes file"
                 }
               },
               "thoughtSignature": "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDAx"
@@ -47,10 +47,10 @@
           "parts": [
             {
               "functionResponse": {
-                "id": "call_89725",
+                "id": "call_14872",
                 "name": "write_to_file",
                 "response": {
-                  "output": "Created At: 2026-09-22T20:52:26+09:00\nCompleted At: 2026-09-22T20:52:26+09:00\nCreated file file:///tmp/work/notes.txt with requested content.\nIf relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission."
+                  "output": "Created At: 2026-09-24T02:08:44+09:00\nCompleted At: 2026-09-24T02:08:44+09:00\nCreated file file:///tmp/work/notes.txt with requested content.\nIf relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission."
                 }
               }
             }
@@ -77,7 +77,7 @@
           "role": "user",
           "parts": [
             {
-              "text": "The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.\n\n<SYSTEM_MESSAGE>\n[Message] timestamp=2026-09-22T11:53:11Z sender=system priority=MESSAGE_PRIORITY_LOW content=[Notice] All your subagents and background tasks have been stopped due to server restart. If you want a subagent to continue working, it needs to be revived by sending it a new message. If resuming work, please check on status and restart as needed.\n</SYSTEM_MESSAGE>"
+              "text": "The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.\n\n<SYSTEM_MESSAGE>\n[Message] timestamp=2026-09-23T17:08:55Z sender=system priority=MESSAGE_PRIORITY_LOW content=[Notice] All your subagents and background tasks have been stopped due to server restart. If you want a subagent to continue working, it needs to be revived by sending it a new message. If resuming work, please check on status and restart as needed.\n</SYSTEM_MESSAGE>"
             }
           ]
         }
