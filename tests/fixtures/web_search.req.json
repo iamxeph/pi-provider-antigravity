@@ -3,8 +3,8 @@
   "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:generateContent",
   "headers": {
     "Host": "daily-cloudcode-pa.googleapis.com",
-    "User-Agent": "antigravity/cli/1.2.11 (aidev_client; os_type=linux; arch=amd64; cl=987915746; auth_method=consumer)",
-    "Content-Length": "670",
+    "User-Agent": "antigravity/cli/1.2.12 (aidev_client; os_type=linux; arch=amd64; cl=989022288; auth_method=consumer)",
+    "Content-Length": "685",
     "Authorization": "Bearer <REDACTED_ACCESS_TOKEN>",
     "Content-Type": "application/json",
     "Accept-Encoding": "gzip"
@@ -17,7 +17,7 @@
           "role": "user",
           "parts": [
             {
-              "text": "artificial intelligence news"
+              "text": "artificial intelligence news September 2026"
             }
           ]
         }
