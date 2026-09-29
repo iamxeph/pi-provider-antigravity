@@ -3,7 +3,7 @@
   "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse",
   "headers": {
     "Host": "daily-cloudcode-pa.googleapis.com",
-    "User-Agent": "antigravity/cli/1.2.11 (aidev_client; os_type=linux; arch=amd64; cl=987915746; auth_method=consumer)",
+    "User-Agent": "antigravity/cli/1.2.12 (aidev_client; os_type=linux; arch=amd64; cl=989022288; auth_method=consumer)",
     "Transfer-Encoding": "chunked",
     "Authorization": "Bearer <REDACTED_ACCESS_TOKEN>",
     "Content-Type": "application/json",
@@ -27,12 +27,12 @@
           "parts": [
             {
               "functionCall": {
-                "id": "call_269230",
+                "id": "call_157261",
                 "name": "view_file",
                 "args": {
                   "AbsolutePath": "/tmp/agy-no-such-file-xyz.txt",
                   "toolAction": "Reading file contents",
-                  "toolSummary": "View file"
+                  "toolSummary": "Read file"
                 }
               },
               "thoughtSignature": "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDA0"
@@ -44,10 +44,10 @@
           "parts": [
             {
               "functionResponse": {
-                "id": "call_269230",
+                "id": "call_157261",
                 "name": "view_file",
                 "response": {
-                  "output": "Created At: 2026-09-26T12:10:14+09:00\nCompleted At: 2026-09-26T12:10:14+09:00\nEncountered error in tool execution: declaring permissions: cortex tool view_file: convert tool call for permissions: model output error: invalid tool call error (invalid_args) failed to read file: stat /tmp/agy-no-such-file-xyz.txt: no such file or directory"
+                  "output": "Created At: 2026-09-29T08:41:56+09:00\nCompleted At: 2026-09-29T08:41:56+09:00\nEncountered error in tool execution: declaring permissions: cortex tool view_file: convert tool call for permissions: model output error: invalid tool call error (invalid_args) failed to read file: stat /tmp/agy-no-such-file-xyz.txt: no such file or directory"
                 }
               }
             }
