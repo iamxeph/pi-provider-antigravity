@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.19.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.18.0...v0.19.0) (2026-09-30)
+
+
+### Features
+
+* **compatibility:** verify wire compatibility with agy CLI 1.2.12 ([#46](https://github.com/iamxeph/pi-provider-antigravity/issues/46)) ([01e3e3d](https://github.com/iamxeph/pi-provider-antigravity/commit/01e3e3dc0a847cdc40488e9136491d6ba86717ff))
+* **core:** bump wire capture to agy 1.2.13 ([#49](https://github.com/iamxeph/pi-provider-antigravity/issues/49)) ([fdd043c](https://github.com/iamxeph/pi-provider-antigravity/commit/fdd043c1870ac4bdf7a0bb621865316e21fc5d22))
+
 ## [0.18.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.17.0...v0.18.0) (2026-09-26)
 
 
