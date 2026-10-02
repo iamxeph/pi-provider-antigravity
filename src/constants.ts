@@ -4,6 +4,6 @@ export const PROVIDER_NAME = "Antigravity";
 export const DEFAULT_HOST = "daily-cloudcode-pa.googleapis.com";
 export const DEFAULT_ENDPOINT = `https://${DEFAULT_HOST}`;
 export const DEFAULT_USER_AGENT =
-  "antigravity/cli/1.2.13 (aidev_client; os_type=linux; arch=amd64; cl=989937024; auth_method=consumer)";
+  "antigravity/cli/1.2.14 (aidev_client; os_type=linux; arch=amd64; cl=990662481; auth_method=consumer)";
 
 export const FALLBACK_PROJECT_ID = "aicode-consumers";

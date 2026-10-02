@@ -3,7 +3,7 @@
   "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse",
   "headers": {
     "Host": "daily-cloudcode-pa.googleapis.com",
-    "User-Agent": "antigravity/cli/1.2.13 (aidev_client; os_type=linux; arch=amd64; cl=989937024; auth_method=consumer)",
+    "User-Agent": "antigravity/cli/1.2.14 (aidev_client; os_type=linux; arch=amd64; cl=990662481; auth_method=consumer)",
     "Transfer-Encoding": "chunked",
     "Authorization": "Bearer <REDACTED_ACCESS_TOKEN>",
     "Content-Type": "application/json",
@@ -26,6 +26,10 @@
           "role": "model",
           "parts": [
             {
+              "text": "**Assessing the Core Request**\n\nOkay, so I'm analyzing this straightforward request for a simple \"ok\" response. I've re-evaluated the constraints, keeping those critical instructions in mind. It's clear that the primary focus is on producing that one single, specified word. The goal is now to evaluate exactly how to deliver that response, to make sure I am doing the correct thing.\n\n\n",
+              "thought": true
+            },
+            {
               "text": "ok",
               "thoughtSignature": "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDA3"
             }
@@ -43,7 +47,7 @@
           "role": "user",
           "parts": [
             {
-              "text": "The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.\n\n<SYSTEM_MESSAGE>\n[Message] timestamp=2026-09-30T01:00:31Z sender=system priority=MESSAGE_PRIORITY_LOW content=[Notice] All your subagents and background tasks have been stopped due to server restart. If you want a subagent to continue working, it needs to be revived by sending it a new message. If resuming work, please check on status and restart as needed.\n</SYSTEM_MESSAGE>"
+              "text": "The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.\n\n<SYSTEM_MESSAGE>\n[Message] timestamp=2026-10-02T02:34:07Z sender=system priority=MESSAGE_PRIORITY_LOW content=[Notice] All your subagents and background tasks have been stopped due to server restart. If you want a subagent to continue working, it needs to be revived by sending it a new message. If resuming work, please check on status and restart as needed.\n</SYSTEM_MESSAGE>"
             }
           ]
         }
