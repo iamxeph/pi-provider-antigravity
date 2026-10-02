@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.20.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.19.0...v0.20.0) (2026-10-02)
+
+
+### Features
+
+* **core:** bump wire capture to agy 1.2.14 ([#50](https://github.com/iamxeph/pi-provider-antigravity/issues/50)) ([4dd5000](https://github.com/iamxeph/pi-provider-antigravity/commit/4dd5000daca27d7507419fad78f002f70e102c20))
+
+
+### Bug Fixes
+
+* **test:** pin DEFAULT_USER_AGENT against the exported capture fixture ([#52](https://github.com/iamxeph/pi-provider-antigravity/issues/52)) ([f7c6766](https://github.com/iamxeph/pi-provider-antigravity/commit/f7c676637579e2f5e1436ca6617b9a4bc4ecb61f))
+
 ## [0.19.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.18.0...v0.19.0) (2026-09-30)
 
 
