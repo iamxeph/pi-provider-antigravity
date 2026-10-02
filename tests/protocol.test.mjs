@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import { newestCapture } from "./fixtures.mjs";
 import {
   DEFAULT_ENDPOINT,
   DEFAULT_USER_AGENT,
@@ -12,6 +14,16 @@ import {
   AntigravityAuthError,
 } from "../src/protocol.ts";
 
+test("Seam Protocol: DEFAULT_USER_AGENT matches the exported capture fixture", () => {
+  // Hermetic, and the only place the exact release row is checked automatically: the
+  // exported fixture carries agy's real User-Agent, so exporting a new capture without
+  // bumping the constant fails CI here rather than silently shipping a stale fingerprint.
+  const turn1 = JSON.parse(
+    fs.readFileSync(newestCapture("stream_turn1_initial.req.json"), "utf-8")
+  );
+  assert.equal(DEFAULT_USER_AGENT, turn1.headers["User-Agent"]);
+});
+
 test("Seam Protocol: buildAntigravityHeaders matches wire fingerprint", () => {
   const token = "mock-token-xyz";
   const headers = buildAntigravityHeaders(token);
@@ -20,8 +32,8 @@ test("Seam Protocol: buildAntigravityHeaders matches wire fingerprint", () => {
   assert.equal(headers["Content-Type"], "application/json");
   assert.equal(headers["Authorization"], `Bearer ${token}`);
   assert.equal(headers["User-Agent"], DEFAULT_USER_AGENT);
-  // Version-agnostic shape pin: the exact release row lives in EXPECTED_UA
-  // (wire-parity), so this one catches a wrong constant shape, not a new version.
+  // Shape pin only: the exact release row is pinned against the exported fixture in
+  // "DEFAULT_USER_AGENT matches the exported capture fixture" below.
   assert.match(
     headers["User-Agent"],
     /^antigravity\/cli\/\d+\.\d+\.\d+ \(aidev_client; os_type=linux; arch=amd64; cl=\d+; auth_method=consumer\)$/,
