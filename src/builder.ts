@@ -397,7 +397,7 @@ function translateTurnTrace(
             if (sig) {
               part.thoughtSignature = sig;
               pendingThinkingSig = undefined;
-            } else if (isGeminiRequest && !isSameProviderAndModel) {
+            } else if (isGeminiRequest) {
               part.thoughtSignature = SKIP_THOUGHT_SIGNATURE_VALIDATOR;
             }
             parts.push(part);

@@ -1303,9 +1303,9 @@ test("Seam 1: sentinel is Gemini-scoped, foreign-only and independent of the tur
   assert.equal(claudeCalls.length, 2);
   assert.equal(claudeCalls.every((p) => p.thoughtSignature === undefined), true);
 
-  // Scope: a signature we should have had (same provider and family) stays unpatched, so
-  // the backend's 400 still surfaces a lost/damaged signature instead of hiding it.
-  const lostSignatureContents = buildAntigravityRequestBody({
+  // Scope: when thinking is disabled or a tool call is emitted without a signature,
+  // Gemini requests receive the sentinel to prevent 400 rejection from Google's backend.
+  const unsignedGeminiContents = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
     plan: staticPlan("gemini-3.8-flash-high"),
     context: {
@@ -1323,12 +1323,12 @@ test("Seam 1: sentinel is Gemini-scoped, foreign-only and independent of the tur
       ],
     },
   }).request.contents;
-  const lostSignatureCalls = lostSignatureContents
+  const unsignedGeminiCalls = unsignedGeminiContents
     .flatMap((turn) => turn.parts)
     .filter((p) => p.functionCall);
-  assert.equal(lostSignatureCalls.length, 1);
-  assert.equal(lostSignatureCalls[0].thoughtSignature, undefined);
-  assert.equal(violatesThoughtSignatureRule(lostSignatureContents), true);
+  assert.equal(unsignedGeminiCalls.length, 1);
+  assert.equal(unsignedGeminiCalls[0].thoughtSignature, SKIP_THOUGHT_SIGNATURE_VALIDATOR);
+  assert.equal(violatesThoughtSignatureRule(unsignedGeminiContents), false);
 });
 
 test("Seam 1: buildAntigravityRequestBody extracts summary from foreign JSON signature when thinking text is empty", () => {
