@@ -134,7 +134,7 @@ test("Seam 1: multi-turn tool call increments request_id sequence and preserves 
   assert.deepEqual(toolContent.parts[0].functionResponse.response, { output: "file1.txt\nfile2.txt" });
 });
 
-test("Seam 1: assistant thinking blocks serialize as thought: true with text property", () => {
+test("Seam 1: assistant thinking blocks replay as a signed text part only (1.2.16)", () => {
   const context = {
     messages: [
       {
@@ -170,16 +170,12 @@ test("Seam 1: assistant thinking blocks serialize as thought: true with text pro
 
   const assistantTurn = body.request.contents[1];
   assert.equal(assistantTurn.role, "model");
-  assert.equal(assistantTurn.parts.length, 2);
-
-  const thinkingPart = assistantTurn.parts[0];
-  assert.equal(typeof thinkingPart.thought, "boolean");
-  assert.equal(thinkingPart.thought, true);
-  assert.equal(thinkingPart.text, "Deconstructing SHA-256 Algorithm...");
-  // agy CLI part-split (#15): the thinking part never carries the signature —
-  // it rides on the next visible-text part instead.
-  assert.equal("thoughtSignature" in thinkingPart, false);
-  assert.equal(assistantTurn.parts[1].thoughtSignature, "sig_12345");
+  // 1.2.16 dropped the thought part from a replay: agy echoes no reasoning text at
+  // all, and the signature the thinking block carried rides the visible text part.
+  assert.equal(assistantTurn.parts.length, 1);
+  assert.equal("thought" in assistantTurn.parts[0], false);
+  assert.equal(assistantTurn.parts[0].text, "SHA-256 is a cryptographic hash function...");
+  assert.equal(assistantTurn.parts[0].thoughtSignature, "sig_12345");
 });
 
 test("Seam 1: a gpt reasoning turn replays as text only (gpt turn12 → turn13)", () => {
@@ -309,8 +305,12 @@ test("Seam 1: integer thinkingBudget matches PR #39 / #36 matrix across models",
   assert.deepEqual(budget("gemini-pro-agent", "high"), { includeThoughts: true, thinkingBudget: 10001 });
   // Pro low -> 1001
   assert.deepEqual(budget("gemini-3.1-pro-low"), { includeThoughts: true, thinkingBudget: 1001 });
-  // Claude -> 1024
-  assert.deepEqual(budget("claude-sonnet-4-6"), { includeThoughts: true, thinkingBudget: 1024 });
+  // Claude 5.5 ships no token budget: the effort is named instead.
+  assert.deepEqual(budget("claude-sonnet-5-5-high"), {
+    includeThoughts: true,
+    thinkingBudget: 0,
+    thinkingLevel: "HIGH",
+  });
   // GPT-OSS -> 8192
   assert.deepEqual(budget("gpt-oss-120b-medium"), { includeThoughts: true, thinkingBudget: 8192 });
 });
@@ -466,7 +466,7 @@ test("Seam 1: tool conversion formats legacy parameters for non-Gemini and strip
 
   const body = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("claude-sonnet-4-6"),
+    plan: staticPlan("claude-sonnet-5-5-high"),
     context: { messages: [{ role: "user", content: "hi" }], tools: [agentTool, todoTool] },
   });
 
@@ -527,7 +527,7 @@ test("Seam 1: tool conversion strips $defs and $schema metadata", () => {
 
   const claudeBody = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("claude-sonnet-4-6"),
+    plan: staticPlan("claude-sonnet-5-5-high"),
     context: { messages: [{ role: "user", content: "hi" }], tools: [toolWithMeta] },
   });
   const claudeDecl = claudeBody.request.tools[0].functionDeclarations[0];
@@ -544,15 +544,15 @@ test("Seam 1: resolveModelPlan maps Public Model IDs to Runtime Model IDs", () =
   assert.equal(fixtureCatalog.resolvePlan("gemini-3.1-pro", "high").runtimeModelId, "gemini-pro-agent");
   assert.equal(fixtureCatalog.resolvePlan("gemini-3.1-pro", "low").runtimeModelId, "gemini-3.1-pro-low");
 
-  assert.equal(fixtureCatalog.resolvePlan("claude-opus-4-6", undefined).runtimeModelId, "claude-opus-4-6-thinking");
-  assert.equal(fixtureCatalog.resolvePlan("claude-sonnet-4-6", undefined).runtimeModelId, "claude-sonnet-4-6");
+  assert.equal(fixtureCatalog.resolvePlan("claude-opus-5-5-high", undefined).runtimeModelId, "claude-opus-5-5-high");
+  assert.equal(fixtureCatalog.resolvePlan("claude-sonnet-5-5-high", undefined).runtimeModelId, "claude-sonnet-5-5-high");
   assert.equal(fixtureCatalog.resolvePlan("gpt-oss-120b", undefined).runtimeModelId, "gpt-oss-120b-medium");
 
   // Models the snapshot lists under a single variant have no tier to choose
   // from, so that variant serves every effort (the deleted heuristics did this).
   for (const effort of ["high", "medium", "low", "minimal", undefined]) {
     assert.equal(fixtureCatalog.resolvePlan("gpt-oss-120b", effort).runtimeModelId, "gpt-oss-120b-medium");
-    assert.equal(fixtureCatalog.resolvePlan("claude-opus-4-6", effort).runtimeModelId, "claude-opus-4-6-thinking");
+    assert.equal(fixtureCatalog.resolvePlan("claude-opus-5-5-high", effort).runtimeModelId, "claude-opus-5-5-high");
   }
   // Gemini 3.1 Pro lists no medium tier (-high/-low only); medium
   // resolves to the high variant, which the server renames to gemini-pro-agent.
@@ -574,9 +574,13 @@ test("Seam 1: resolveModelPlan bundles enum, thinking budget, and non-Gemini fla
   assert.equal(flash.isNonGemini, false);
   assert.equal(flash.isClaude, false);
 
-  const claude = fixtureCatalog.resolvePlan("claude-opus-4-6", undefined);
-  assert.equal(claude.modelEnum, "MODEL_PLACEHOLDER_M26");
-  assert.deepEqual(claude.thinkingConfig, { includeThoughts: true, thinkingBudget: 1024 });
+  const claude = fixtureCatalog.resolvePlan("claude-opus-5-5-high", undefined);
+  assert.equal(claude.modelEnum, "MODEL_PLACEHOLDER_M402");
+  assert.deepEqual(claude.thinkingConfig, {
+    includeThoughts: true,
+    thinkingBudget: 0,
+    thinkingLevel: "HIGH",
+  });
   assert.equal(claude.isNonGemini, true);
   assert.equal(claude.isClaude, true);
 
@@ -692,7 +696,7 @@ test("Seam 1: buildAntigravityRequestBody with complex tools generates valid pay
   // Claude request
   const claudeBody = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("claude-sonnet-4-6"),
+    plan: staticPlan("claude-sonnet-5-5-high"),
     context,
   });
   assert.ok(claudeBody.request.tools);
@@ -1295,7 +1299,7 @@ test("Seam 1: sentinel is Gemini-scoped, foreign-only and independent of the tur
   // sentinel, so only Gemini requests get it (both tool calls stay unsigned here).
   const claudeCalls = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("claude-sonnet-4-6"),
+    plan: staticPlan("claude-sonnet-5-5-high"),
     context: { messages: CROSS_PROVIDER_TOOL_TURN },
   })
     .request.contents.flatMap((turn) => turn.parts)
@@ -1391,7 +1395,7 @@ test("Seam 1: buildAntigravityRequestBody drops cross-model thoughtSignature bet
       {
         role: "assistant",
         provider: "antigravity",
-        model: "claude-sonnet-4-6",
+        model: "claude-sonnet-5-5-high",
         content: [
           {
             type: "thinking",
@@ -1452,11 +1456,11 @@ test("Seam 1: buildAntigravityRequestBody preserves valid thoughtSignature for s
 
   const modelTurn = body.request.contents[1];
   assert.equal(modelTurn.role, "model");
-  assert.equal(modelTurn.parts[0].thought, true);
-  // agy CLI part-split (#15): thinking stays signature-free, the signature
-  // rides on the following functionCall part.
-  assert.equal("thoughtSignature" in modelTurn.parts[0], false);
-  assert.equal(modelTurn.parts[1].thoughtSignature, validSig);
+  // 1.2.16: no thought part on the wire, and the signature the thinking block carried
+  // rides the following functionCall part.
+  assert.equal("thought" in modelTurn.parts[0], false);
+  assert.equal(modelTurn.parts[0].functionCall.name, "bash");
+  assert.equal(modelTurn.parts[0].thoughtSignature, validSig);
 });
 
 test("Seam 1 (Verified wire parity): Gemini 3.7 and Gemini 3.8 share thoughtSignatures seamlessly", () => {
@@ -1503,7 +1507,7 @@ test("Seam 1 (Verified wire parity): Gemini 3.7 and Gemini 3.8 share thoughtSign
         {
           role: "assistant",
           provider: "antigravity",
-          model: "claude-sonnet-4-6",
+          model: "claude-sonnet-5-5-high",
           content: [{ type: "text", text: "Claude response", textSignature: validSig37 }],
         },
         { role: "user", content: "next" },
@@ -1515,14 +1519,14 @@ test("Seam 1 (Verified wire parity): Gemini 3.7 and Gemini 3.8 share thoughtSign
   // Same-family Claude Sonnet -> Claude Opus preserves signature
   const claudeToClaudeBody = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("claude-opus-4-6-thinking"),
+    plan: staticPlan("claude-opus-5-5-high"),
     context: {
       messages: [
         { role: "user", content: "hi" },
         {
           role: "assistant",
           provider: "antigravity",
-          model: "claude-sonnet-4-6",
+          model: "claude-sonnet-5-5-high",
           content: [{ type: "text", text: "Claude response", textSignature: validSig37 }],
         },
         { role: "user", content: "next" },
@@ -1718,13 +1722,9 @@ test("Seam 1 (#15): deterministic Gemini thinking replay produces canonical part
 
   const modelTurn = body.request.contents[1];
   assert.equal(modelTurn.role, "model");
-  assert.equal(modelTurn.parts.length, 2);
+  // 1.2.16: one part, the visible text, carrying the replayed signature.
+  assert.equal(modelTurn.parts.length, 1);
   assert.deepEqual(modelTurn.parts[0], {
-    thought: true,
-    text: "Thinking step by step...",
-  });
-  assert.equal("thoughtSignature" in modelTurn.parts[0], false);
-  assert.deepEqual(modelTurn.parts[1], {
     text: "Here is the answer.",
     thoughtSignature: sig,
   });
@@ -1761,19 +1761,18 @@ test("Seam 1 (#15): assistant turn with textSignature only replays signature on 
   assert.equal(modelTurn.parts[0].thought, undefined);
 });
 
-test("Seam 1 (#14): Claude thinking replay matches the agy CLI part-split byte-for-byte (1.1.27 turn9)", () => {
-  // Counter-capture verdict: Claude signatures DO replay within the Claude
-  // family, part-split exactly like Gemini (#15) — the drop rule stays for
-  // cross-family only. SSE carries the signature combined on the closing
-  // thought part; history stores it on the thinking block, as the adapter leaves it.
+test("Seam 1 (#14): Claude 5.5 replay matches the agy CLI byte-for-byte (1.2.16 turn9)", () => {
+  // 1.2.16 verdict: the Claude 5.5 family returns text-only turns, so its replay is a
+  // single unsigned text part — the part-split the 4-6 capture showed is gone, and the
+  // drop rule for cross-family reasoning is now indistinguishable from the same-family
+  // shape on this wire.
   const turn9 = JSON.parse(
     fs.readFileSync(newestCapture("stream_turn9_claude_followup.req.json"), "utf-8")
   );
   const fixtureTurn = turn9.body.request.contents[1];
-  assert.equal(fixtureTurn.parts[0].thought, true);
+  assert.equal(fixtureTurn.parts.length, 1);
+  assert.equal("thought" in fixtureTurn.parts[0], false);
   assert.equal("thoughtSignature" in fixtureTurn.parts[0], false);
-  const sig = fixtureTurn.parts[1].thoughtSignature;
-  assert.ok(sig, "turn9 must replay the turn8 thinking signature");
 
   const context = {
     messages: [
@@ -1781,10 +1780,10 @@ test("Seam 1 (#14): Claude thinking replay matches the agy CLI part-split byte-f
       {
         role: "assistant",
         provider: "antigravity",
-        model: "claude-sonnet-4-6",
+        model: "claude-sonnet-5-5-high",
         content: [
-          { type: "thinking", thinking: fixtureTurn.parts[0].text, thinkingSignature: sig },
-          { type: "text", text: fixtureTurn.parts[1].text },
+          { type: "thinking", thinking: "Distance over time." },
+          { type: "text", text: fixtureTurn.parts[0].text },
         ],
       },
       { role: "user", content: "reply with exactly this one word: done" },
@@ -1793,7 +1792,7 @@ test("Seam 1 (#14): Claude thinking replay matches the agy CLI part-split byte-f
 
   const body = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("claude-sonnet-4-6"),
+    plan: staticPlan("claude-sonnet-5-5-high"),
     context,
   });
 
@@ -1825,13 +1824,12 @@ test("Seam 1 (#15): thinking signature forwards onto a following functionCall", 
   });
 
   const turn = body.request.contents[1];
-  assert.equal(turn.parts[0].thought, true);
-  assert.equal("thoughtSignature" in turn.parts[0], false);
-  assert.equal(turn.parts[1].functionCall.name, "bash");
-  assert.equal(turn.parts[1].thoughtSignature, sig);
+  assert.equal("thought" in turn.parts[0], false);
+  assert.equal(turn.parts[0].functionCall.name, "bash");
+  assert.equal(turn.parts[0].thoughtSignature, sig);
 });
 
-test("Seam 1 (#15): thinking-only turn falls back to the last part (uncovered edge)", () => {
+test("Seam 1 (#15): a thinking-only turn replays as nothing (1.2.16)", () => {
   const sig = "EtUOCtIOARFNMg8lE2aQ3yiigw==";
   const context = {
     messages: [
@@ -1852,10 +1850,11 @@ test("Seam 1 (#15): thinking-only turn falls back to the last part (uncovered ed
     context,
   });
 
-  const turn = body.request.contents[1];
-  assert.equal(turn.parts.length, 1);
-  assert.equal(turn.parts[0].thought, true);
-  assert.equal(turn.parts[0].thoughtSignature, sig);
+  // The wire replays no thought part, so a turn that carried nothing else has no part
+  // left to send and no carrier for its signature: agy's requests never hold a bare
+  // signature, and the model turn is dropped rather than invented.
+  assert.equal(body.request.contents.length, 2);
+  assert.deepEqual(body.request.contents.map((c) => c.role), ["user", "user"]);
 });
 
 test("Seam 1: replay drops vacuous text parts (live Claude 400)", () => {
@@ -1867,7 +1866,7 @@ test("Seam 1: replay drops vacuous text parts (live Claude 400)", () => {
       {
         role: "assistant",
         provider: "antigravity",
-        model: "claude-sonnet-4-6",
+        model: "claude-sonnet-5-5-high",
         content: [
           { type: "text", text: "" },
           {
@@ -1884,7 +1883,7 @@ test("Seam 1: replay drops vacuous text parts (live Claude 400)", () => {
 
   const body = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("claude-sonnet-4-6"),
+    plan: staticPlan("claude-sonnet-5-5-high"),
     context,
   });
 
@@ -1895,7 +1894,7 @@ test("Seam 1: replay drops vacuous text parts (live Claude 400)", () => {
   );
   assert.deepEqual(
     turn.parts.map((p) => (p.thought === true ? "thought" : p.text)),
-    ["thought", "391"]
+    ["391"]
   );
 });
 
