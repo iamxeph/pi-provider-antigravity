@@ -435,6 +435,8 @@ test("Seam 3: -max/-xhigh tiered runtime IDs group under the base and resolve", 
       models: {
         "gemini-4-argon-max": { model: "gemini_4_argon_max", supportsThinking: true },
         "gemini-4-argon-high": { model: "gemini_4_argon_high", supportsThinking: true },
+        "gemini-4-krypton-xhigh": { model: "gemini_4_krypton_xhigh", supportsThinking: true },
+        "gemini-4-krypton-high": { model: "gemini_4_krypton_high", supportsThinking: true },
       },
     }),
   });
@@ -447,8 +449,15 @@ test("Seam 3: -max/-xhigh tiered runtime IDs group under the base and resolve", 
     });
 
     // The -max variant is a tier of the base, never a standalone public model
-    assert.equal(publicModels.length, 1);
-    assert.equal(publicModels[0].id, "gemini-4-argon");
+    assert.equal(publicModels.length, 2);
+    const argon = publicModels.find((m) => m.id === "gemini-4-argon");
+    const krypton = publicModels.find((m) => m.id === "gemini-4-krypton");
+    assert.ok(argon);
+    assert.ok(krypton);
+    assert.equal(argon.thinkingLevelMap.max, "max");
+    assert.equal(argon.thinkingLevelMap.xhigh, undefined);
+    assert.equal(krypton.thinkingLevelMap.xhigh, "xhigh");
+    assert.equal(krypton.thinkingLevelMap.max, undefined);
 
     assert.equal(catalog.resolvePlan("gemini-4-argon", "max").runtimeModelId, "gemini-4-argon-max");
     // Up to max, never down: xhigh rides the model's top tier

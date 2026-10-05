@@ -507,6 +507,8 @@ function synthesizeDynamicModel(baseId: string, items: AvailableModelItem[]): Mo
     ...(hasVariant(tierSpellings("high")) || items.some((it) => it.id === baseId)
       ? {}
       : { high: null }),
+    ...(hasVariant(tierSpellings("xhigh")) ? { xhigh: "xhigh" } : {}),
+    ...(hasVariant(tierSpellings("max")) ? { max: "max" } : {}),
   };
 
   const profile = getModelProfile(baseId);
