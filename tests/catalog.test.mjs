@@ -645,6 +645,17 @@ test("Catalog refresh: offline returns stored models without fetching", async ()
   }
 });
 
+test("Catalog refresh: stored models of every type pass through unchanged", async () => {
+  const catalog = createModelCatalog();
+  const stored = [
+    ...storedModels,
+    { id: "imagen-4", name: "Image", type: "image" },
+    { id: "jev-1", name: "Classifier", type: "classifier" },
+  ];
+  const models = await catalog.refresh({ allowNetwork: false, stored: { models: stored } });
+  assert.deepEqual(models, stored);
+});
+
 test("Catalog refresh: missing credential falls back to stored models", async () => {
   const catalog = createModelCatalog();
   const models = await catalog.refresh({
