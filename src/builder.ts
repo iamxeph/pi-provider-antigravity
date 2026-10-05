@@ -108,14 +108,32 @@ function deriveSessionId(
 }
 
 /**
- * Computes deterministic v5 UUID trajectory ID from the session ID.
+ * Computes a deterministic v5 UUID from a seed. agy mints these identifiers randomly per
+ * conversation, so a provider can only ever send a stable stand-in of the right shape.
  */
-function resolveSessionTrajectory(sessionId: string): string {
-  const bytes = createHash("sha1").update(`antigravity:${sessionId}`).digest().subarray(0, 16);
+function v5Uuid(seed: string): string {
+  const bytes = createHash("sha1").update(seed).digest().subarray(0, 16);
   bytes[6] = (bytes[6] & 0x0f) | 0x50; // v5 UUID
   bytes[8] = (bytes[8] & 0x3f) | 0x80;
   const hex = [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+/**
+ * Computes deterministic v5 UUID trajectory ID from the session ID.
+ */
+function resolveSessionTrajectory(sessionId: string): string {
+  return v5Uuid(`antigravity:${sessionId}`);
+}
+
+/**
+ * Deterministic per-conversation cascade UUID. 1.2.16 names the cascade on the labels
+ * (cascade_id/root_cascade_id) and leads the requestId path with it; agy generates the
+ * UUID itself, so the provider derives a stable stand-in from the same conversation
+ * identity the trajectory uses.
+ */
+function resolveSessionCascade(sessionId: string): string {
+  return v5Uuid(`antigravity:cascade:${sessionId}`);
 }
 
 /**
@@ -298,6 +316,14 @@ function translateTurnTrace(
       const isSameProviderAndModel = isSameProvider && isSameModel;
 
       const parts: Array<any> = [];
+      // agy replays a same-family thought part on a text turn and drops it on a turn
+      // whose model content ends in a functionCall (1.2.16 turn11 keeps it, turn2's
+      // tool turn does not). Either way the signature the thinking block carried never
+      // rides the thought part itself: it stays pending and attaches to the NEXT
+      // text/functionCall part, or falls back onto the last part when nothing follows.
+      const isToolTurn =
+        Array.isArray(msg.content) &&
+        msg.content.some((item: any) => item.type === "tool_use" || item.type === "toolCall");
       // Canonical wire shape: a thinking replay never carries its
       // own signature — it stays pending and rides on the NEXT text/functionCall
       // part. Only when the turn ends with no carrying part does it fall back
@@ -348,17 +374,13 @@ function translateTurnTrace(
             if (isGptRequest && !isForeignReasoning) continue;
 
             if (!isForeignReasoning) {
-              // No thoughtSignature here by design: it stays pending for the
-              // next text/functionCall part (canonical wire part-split shape).
-              const part: any = {
-                thought: true,
-                text: item.thinking || "",
-              };
               const sig = resolveThoughtSignature(true, candidateSig);
               if (sig) {
                 pendingThinkingSig = sig;
               }
-              parts.push(part);
+              if (!isToolTurn) {
+                parts.push({ thought: true, text: item.thinking || "" });
+              }
             } else {
               // Cross-provider/model or foreign reasoning item: drop foreign signature and
               // serialize reasoning text (or summary) as plain text so the model retains
@@ -523,6 +545,7 @@ export function buildAntigravityRequestBody(params: BuildRequestBodyParams): Rec
   const conversation = withoutInitialSystemMessage(transcript.messages);
 
   const sessionId = deriveSessionId(conversation, params.sessionId);
+  const cascadeId = resolveSessionCascade(sessionId);
   const trajectoryId =
     params.trajectoryId && typeof params.trajectoryId === "string" && params.trajectoryId.trim().length > 0
       ? params.trajectoryId.trim()
@@ -536,14 +559,18 @@ export function buildAntigravityRequestBody(params: BuildRequestBodyParams): Rec
   const requestIndex = contents.filter(
     (c) => c.role === "model" && !c.parts?.some((p: any) => p.functionResponse)
   ).length;
-  const requestId = `agent/${sessionId}/${Date.now()}/${trajectoryId}/${contents.length}`;
+  const requestId = `agent/${cascadeId}/${Date.now()}/${trajectoryId}/${contents.length}`;
 
   const modelEnum = plan.modelEnum;
 
   const labels: Record<string, string> = {
+    // agy names the conversation twice on 1.2.16 (cascade_id and its root) and the
+    // per-turn trajectory once; the root is the same cascade for a plain session.
+    cascade_id: cascadeId,
     last_step_index: String(Math.max(0, contents.length - 1)),
     model_enum: modelEnum,
     request_id: `${trajectoryId}-${requestIndex}`,
+    root_cascade_id: cascadeId,
     trajectory_id: trajectoryId,
     used_claude: String(plan.isClaude),
     used_claude_conservative: String(plan.isClaude),

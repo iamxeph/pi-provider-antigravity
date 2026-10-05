@@ -171,7 +171,7 @@ export interface PersistedSnapshot {
 export interface ModelPlan {
   runtimeModelId: string;
   modelEnum: string;
-  thinkingConfig: { includeThoughts: boolean; thinkingBudget: number };
+  thinkingConfig: { includeThoughts: boolean; thinkingBudget: number; thinkingLevel?: string };
   isNonGemini: boolean;
   isClaude: boolean;
 }
@@ -413,13 +413,33 @@ function followRenames(runtimeModelId: string, snapshot: CatalogSnapshot): strin
   return current;
 }
 
+/**
+ * Wire effort name for a tiered runtime model whose catalog entry carries no
+ * thinkingBudget. agy 1.2.16 names the effort on those entries instead of a token
+ * count (Claude 5.5: thinkingBudget 0 plus thinkingLevel HIGH/MEDIUM/LOW).
+ */
+function thinkingLevelFor(runtimeModelId: string): string | undefined {
+  for (const tier of ["low", "medium", "high"] as const) {
+    if (tierSpellings(tier).some((suffix) => runtimeModelId.endsWith(suffix))) {
+      return tier.toUpperCase();
+    }
+  }
+  return undefined;
+}
+
 function resolveThinkingConfig(
   runtimeModelId: string,
   snapshot: CatalogSnapshot
-): { includeThoughts: boolean; thinkingBudget: number } {
+): { includeThoughts: boolean; thinkingBudget: number; thinkingLevel?: string } {
   const budget = snapshot.thinking[runtimeModelId]?.budget;
-  return typeof budget === "number"
-    ? { includeThoughts: true, thinkingBudget: budget }
+  if (typeof budget === "number") {
+    return { includeThoughts: true, thinkingBudget: budget };
+  }
+  // Budget-less tiered entries keep thoughts on and carry the effort name; a
+  // budget-less entry with no tier name stays disabled rather than guessed.
+  const thinkingLevel = thinkingLevelFor(runtimeModelId);
+  return thinkingLevel
+    ? { includeThoughts: true, thinkingBudget: 0, thinkingLevel }
     : { includeThoughts: false, thinkingBudget: 0 };
 }
 
