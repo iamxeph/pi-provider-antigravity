@@ -10,16 +10,19 @@ import { getModelProfile } from "./model-identity.ts";
 
 export const PRIVATE_SNAPSHOT_KEY = "pi-provider-antigravity";
 
-type CanonicalTier = "low" | "medium" | "high";
+type CanonicalTier = "low" | "medium" | "high" | "xhigh" | "max";
 
 /**
  * Canonical Tier Suffix: The wire suffix that mirrors the user-requested thinking
- * effort by name (-low, -medium, -high), attempted first when resolving a Runtime Model ID.
+ * effort by name (-low, -medium, -high, -xhigh, -max), attempted first when
+ * resolving a Runtime Model ID.
  */
 const CANONICAL_TIER_SUFFIXES: Record<CanonicalTier, string> = Object.freeze({
   low: "-low",
   medium: "-medium",
   high: "-high",
+  xhigh: "-xhigh",
+  max: "-max",
 });
 
 /**
@@ -31,6 +34,8 @@ const TIER_ALIASES: Record<CanonicalTier, readonly string[]> = Object.freeze({
   low: Object.freeze(["-extra-low"]),
   medium: Object.freeze([]),
   high: Object.freeze(["-thinking", "-agent"]),
+  xhigh: Object.freeze([]),
+  max: Object.freeze([]),
 });
 
 /**
@@ -78,7 +83,7 @@ const TIER_FALLBACKS: Record<string, readonly string[]> = Object.freeze({
   low: Object.freeze(["-extra-low", ""]),
   medium: Object.freeze(["", "-high"]), // Gemini 3.1 Pro lists no -medium: up to high, never down
   high: Object.freeze(["-thinking", "-agent", ""]), // Claude's high tier is -thinking
-  xhigh: Object.freeze(["-high", "-thinking", "-agent", ""]),
+  xhigh: Object.freeze(["-max", "-high", "-thinking", "-agent", ""]), // up to max, never down
   max: Object.freeze(["-high", "-thinking", "-agent", ""]),
 });
 
@@ -416,10 +421,12 @@ function followRenames(runtimeModelId: string, snapshot: CatalogSnapshot): strin
 /**
  * Wire effort name for a tiered runtime model whose catalog entry carries no
  * thinkingBudget. agy 1.2.16 names the effort on those entries instead of a token
- * count (Claude 5.5: thinkingBudget 0 plus thinkingLevel HIGH/MEDIUM/LOW).
+ * count (Claude 5.5: thinkingBudget 0 plus thinkingLevel HIGH/MEDIUM/LOW). Higher
+ * tiers follow the same uppercase-effort naming (XHIGH/MAX) — unverified until a
+ * budget-less tier with such a suffix ships; a capture then settles the spelling.
  */
 function thinkingLevelFor(runtimeModelId: string): string | undefined {
-  for (const tier of ["low", "medium", "high"] as const) {
+  for (const tier of Object.keys(CANONICAL_TIER_SUFFIXES) as CanonicalTier[]) {
     if (tierSpellings(tier).some((suffix) => runtimeModelId.endsWith(suffix))) {
       return tier.toUpperCase();
     }

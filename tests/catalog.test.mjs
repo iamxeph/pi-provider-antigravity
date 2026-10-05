@@ -427,6 +427,44 @@ test("Seam 3: resolveModelPlan dynamically resolves tiers for new models", () =>
   });
 });
 
+test("Seam 3: -max/-xhigh tiered runtime IDs group under the base and resolve", async () => {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => ({
+      models: {
+        "gemini-4-argon-max": { model: "gemini_4_argon_max", supportsThinking: true },
+        "gemini-4-argon-high": { model: "gemini_4_argon_high", supportsThinking: true },
+      },
+    }),
+  });
+  try {
+    const catalog = createModelCatalog();
+    const publicModels = await catalog.refresh({
+      allowNetwork: true,
+      credential: TEST_CREDENTIAL,
+      stored: {},
+    });
+
+    // The -max variant is a tier of the base, never a standalone public model
+    assert.equal(publicModels.length, 1);
+    assert.equal(publicModels[0].id, "gemini-4-argon");
+
+    assert.equal(catalog.resolvePlan("gemini-4-argon", "max").runtimeModelId, "gemini-4-argon-max");
+    // Up to max, never down: xhigh rides the model's top tier
+    assert.equal(catalog.resolvePlan("gemini-4-argon", "xhigh").runtimeModelId, "gemini-4-argon-max");
+    assert.equal(catalog.resolvePlan("gemini-4-argon", "high").runtimeModelId, "gemini-4-argon-high");
+    // Budget-less tiered entry: the effort is named on the request
+    assert.deepEqual(catalog.resolvePlan("gemini-4-argon", "max").thinkingConfig, {
+      includeThoughts: true,
+      thinkingBudget: 0,
+      thinkingLevel: "MAX",
+    });
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
 test("Seam 3: resolveModelPlan resolves thinking from snapshot wire values", () => {
   const catalog = createModelCatalog();
   catalog.record(modelsJson);
