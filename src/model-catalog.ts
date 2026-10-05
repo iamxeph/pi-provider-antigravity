@@ -1,4 +1,4 @@
-import type { Model, RefreshModelsContext } from "@earendil-works/pi-ai";
+import type { AnyModel, Model, RefreshModelsContext } from "@earendil-works/pi-ai";
 import { type CredentialSource, type AntigravityCredentials } from "./auth.ts";
 import {
   type AntigravityClient,
@@ -202,8 +202,11 @@ export interface ModelCatalog {
   /**
    * Pi SDK refreshModels entry point: restores stored snapshot, fetches wire
    * catalog when online, updates generation, and publishes to Pi store.
+   * Returns the provider-scoped catalog of every model type (Pi 1.0 persists
+   * chat, image, and classifier entries alike), so a chat-only consumer narrows
+   * by `model.type ?? "chat"` at its own call site.
    */
-  refresh(context: RefreshContext): Promise<Array<Model<any>>>;
+  refresh(context: RefreshContext): Promise<Array<AnyModel>>;
   /**
    * Refreshes catalog via the provided hook and reports freshness verdict.
    */
@@ -643,11 +646,13 @@ export function createModelCatalog(deps?: { client?: AntigravityClient }): Model
     return toPersistedSnapshot(generation.snapshot);
   };
 
-  const refresh = async (context: RefreshContext): Promise<Array<Model<any>>> => {
+  const refresh = async (context: RefreshContext): Promise<Array<AnyModel>> => {
     const persisted = context.stored?.[PRIVATE_SNAPSHOT_KEY];
     if (persisted) restore(persisted);
 
-    const storedModels = () => [...(context.stored?.models ?? [])];
+    // Provider-scoped persisted catalog: Pi 1.0 keeps entries of every model type
+    // here (chat, image, classifier), so pass the stored entries through unchanged.
+    const storedModels = (): Array<AnyModel> => [...(context.stored?.models ?? [])];
     if (!context.allowNetwork) return storedModels();
 
     try {
@@ -694,6 +699,6 @@ export function createModelCatalog(deps?: { client?: AntigravityClient }): Model
 
 export const createCatalogStore = createModelCatalog;
 
-export async function refreshCatalog(context: RefreshContext, store: ModelCatalog): Promise<Array<Model<any>>> {
+export async function refreshCatalog(context: RefreshContext, store: ModelCatalog): Promise<Array<AnyModel>> {
   return store.refresh(context);
 }
