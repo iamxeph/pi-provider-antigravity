@@ -10,16 +10,19 @@ import { getModelProfile } from "./model-identity.ts";
 
 export const PRIVATE_SNAPSHOT_KEY = "pi-provider-antigravity";
 
-type CanonicalTier = "low" | "medium" | "high";
+type CanonicalTier = "low" | "medium" | "high" | "xhigh" | "max";
 
 /**
  * Canonical Tier Suffix: The wire suffix that mirrors the user-requested thinking
- * effort by name (-low, -medium, -high), attempted first when resolving a Runtime Model ID.
+ * effort by name (-low, -medium, -high, -xhigh, -max), attempted first when
+ * resolving a Runtime Model ID.
  */
 const CANONICAL_TIER_SUFFIXES: Record<CanonicalTier, string> = Object.freeze({
   low: "-low",
   medium: "-medium",
   high: "-high",
+  xhigh: "-xhigh",
+  max: "-max",
 });
 
 /**
@@ -31,6 +34,8 @@ const TIER_ALIASES: Record<CanonicalTier, readonly string[]> = Object.freeze({
   low: Object.freeze(["-extra-low"]),
   medium: Object.freeze([]),
   high: Object.freeze(["-thinking", "-agent"]),
+  xhigh: Object.freeze([]),
+  max: Object.freeze([]),
 });
 
 /**
@@ -78,7 +83,7 @@ const TIER_FALLBACKS: Record<string, readonly string[]> = Object.freeze({
   low: Object.freeze(["-extra-low", ""]),
   medium: Object.freeze(["", "-high"]), // Gemini 3.1 Pro lists no -medium: up to high, never down
   high: Object.freeze(["-thinking", "-agent", ""]), // Claude's high tier is -thinking
-  xhigh: Object.freeze(["-high", "-thinking", "-agent", ""]),
+  xhigh: Object.freeze(["-max", "-high", "-thinking", "-agent", ""]), // up to max, never down
   max: Object.freeze(["-high", "-thinking", "-agent", ""]),
 });
 
@@ -171,7 +176,7 @@ export interface PersistedSnapshot {
 export interface ModelPlan {
   runtimeModelId: string;
   modelEnum: string;
-  thinkingConfig: { includeThoughts: boolean; thinkingBudget: number };
+  thinkingConfig: { includeThoughts: boolean; thinkingBudget: number; thinkingLevel?: string };
   isNonGemini: boolean;
   isClaude: boolean;
 }
@@ -413,13 +418,35 @@ function followRenames(runtimeModelId: string, snapshot: CatalogSnapshot): strin
   return current;
 }
 
+/**
+ * Wire effort name for a tiered runtime model whose catalog entry carries no
+ * thinkingBudget. agy 1.2.16 names the effort on those entries instead of a token
+ * count (Claude 5.5: thinkingBudget 0 plus thinkingLevel HIGH/MEDIUM/LOW). Higher
+ * tiers follow the same uppercase-effort naming (XHIGH/MAX) — unverified until a
+ * budget-less tier with such a suffix ships; a capture then settles the spelling.
+ */
+function thinkingLevelFor(runtimeModelId: string): string | undefined {
+  for (const tier of Object.keys(CANONICAL_TIER_SUFFIXES) as CanonicalTier[]) {
+    if (tierSpellings(tier).some((suffix) => runtimeModelId.endsWith(suffix))) {
+      return tier.toUpperCase();
+    }
+  }
+  return undefined;
+}
+
 function resolveThinkingConfig(
   runtimeModelId: string,
   snapshot: CatalogSnapshot
-): { includeThoughts: boolean; thinkingBudget: number } {
+): { includeThoughts: boolean; thinkingBudget: number; thinkingLevel?: string } {
   const budget = snapshot.thinking[runtimeModelId]?.budget;
-  return typeof budget === "number"
-    ? { includeThoughts: true, thinkingBudget: budget }
+  if (typeof budget === "number") {
+    return { includeThoughts: true, thinkingBudget: budget };
+  }
+  // Budget-less tiered entries keep thoughts on and carry the effort name; a
+  // budget-less entry with no tier name stays disabled rather than guessed.
+  const thinkingLevel = thinkingLevelFor(runtimeModelId);
+  return thinkingLevel
+    ? { includeThoughts: true, thinkingBudget: 0, thinkingLevel }
     : { includeThoughts: false, thinkingBudget: 0 };
 }
 
@@ -480,6 +507,8 @@ function synthesizeDynamicModel(baseId: string, items: AvailableModelItem[]): Mo
     ...(hasVariant(tierSpellings("high")) || items.some((it) => it.id === baseId)
       ? {}
       : { high: null }),
+    ...(hasVariant(tierSpellings("xhigh")) ? { xhigh: "xhigh" } : {}),
+    ...(hasVariant(tierSpellings("max")) ? { max: "max" } : {}),
   };
 
   const profile = getModelProfile(baseId);

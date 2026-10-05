@@ -41,10 +41,12 @@ test("Seam 3: parseAvailableModels extracts models and model_enum", () => {
   assert.ok(flash37low);
   assert.equal(flash37low.thinkingBudget, 1000);
 
-  const claudeSonnet = items.models.find((m) => m.id === "claude-sonnet-4-6");
+  const claudeSonnet = items.models.find((m) => m.id === "claude-sonnet-5-5-high");
   assert.ok(claudeSonnet);
-  assert.equal(claudeSonnet.modelEnum, "MODEL_PLACEHOLDER_M35");
-  assert.equal(claudeSonnet.thinkingBudget, 1024);
+  assert.equal(claudeSonnet.modelEnum, "MODEL_PLACEHOLDER_M405");
+  // 5.5 Claude tiers ship no token budget at all: the effort is named on the
+  // request's thinkingLevel instead (see resolveModelPlan below).
+  assert.equal(claudeSonnet.thinkingBudget, undefined);
 
   const gpt = items.models.find((m) => m.id === "gpt-oss-120b-medium");
   assert.ok(gpt);
@@ -89,7 +91,7 @@ test("Seam 3: formatModelsList formats clean table view", () => {
   const output = catalog.formatList();
 
   assert.match(output, /gemini-3\.8-flash/);
-  assert.match(output, /claude-sonnet-4-6/);
+  assert.match(output, /claude-sonnet-5-5/);
 });
 
 test("Seam 3: formatModelsList shows recommended-only detailed table in sort order", () => {
@@ -97,14 +99,14 @@ test("Seam 3: formatModelsList shows recommended-only detailed table in sort ord
   catalog.record(modelsJson);
   const output = catalog.formatList();
 
-  assert.match(output, /\(14 recommended\)/);
+  assert.match(output, /\(18 recommended\)/);
   assert.match(output, /Model\s+Name\s+Context\s+Features\s+Rem/);
   // non-recommended runtimes excluded
   assert.doesNotMatch(output, /gemini-2\.5-flash/);
   // recommended order from agentModelSorts
   const idx38 = output.indexOf("gemini-3.8-flash-high");
   const idx37 = output.indexOf("gemini-3.7-flash-high");
-  const idxSonnet = output.indexOf("claude-sonnet-4-6");
+  const idxSonnet = output.indexOf("claude-sonnet-5-5-high");
   assert.ok(idx38 !== -1 && idx37 !== -1 && idxSonnet !== -1 && idx38 < idx37 && idx37 < idxSonnet);
   // detail columns, no reset column
   assert.match(output, /Gemini 3\.8 Flash/);
@@ -131,8 +133,8 @@ test("Seam 3: buildDynamicPublicModels generates models dynamically from agy mod
     assert.ok(ids.includes("gemini-3.7-flash"));
     assert.ok(ids.includes("gemini-3.6-flash"));
     assert.ok(ids.includes("gemini-3.1-pro"));
-    assert.ok(ids.includes("claude-sonnet-4-6"));
-    assert.ok(ids.includes("claude-opus-4-6"));
+    assert.ok(ids.includes("claude-sonnet-5-5"));
+    assert.ok(ids.includes("claude-opus-5-5"));
     assert.ok(ids.includes("gpt-oss-120b"));
 
     // Verify ordering follows recommended agentModelSorts
@@ -322,8 +324,8 @@ test("Seam 3: synthesized models declare promptCache lifetimes per model family"
 
     assert.deepEqual(byId.get("gemini-3.8-flash")?.promptCache, { short: 300 });
     assert.deepEqual(byId.get("gemini-3.1-pro")?.promptCache, { short: 300 });
-    assert.deepEqual(byId.get("claude-sonnet-4-6")?.promptCache, { short: 300, long: 3600 });
-    assert.deepEqual(byId.get("claude-opus-4-6")?.promptCache, { short: 300, long: 3600 });
+    assert.deepEqual(byId.get("claude-sonnet-5-5")?.promptCache, { short: 300, long: 3600 });
+    assert.deepEqual(byId.get("claude-opus-5-5")?.promptCache, { short: 300, long: 3600 });
   } finally {
     globalThis.fetch = realFetch;
   }
@@ -345,8 +347,10 @@ test("Seam 3: synthesized models hide effort levels the snapshot has no variant 
     assert.deepEqual(hiddenLevels("gemini-3.8-flash"), ["minimal", "off"]);
     assert.deepEqual(hiddenLevels("gemini-3.1-pro"), ["medium", "minimal", "off"]);
     assert.deepEqual(hiddenLevels("gpt-oss-120b"), ["high", "low", "minimal", "off"]);
-    assert.deepEqual(hiddenLevels("claude-opus-4-6"), ["low", "medium", "minimal", "off"]);
-    assert.deepEqual(hiddenLevels("claude-sonnet-4-6"), ["low", "medium", "minimal", "off"]);
+    // Claude 5.5 is tiered like Gemini now, so only the two levels it never
+    // spells out stay hidden.
+    assert.deepEqual(hiddenLevels("claude-opus-5-5"), ["minimal", "off"]);
+    assert.deepEqual(hiddenLevels("claude-sonnet-5-5"), ["minimal", "off"]);
   } finally {
     globalThis.fetch = realFetch;
   }
@@ -414,11 +418,60 @@ test("Seam 3: resolveModelPlan dynamically resolves tiers for new models", () =>
   assert.equal(catalog.resolvePlan("gemini-99.9-flash", "medium").runtimeModelId, "gemini-99.9-flash-medium");
   assert.equal(catalog.resolvePlan("gemini-99.9-flash", "low").runtimeModelId, "gemini-99.9-flash-low");
   assert.equal(catalog.resolvePlan("gemini-99.9-flash", undefined).runtimeModelId, "gemini-99.9-flash-high");
-  // No per-ID thinking data in this snapshot: disabled, never a guessed budget.
+  // No per-ID thinking data in this snapshot: no budget is guessed. The tier the
+  // runtime id names is still forwarded as thinkingLevel, never a token count.
   assert.deepEqual(catalog.resolvePlan("gemini-99.9-flash", "medium").thinkingConfig, {
-    includeThoughts: false,
+    includeThoughts: true,
     thinkingBudget: 0,
+    thinkingLevel: "MEDIUM",
   });
+});
+
+test("Seam 3: -max/-xhigh tiered runtime IDs group under the base and resolve", async () => {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => ({
+      models: {
+        "gemini-4-argon-max": { model: "gemini_4_argon_max", supportsThinking: true },
+        "gemini-4-argon-high": { model: "gemini_4_argon_high", supportsThinking: true },
+        "gemini-4-krypton-xhigh": { model: "gemini_4_krypton_xhigh", supportsThinking: true },
+        "gemini-4-krypton-high": { model: "gemini_4_krypton_high", supportsThinking: true },
+      },
+    }),
+  });
+  try {
+    const catalog = createModelCatalog();
+    const publicModels = await catalog.refresh({
+      allowNetwork: true,
+      credential: TEST_CREDENTIAL,
+      stored: {},
+    });
+
+    // The -max variant is a tier of the base, never a standalone public model
+    assert.equal(publicModels.length, 2);
+    const argon = publicModels.find((m) => m.id === "gemini-4-argon");
+    const krypton = publicModels.find((m) => m.id === "gemini-4-krypton");
+    assert.ok(argon);
+    assert.ok(krypton);
+    assert.equal(argon.thinkingLevelMap.max, "max");
+    assert.equal(argon.thinkingLevelMap.xhigh, undefined);
+    assert.equal(krypton.thinkingLevelMap.xhigh, "xhigh");
+    assert.equal(krypton.thinkingLevelMap.max, undefined);
+
+    assert.equal(catalog.resolvePlan("gemini-4-argon", "max").runtimeModelId, "gemini-4-argon-max");
+    // Up to max, never down: xhigh rides the model's top tier
+    assert.equal(catalog.resolvePlan("gemini-4-argon", "xhigh").runtimeModelId, "gemini-4-argon-max");
+    assert.equal(catalog.resolvePlan("gemini-4-argon", "high").runtimeModelId, "gemini-4-argon-high");
+    // Budget-less tiered entry: the effort is named on the request
+    assert.deepEqual(catalog.resolvePlan("gemini-4-argon", "max").thinkingConfig, {
+      includeThoughts: true,
+      thinkingBudget: 0,
+      thinkingLevel: "MAX",
+    });
+  } finally {
+    globalThis.fetch = realFetch;
+  }
 });
 
 test("Seam 3: resolveModelPlan resolves thinking from snapshot wire values", () => {
@@ -431,7 +484,6 @@ test("Seam 3: resolveModelPlan resolves thinking from snapshot wire values", () 
     ["gemini-3.7-flash", "low", "gemini-3.7-flash-low"],
     ["gemini-3.1-pro", "high", "gemini-pro-agent"],
     ["gemini-3.1-pro", "low", "gemini-3.1-pro-low"],
-    ["claude-sonnet-4-6", undefined, "claude-sonnet-4-6"],
     ["gpt-oss-120b", undefined, "gpt-oss-120b-medium"],
   ];
   for (const [publicId, effort, runtimeId] of cases) {
@@ -444,25 +496,39 @@ test("Seam 3: resolveModelPlan resolves thinking from snapshot wire values", () 
       thinkingBudget: wire.thinkingBudget,
     });
   }
+
+  // 1.2.16 Claude 5.5: the catalog carries no budget for those tiers, so the
+  // effort rides thinkingLevel (uppercase tier) with a zero budget instead.
+  const claude = catalog.resolvePlan("claude-sonnet-5-5", "high");
+  assert.equal(claude.runtimeModelId, "claude-sonnet-5-5-high");
+  assert.deepEqual(claude.thinkingConfig, {
+    includeThoughts: true,
+    thinkingBudget: 0,
+    thinkingLevel: "HIGH",
+  });
+  assert.equal(catalog.resolvePlan("claude-sonnet-5-5", "low").thinkingConfig.thinkingLevel, "LOW");
 });
 
 test("Seam 3: resolveModelPlan disables thoughts for wire-marked non-thinking models", () => {
   const catalog = createModelCatalog();
   catalog.record(modelsJson);
-  const plain = catalog.generation().items.models.find((m) => m.thinkingBudget === undefined);
-  assert.ok(plain, "the capture must contain a model without thinking fields");
+  const plain = catalog.generation().items.models.find(
+    (m) => m.thinkingBudget === undefined && !/-(low|medium|high|extra-low|thinking|agent)$/.test(m.id)
+  );
+  assert.ok(plain, "the capture must contain a non-tiered model without thinking fields");
   const plan = catalog.resolvePlan(plain.id, undefined);
   assert.deepEqual(plan.thinkingConfig, { includeThoughts: false, thinkingBudget: 0 });
 });
 
 test("Seam 3: resolveModelPlan degrades to disabled thoughts without per-ID thinking data", () => {
-  const enums = { "gemini-3.8-flash-high": "MODEL_PLACEHOLDER_M318" };
-  const runtimeIds = ["gemini-3.8-flash-high"];
+  const enums = { "gemini-3.1-flash-lite": "MODEL_PLACEHOLDER_M20", "gemini-3.8-flash-high": "MODEL_PLACEHOLDER_M318" };
+  const runtimeIds = ["gemini-3.1-flash-lite", "gemini-3.8-flash-high"];
   const disabled = { includeThoughts: false, thinkingBudget: 0 };
 
   const catalog1 = createModelCatalog();
   catalog1.restore({ modelEnums: enums, runtimeIds });
-  assert.deepEqual(catalog1.resolvePlan("gemini-3.8-flash", "high").thinkingConfig, disabled);
+  // An untiered runtime id with no thinking data stays disabled: nothing to name.
+  assert.deepEqual(catalog1.resolvePlan("gemini-3.1-flash-lite", "high").thinkingConfig, disabled);
 
   const catalog2 = createModelCatalog();
   catalog2.restore({
@@ -471,7 +537,7 @@ test("Seam 3: resolveModelPlan degrades to disabled thoughts without per-ID thin
     thinking: { "gemini-3.8-flash-high": { supportsThinking: true } },
     deprecated: {},
   });
-  assert.deepEqual(catalog2.resolvePlan("gemini-3.8-flash", "high").thinkingConfig, disabled);
+  assert.deepEqual(catalog2.resolvePlan("gemini-3.1-flash-lite", "high").thinkingConfig, disabled);
 });
 
 test("Seam 3: resolveModelPlan fails fast without runtime IDs instead of guessing a tier", () => {
