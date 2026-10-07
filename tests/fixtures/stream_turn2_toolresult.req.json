@@ -3,7 +3,7 @@
   "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse",
   "headers": {
     "Host": "daily-cloudcode-pa.googleapis.com",
-    "User-Agent": "antigravity/cli/1.2.16 (aidev_client; os_type=linux; arch=amd64; cl=992658124; auth_method=consumer)",
+    "User-Agent": "antigravity/cli/1.3.0 (aidev_client; os_type=linux; arch=amd64; cl=994000447; auth_method=consumer)",
     "Transfer-Encoding": "chunked",
     "Authorization": "Bearer <REDACTED_ACCESS_TOKEN>",
     "Content-Type": "application/json",
@@ -27,15 +27,15 @@
           "parts": [
             {
               "functionCall": {
-                "id": "call_32730",
+                "id": "call_187442",
                 "name": "write_to_file",
                 "args": {
                   "CodeContent": "Hello Antigravity",
-                  "Description": "Create notes.txt with content 'Hello Antigravity'",
+                  "Description": "Create notes.txt with 'Hello Antigravity' content",
                   "Overwrite": true,
                   "TargetFile": "/tmp/work/notes.txt",
-                  "toolAction": "Creating notes.txt",
-                  "toolSummary": "Create notes file"
+                  "toolAction": "Creating file",
+                  "toolSummary": "Create notes.txt"
                 }
               },
               "thoughtSignature": "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDAx"
@@ -47,10 +47,10 @@
           "parts": [
             {
               "functionResponse": {
-                "id": "call_32730",
+                "id": "call_187442",
                 "name": "write_to_file",
                 "response": {
-                  "output": "Created At: 2026-10-05T19:37:10+09:00\nCompleted At: 2026-10-05T19:37:10+09:00\nCreated file file:///tmp/work/notes.txt with requested content.\nIf relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission."
+                  "output": "Created At: 2026-10-07T12:13:10+09:00\nCompleted At: 2026-10-07T12:13:10+09:00\nCreated file file:///tmp/work/notes.txt with requested content.\nIf relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission."
                 }
               }
             }
