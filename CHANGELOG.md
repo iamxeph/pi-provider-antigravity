@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.23.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.22.0...v0.23.0) (2026-10-08)
+
+
+### Features
+
+* **wire:** adopt agy 1.3.1 wire parity ([#63](https://github.com/iamxeph/pi-provider-antigravity/issues/63)) ([f80a511](https://github.com/iamxeph/pi-provider-antigravity/commit/f80a511ce939e91b15fa4d546be15c27c1463cfe))
+* **wire:** adopt agy 1.3.2 wire parity ([#65](https://github.com/iamxeph/pi-provider-antigravity/issues/65)) ([dc2ad30](https://github.com/iamxeph/pi-provider-antigravity/commit/dc2ad3088468218ae1b98b00f6d6619f13062e89))
+
 ## [0.22.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.21.0...v0.22.0) (2026-10-07)
 
 
