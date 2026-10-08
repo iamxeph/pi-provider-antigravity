@@ -7,110 +7,99 @@
           "parts": [
             {
               "thoughtSignature": "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDA3",
-              "text": "As of October 7, 2026, the artificial intelligence landscape is defined by a major shift from experimental chatbots to **autonomous AI agents** capable of planning and executing multi-step tasks.\n\n### **Key Developments (October 2026)**\n\n*   **Rise of Autonomous Agents:** The industry is moving toward \"agentic\" workflows where AI independently formulates plans and uses tools to complete jobs. This transition has prompted organizations to prioritize security, with institutions like the Financial Security Institute establishing new **\"Financial Sector AI Agent Security Evaluation Standards\"** to mitigate risks like data and model poisoning.\n*   **Model Releases and Updates:** \n    *   **Gemini 4 Argon:** Reports indicate this model is dominating standard benchmarks, and Google has begun restricting its high-capability models behind paid developer tiers.\n    *   **New Tools:** Recent releases include Amazon’s open-source **Strands Decider 2B** (based on Qwen3.5) and updates such as **GPT-6.1 Sol** and **Claude Opus 5.5**, which are being integrated into professional coding and automation workflows.\n*   **Corporate & Strategic Moves:**\n    *   **US-China Relations:** The U.S. and China are reportedly planning an AI incident communication channel to manage risks as international competition intensifies.\n    *   **Microsoft Copilot:** Microsoft has introduced a new usage-based billing model for \"agentic work\" (Copilot Credits), shifting away from fixed per-user pricing for certain autonomous tasks.\n    *   **Nvidia & Infrastructure:** Nvidia’s $20 billion Groq deal is reportedly facing legal challenges from engineers, while global AI spending is forecast to reach $2.7 trillion in 2026.\n*   **National AI Strategies:**\n    *   **Japan:** The Japanese Digital Transformation Minister, Toshiharu Furukawa, has signaled a strategic pivot toward **\"Narrow AI\"** (vertical and physical AI) to compete with global powers, emphasizing the use of proprietary high-quality data (e.g., medical records) that is not available on the open internet.\n*   **Developer Ecosystem:** \n    *   Silicon Labs has expanded its AI developer platform to simplify IoT and edge AI integration.\n    *   There is a growing trend of \"governance as a sales asset,\" where businesses are increasingly required to provide clear logs and security protocols before deploying AI tools. \n    *   Some open-source communities, such as those behind the COSMIC desktop environment, have begun formally rejecting LLM-generated code."
+              "text": "As of October 8, 2026, here is the latest news and key developments in the world of artificial intelligence:\n\n### **Corporate & Industrial AI**\n*   **SAP Acquisition:** SAP announced it will acquire **TechWolf**, an AI-native work intelligence platform, to integrate advanced AI-driven workforce insights into its SAP SuccessFactors core.\n*   **ASUS AI PCs:** ASUS has opened pre-orders for its new **ProArt RTX Spark PCs**, which are designed specifically for running local, token-free AI agents and complex creative workflows.\n*   **Industrial AI Expansions:** South Korean company **NewenAI** has joined the **Kolon Benit AI Alliance** to drive AI transformation projects at industrial sites. Additionally, **Doosan Enerbility** recently completed the shipment of a gas turbine to **SpaceXAI**, marking its deeper entry into the AI infrastructure supply chain.\n\n### **Economic & Market Trends**\n*   **AI Bubble Concerns:** Financier **Ray Dalio** has cautioned that the massive borrowing by tech giants to fund AI investments, combined with high interest rates, could potentially trigger an \"AI bubble\" burst.\n*   **Logistics & Infrastructure:** **DHL Express** identified the AI boom as the primary driver of global trade, noting that the massive infrastructure required to support AI—such as chips and networking gear—has made logistics a critical component of the sector's growth.\n*   **Investment Portfolios:** Asset managers are increasingly broadening their AI exposure. For example, the **Edelweiss US Technology Fund** has allocated approximately 40% of its portfolio to the AI supply chain, focusing on compute, networking, and power infrastructure bottlenecks rather than just the model developers themselves.\n\n### **AI Regulation & Policy**\n*   **Global Regulatory Approaches:** International observers continue to highlight the diverging paths being taken by the **US, China, and the EU** to govern AI. In the US, the policy environment remains largely focused on voluntary industry pledges and executive actions, particularly following the removal of requirements for developers to share safety test results with the government.\n*   **Public Oversight:** In South Korea, Reform Party lawmaker Lee Jun-seok reported that an **AI-powered analysis** of public procurement data identified approximately 562.8 billion won in potentially suspicious government contracts, prompting a new citizen-led verification project.\n\n### **Workplace & Human Impact**\n*   **AI Trust Issues:** New research from **Appian** indicates that 60% of Australian workers have encountered errors made by AI in the workplace. The study found that low trust in AI outputs, combined with a cultural reluctance to challenge AI recommendations, is leading to operational and financial risks for businesses."
             }
           ]
         },
         "finishReason": "STOP",
         "groundingMetadata": {
           "webSearchQueries": [
-            "latest AI news October 7 2026",
-            "major AI developments October 2026"
+            "latest artificial intelligence AI news today October 8 2026",
+            "top AI news headlines October 8 2026"
           ],
           "searchEntryPoint": {
-            "renderedContent": "<style>\n.container {\n  align-items: center;\n  border-radius: 8px;\n  display: flex;\n  font-family: Google Sans, Roboto, sans-serif;\n  font-size: 14px;\n  line-height: 20px;\n  padding: 8px 12px;\n}\n.chip {\n  display: inline-block;\n  border: solid 1px;\n  border-radius: 16px;\n  min-width: 14px;\n  padding: 5px 16px;\n  text-align: center;\n  user-select: none;\n  margin: 0 8px;\n  -webkit-tap-highlight-color: transparent;\n}\n.carousel {\n  overflow: auto;\n  scrollbar-width: none;\n  white-space: nowrap;\n  margin-right: -12px;\n}\n.headline {\n  display: flex;\n  margin-right: 4px;\n}\n.gradient-container {\n  position: relative;\n}\n.gradient {\n  position: absolute;\n  transform: translate(3px, -9px);\n  height: 36px;\n  width: 9px;\n}\n@media (prefers-color-scheme: light) {\n  .container {\n    background-color: #fafafa;\n    box-shadow: 0 0 0 1px #0000000f;\n  }\n  .headline-label {\n    color: #1f1f1f;\n  }\n  .chip {\n    background-color: #ffffff;\n    border-color: #d2d2d2;\n    color: #5e5e5e;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #f2f2f2;\n  }\n  .chip:focus {\n    background-color: #f2f2f2;\n  }\n  .chip:active {\n    background-color: #d8d8d8;\n    border-color: #b6b6b6;\n  }\n  .logo-dark {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #fafafa 15%, #fafafa00 100%);\n  }\n}\n@media (prefers-color-scheme: dark) {\n  .container {\n    background-color: #1f1f1f;\n    box-shadow: 0 0 0 1px #ffffff26;\n  }\n  .headline-label {\n    color: #fff;\n  }\n  .chip {\n    background-color: #2c2c2c;\n    border-color: #3c4043;\n    color: #fff;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #353536;\n  }\n  .chip:focus {\n    background-color: #353536;\n  }\n  .chip:active {\n    background-color: #464849;\n    border-color: #53575b;\n  }\n  .logo-light {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #1f1f1f 15%, #1f1f1f00 100%);\n  }\n}\n</style>\n<div class=\"container\">\n  <div class=\"headline\">\n    <svg class=\"logo-light\" width=\"18\" height=\"18\" viewBox=\"9 9 35 35\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M42.8622 27.0064C42.8622 25.7839 42.7525 24.6084 42.5487 23.4799H26.3109V30.1568H35.5897C35.1821 32.3041 33.9596 34.1222 32.1258 35.3448V39.6864H37.7213C40.9814 36.677 42.8622 32.2571 42.8622 27.0064V27.0064Z\" fill=\"#4285F4\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 43.8555C30.9659 43.8555 34.8687 42.3195 37.7213 39.6863L32.1258 35.3447C30.5898 36.3792 28.6306 37.0061 26.3109 37.0061C21.8282 37.0061 18.0195 33.9811 16.6559 29.906H10.9194V34.3573C13.7563 39.9841 19.5712 43.8555 26.3109 43.8555V43.8555Z\" fill=\"#34A853\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M16.6559 29.8904C16.3111 28.8559 16.1074 27.7588 16.1074 26.6146C16.1074 25.4704 16.3111 24.3733 16.6559 23.3388V18.8875H10.9194C9.74388 21.2072 9.06992 23.8247 9.06992 26.6146C9.06992 29.4045 9.74388 32.022 10.9194 34.3417L15.3864 30.8621L16.6559 29.8904V29.8904Z\" fill=\"#FBBC05\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 16.2386C28.85 16.2386 31.107 17.1164 32.9095 18.8091L37.8466 13.8719C34.853 11.082 30.9659 9.3736 26.3109 9.3736C19.5712 9.3736 13.7563 13.245 10.9194 18.8875L16.6559 23.3388C18.0195 19.2636 21.8282 16.2386 26.3109 16.2386V16.2386Z\" fill=\"#EA4335\"/>\n    </svg>\n    <svg class=\"logo-dark\" width=\"18\" height=\"18\" viewBox=\"0 0 48 48\" xmlns=\"http://www.w3.org/2000/svg\">\n      <circle cx=\"24\" cy=\"23\" fill=\"#FFF\" r=\"22\"/>\n      <path d=\"M33.76 34.26c2.75-2.56 4.49-6.37 4.49-11.26 0-.89-.08-1.84-.29-3H24.01v5.99h8.03c-.4 2.02-1.5 3.56-3.07 4.56v.75l3.91 2.97h.88z\" fill=\"#4285F4\"/>\n      <path d=\"M15.58 25.77A8.845 8.845 0 0 0 24 31.86c1.92 0 3.62-.46 4.97-1.31l4.79 3.71C31.14 36.7 27.65 38 24 38c-5.93 0-11.01-3.4-13.45-8.36l.17-1.01 4.06-2.85h.8z\" fill=\"#34A853\"/>\n      <path d=\"M15.59 20.21a8.864 8.864 0 0 0 0 5.58l-5.03 3.86c-.98-2-1.53-4.25-1.53-6.64 0-2.39.55-4.64 1.53-6.64l1-.22 3.81 2.98.22 1.08z\" fill=\"#FBBC05\"/>\n      <path d=\"M24 14.14c2.11 0 4.02.75 5.52 1.98l4.36-4.36C31.22 9.43 27.81 8 24 8c-5.93 0-11.01 3.4-13.45 8.36l5.03 3.85A8.86 8.86 0 0 1 24 14.14z\" fill=\"#EA4335\"/>\n    </svg>\n    <div class=\"gradient-container\"><div class=\"gradient\"></div></div>\n  </div>\n  <div class=\"carousel\">\n<a class=\"chip\" href=\"https://www.google.com/search?q=latest+AI+news+October+7+2026&client=app-vertex-grounding&safesearch=active\">latest AI news October 7 2026</a>\n<a class=\"chip\" href=\"https://www.google.com/search?q=major+AI+developments+October+2026&client=app-vertex-grounding&safesearch=active\">major AI developments October 2026</a>\n  </div>\n</div>"
+            "renderedContent": "<style>\n.container {\n  align-items: center;\n  border-radius: 8px;\n  display: flex;\n  font-family: Google Sans, Roboto, sans-serif;\n  font-size: 14px;\n  line-height: 20px;\n  padding: 8px 12px;\n}\n.chip {\n  display: inline-block;\n  border: solid 1px;\n  border-radius: 16px;\n  min-width: 14px;\n  padding: 5px 16px;\n  text-align: center;\n  user-select: none;\n  margin: 0 8px;\n  -webkit-tap-highlight-color: transparent;\n}\n.carousel {\n  overflow: auto;\n  scrollbar-width: none;\n  white-space: nowrap;\n  margin-right: -12px;\n}\n.headline {\n  display: flex;\n  margin-right: 4px;\n}\n.gradient-container {\n  position: relative;\n}\n.gradient {\n  position: absolute;\n  transform: translate(3px, -9px);\n  height: 36px;\n  width: 9px;\n}\n@media (prefers-color-scheme: light) {\n  .container {\n    background-color: #fafafa;\n    box-shadow: 0 0 0 1px #0000000f;\n  }\n  .headline-label {\n    color: #1f1f1f;\n  }\n  .chip {\n    background-color: #ffffff;\n    border-color: #d2d2d2;\n    color: #5e5e5e;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #f2f2f2;\n  }\n  .chip:focus {\n    background-color: #f2f2f2;\n  }\n  .chip:active {\n    background-color: #d8d8d8;\n    border-color: #b6b6b6;\n  }\n  .logo-dark {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #fafafa 15%, #fafafa00 100%);\n  }\n}\n@media (prefers-color-scheme: dark) {\n  .container {\n    background-color: #1f1f1f;\n    box-shadow: 0 0 0 1px #ffffff26;\n  }\n  .headline-label {\n    color: #fff;\n  }\n  .chip {\n    background-color: #2c2c2c;\n    border-color: #3c4043;\n    color: #fff;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #353536;\n  }\n  .chip:focus {\n    background-color: #353536;\n  }\n  .chip:active {\n    background-color: #464849;\n    border-color: #53575b;\n  }\n  .logo-light {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #1f1f1f 15%, #1f1f1f00 100%);\n  }\n}\n</style>\n<div class=\"container\">\n  <div class=\"headline\">\n    <svg class=\"logo-light\" width=\"18\" height=\"18\" viewBox=\"9 9 35 35\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M42.8622 27.0064C42.8622 25.7839 42.7525 24.6084 42.5487 23.4799H26.3109V30.1568H35.5897C35.1821 32.3041 33.9596 34.1222 32.1258 35.3448V39.6864H37.7213C40.9814 36.677 42.8622 32.2571 42.8622 27.0064V27.0064Z\" fill=\"#4285F4\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 43.8555C30.9659 43.8555 34.8687 42.3195 37.7213 39.6863L32.1258 35.3447C30.5898 36.3792 28.6306 37.0061 26.3109 37.0061C21.8282 37.0061 18.0195 33.9811 16.6559 29.906H10.9194V34.3573C13.7563 39.9841 19.5712 43.8555 26.3109 43.8555V43.8555Z\" fill=\"#34A853\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M16.6559 29.8904C16.3111 28.8559 16.1074 27.7588 16.1074 26.6146C16.1074 25.4704 16.3111 24.3733 16.6559 23.3388V18.8875H10.9194C9.74388 21.2072 9.06992 23.8247 9.06992 26.6146C9.06992 29.4045 9.74388 32.022 10.9194 34.3417L15.3864 30.8621L16.6559 29.8904V29.8904Z\" fill=\"#FBBC05\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 16.2386C28.85 16.2386 31.107 17.1164 32.9095 18.8091L37.8466 13.8719C34.853 11.082 30.9659 9.3736 26.3109 9.3736C19.5712 9.3736 13.7563 13.245 10.9194 18.8875L16.6559 23.3388C18.0195 19.2636 21.8282 16.2386 26.3109 16.2386V16.2386Z\" fill=\"#EA4335\"/>\n    </svg>\n    <svg class=\"logo-dark\" width=\"18\" height=\"18\" viewBox=\"0 0 48 48\" xmlns=\"http://www.w3.org/2000/svg\">\n      <circle cx=\"24\" cy=\"23\" fill=\"#FFF\" r=\"22\"/>\n      <path d=\"M33.76 34.26c2.75-2.56 4.49-6.37 4.49-11.26 0-.89-.08-1.84-.29-3H24.01v5.99h8.03c-.4 2.02-1.5 3.56-3.07 4.56v.75l3.91 2.97h.88z\" fill=\"#4285F4\"/>\n      <path d=\"M15.58 25.77A8.845 8.845 0 0 0 24 31.86c1.92 0 3.62-.46 4.97-1.31l4.79 3.71C31.14 36.7 27.65 38 24 38c-5.93 0-11.01-3.4-13.45-8.36l.17-1.01 4.06-2.85h.8z\" fill=\"#34A853\"/>\n      <path d=\"M15.59 20.21a8.864 8.864 0 0 0 0 5.58l-5.03 3.86c-.98-2-1.53-4.25-1.53-6.64 0-2.39.55-4.64 1.53-6.64l1-.22 3.81 2.98.22 1.08z\" fill=\"#FBBC05\"/>\n      <path d=\"M24 14.14c2.11 0 4.02.75 5.52 1.98l4.36-4.36C31.22 9.43 27.81 8 24 8c-5.93 0-11.01 3.4-13.45 8.36l5.03 3.85A8.86 8.86 0 0 1 24 14.14z\" fill=\"#EA4335\"/>\n    </svg>\n    <div class=\"gradient-container\"><div class=\"gradient\"></div></div>\n  </div>\n  <div class=\"carousel\">\n<a class=\"chip\" href=\"https://www.google.com/search?q=latest+artificial+intelligence+AI+news+today+October+8+2026&client=app-vertex-grounding&safesearch=active\">latest artificial intelligence AI news today October 8 2026</a>\n<a class=\"chip\" href=\"https://www.google.com/search?q=top+AI+news+headlines+October+8+2026&client=app-vertex-grounding&safesearch=active\">top AI news headlines October 8 2026</a>\n  </div>\n</div>"
           },
           "groundingChunks": [
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEc7Z3-LQGXvcRnZ0oexr_LE3O0yHiSFwYLTpYO8scT8gGcvMkg9LWvkoMJ56rSqBO5rqL7uJCtTPB0DXh-SgaotJygU2Mk4NYfD7CqW7TtQzGSbJ009USD5FOTZx-_DxGyfEa8O2CbuVMI-q4LOrDwG3XW",
-                "title": "sbs.co.kr"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFULpy6WgnfES7MGdNl-zxm4N4bs98MDmS8glm1rjB15a1oIAIva2Z_Lj6rAF9K5gsQ02o3kHIBcYq8qb5Ed6517oo4IGE-_UInhdOSht-uQhOccMB6sfWRcFyRKtycXjo9vcWQ8Ls0umGUuZxycbKowNLQT-HKS-lvq5sgYYWunYRAhl0upFKJ2vz6konCr6JFEWXsTCyj7Fh2x1A2eZxIuWY=",
+                "title": "erp.today"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHUfZfJtqNByKcaolExza2h6jpTaa7x7NGAoxCM8vFKW-W-IEWg6rHPm_wi1LWWbDFNKcHq-QB3b8yFJ9kTgFJ0ZmdtVw4LVw60X2mk5pTkVcpURNI2ERAAbjeJ-OnnaHdsOUz0aaRlcTg=",
-                "title": "hellogrowth.ai"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFJPXGIxEMLMDjFlAULr3AcmeSxhaVCYwJPHGWQp7FiG6_NhNSnLne1xKV-mR6jkjlR7O_xEZL4h535zuR6PSXJWTrK_QYecbecL0TxGCqxbjcAiJjGwZdqrpdPKyLdiOqnKl07rQXxAmuKHCojCQhYdZ6ijVM-u5TU_nkNLCUGBkIoPhma",
+                "title": "asus.com"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQE5BCgX2nCFaJfBwjLCRae9XfuP2lgoRdKMrsysQV2ffAWBWxYe5i7HFxRv2SNZL9JgVG53YqLMkk4Ke6uFzNq4rBKWZ-RcXDbSvcG2Y65LP1YEEdvSrVDm0RkMhhX3a1HTNSK1X64BTRBrs3o=",
-                "title": "tashios.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGOZbQ9USyg5T3VgzpiWtQ7inVPCy-ZpcNi4GUImugQ1Y9ce38uzqUwzB64iQftuugQqr7oq6wo6EBJl6fPodOJu60vCoAr2zoi2gyNHHZC8NJ2lLNC9PM9rQAvVnmGunVdTL5oyldj96jZwK-1da25NnrNCtu-JinZoLSH9KR4ybwpw3Mk0z_v5yOEW5Lv-5IXkFAamq_DhNmoCXug",
+                "title": "sedaily.com"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHALCkDDAB7FHQHbLCBmJtKQuOzW2xj4bYaYSOMmdehkXmQhesQadUgpolaSkxOhaTbNk4U61e-oUfzAYyxU3-OH9JS_l6kyx4urayv9TjMKKTerHBdT_oeqH5Pzh04kFjJWKG_-j8rR0sH_4U=",
-                "title": "mean.ceo"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFJopzkiYx1OgMSXD8JZKyrexpwbRbq67N_OTseTPo4TkSuhqJuvFSaDFH4BWRPiobQ1LMqpuvgQLJ1nwj0b93ra69wmmmjxSrogpJTdzlFbQ645O2YQI69Uyjf97cz5lxXDt3l8PPPoG3Zvgz8afXI-eESoRNdC5ydy0qKW5bXBNXi_S7Nsp-QprvbFM8tVw==",
+                "title": "cyprusshippingnews.com"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG6FiQExR9eBrQ0cbMLfi2yLkM50hURDIuIWW4F4pNlSbbJWMI-9RATLLhVczoWCqgJSAkCjwAAL-ZIV0fdLUMvYstgygPI83zmF9PvFVazyVxiVytt9g97EaHi6JEvH8QZiQ2pqku8ZuLauQp_WG-Sb8NYFy9bMtM6Vkc=",
-                "title": "essamamdani.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHS5cnASiDkl7FFz9Y_FNDUG7SRAgVeuXM5nTCULgdBJOy7DoMtTzVkmmTd7pDII1aBvnRJrgtqOP6e4914rHqUTxGqZrc-x-HLo4F7n__5GvmofI53YVxvoDvpHQg3XDGC0augzxQgP7kiKm3j7OGk001OiO6Tq-z7LyFpO8ZA2GykdgmeqHxY5k_1ezcQXqcg-DK3QggHDckvM8uXCzA=",
+                "title": "digitimes.com"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFyOg5IQ5klasgEUaLLR4DspMeZOe2BTv5bGqNqir_27BA3ae7JDY_qIehLPTg742S37s7gI4myV6Fd-sQwM4dxzn-IRm3eeoeU-_D566nNnIKg3Ypoxh-hNe29NaiDD7mW",
-                "title": "youtube.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHS5cnASiDkl7FFz9Y_FNDUG7SRAgVeuXM5nTCULgdBJOy7DoMtTzVkmmTd7pDII1aBvnRJrgtqOP6e4914rHqUTxGqZrc-x-HLo4F7n__5GvmofI53YVxvoDvpHQg3XDGC0augzxQgP7kiKm3j7OGk001OiO6Tq-z7LyFpO8ZA2GykdgmeqHxY5k_1ezcQXqcg-DK3QggHDckvM8uXCzA=",
+                "title": "digitimes.com"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGViOaXFFmE-fAFFglsrDnpELxkSHXNYLND3fb__leBAyh0YcrBwiIlExReLftp4Usc5s6-ymNB43RbQejAGGdLvwCVeIS37eH3XyEy6SjS1yMus1i88R57l_-n6J48_6bSRmsZMKdKULq4kRgUag==",
-                "title": "cw.com.tw"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQErSQSOutOXgZ8LAY0BnCHcI-aoMt6UU5gsw9RHLRd7xuMAzbmdXdy70dLlGIfdRoaT1bWNqFOmGtFaDtf0qeEqCXf3x2lnKsuFmQ9Ifnu8zU-jS6VxjvzIiIoMfAgOb5_-OPZ5WfcvAfNToW40MbcsR5L0OUoqgF35DAki_FbDFjwROsK_hdfF0CG27NcDcotTH9LY33LZ1GaCh9Roj2M8ZAY6JA==",
+                "title": "bworldonline.com"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHUfZfJtqNByKcaolExza2h6jpTaa7x7NGAoxCM8vFKW-W-IEWg6rHPm_wi1LWWbDFNKcHq-QB3b8yFJ9kTgFJ0ZmdtVw4LVw60X2mk5pTkVcpURNI2ERAAbjeJ-OnnaHdsOUz0aaRlcTg=",
-                "title": "hellogrowth.ai"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQErzYgboV0ySKlX4YKzUpCpo-gFcMXPDD6QnFq6yp2LZbuvSRkci192zE3f5iTiVnSz1qXARrGWasy4f5aT_13WZs1LghHwJ8hsHGO3s6EfqOsjViiHdfIJdWhSWgCG-kGNX4nzEN2DIq1DHHAJYlU5f6Wl0KAMziAvlumuFZ412-SY5X19wtTKhvtDLF_xK8eB8cvDNBjKtZDFztOInkwt8zJ3fH75NFD7H-7UCxPLHHdX3wFqUrtvGu-H8r2gIQ==",
+                "title": "businesstoday.in"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEK0M14vY6v1QoClr6os8dRECZWYV4NQPa00gI7hGNAJiNCbrQkXqCga91KjSAoXbqcfj5TWFzN7KAlDEqLTyVhUaBoCaM1sSPW5fAdF0tPaZhyhPCS_r6v5QBi6_3Ymz8fyG2U4Dg=",
-                "title": "nippon.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFlT5KJvbaVSYBJl8qwVVUUZuf3Vg08-7QSPVToVcsnPZFLm_8GI1GV-KXMcP-O0s0yb4-li4zQICSc2QqQP-NFg6e5lNeLqD90CQ5Ivv8wexBu8NH03xrarFUuGhEei3Ma2zR5ts_23VVHgjyjT78gacALIHPAQZnJ",
+                "title": "taipeitimes.com"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGYAC4IN2mOkPuLhFov1B8eny5GC5mzaQozgBRApxH7pGqvxlynPJ2wfLz9WSUw9m3paNGq85RcSobJJbTqcpMcGPZZUuApwoz5t9npcpvCIwCliQZ3TqEVXBWQZbGnb9lsQb6hRDVbQjpyQNXbXPHkeq39leH92muveJWTgmdSdj_upCzJYLEVtXv8mYJR677LmI-A8uTfDzo1lTP9PUH-L8QOVMK_Ga_zXWxf24C4JQEbrldMcyzxEdgV046y5bYWaB5YGGwFWPEf3FbZVCFvCcxLZGr8",
-                "title": "morningstar.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH43Jrn5b4--2wfFt2Bb0zO_O_9R2ua6rfLoMED_1cFjTrdcKgoi4adGw10x3OQWi-0t-3NYgFvcLiSbmtNv_7sYEtamaIkR2_4K-nhDy24c5wvlWLlboGrVYuSL9sCnjPJk2So15k6w6pcNFKlSnHYX0Ev5tjrr_gPcrJxLOGCJDWQfOLclU4yOOq7L91Tv_irpsNN",
+                "title": "thedailystar.net"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG7XOtXO2RQUJu6YbWY_9shGvSBQTQKAo6k1IqefwBJCj6BakrU805vTXgwVmpC_0S4WT8kl4KX260iul_vrCDGbFNxd5Iv48RYIIuXLUemAcovn6MewnFiWnAI56SXF98qC_otjJrIz-FUTBKeRqVXR_ukLhCr0ls2eEURf5IrlGaBCO65zfVo-CSgL-XN9XryNaTDUA==",
+                "title": "sedaily.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEBg776iys_vESWaBEmFXPVhUi-tn1bFxaW0h_eR1hTu5Yh0iYakUPp3UwMsoR2sva4M8ZjA-b3zdo-HYALoqn4sC-7lHdAuNlYi5BIsOdUZWQwyqikTTHLtbrz9tMOeh_BsEW-ThAXcou4y54diWszPjlmBpx4N7XTJPhyOuIYSIOPJ7l_itKjwpqypxHkLaXu3bDsG3GfvDsSBPli5nXEGWCV6hYPjNzPzVnhDb7jR_5n4nJPq-U=",
+                "title": "prnewswire.com"
               }
             }
           ],
           "groundingSupports": [
             {
               "segment": {
-                "endIndex": 194,
-                "text": "As of October 7, 2026, the artificial intelligence landscape is defined by a major shift from experimental chatbots to **autonomous AI agents** capable of planning and executing multi-step tasks"
-              },
-              "groundingChunkIndices": [
-                0,
-                1,
-                2
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 238,
-                "endIndex": 394,
-                "text": "*   **Rise of Autonomous Agents:** The industry is moving toward \"agentic\" workflows where AI independently formulates plans and uses tools to complete jobs"
-              },
-              "groundingChunkIndices": [
-                0,
-                3,
-                2
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 396,
-                "endIndex": 645,
-                "text": "This transition has prompted organizations to prioritize security, with institutions like the Financial Security Institute establishing new **\"Financial Sector AI Agent Security Evaluation Standards\"** to mitigate risks like data and model poisoning"
+                "startIndex": 110,
+                "endIndex": 337,
+                "text": "### **Corporate & Industrial AI**\n*   **SAP Acquisition:** SAP announced it will acquire **TechWolf**, an AI-native work intelligence platform, to integrate advanced AI-driven workforce insights into its SAP SuccessFactors core"
               },
               "groundingChunkIndices": [
                 0
@@ -118,91 +107,29 @@
             },
             {
               "segment": {
-                "startIndex": 647,
+                "startIndex": 339,
+                "endIndex": 527,
+                "text": "*   **ASUS AI PCs:** ASUS has opened pre-orders for its new **ProArt RTX Spark PCs**, which are designed specifically for running local, token-free AI agents and complex creative workflows"
+              },
+              "groundingChunkIndices": [
+                1
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 529,
+                "endIndex": 694,
+                "text": "*   **Industrial AI Expansions:** South Korean company **NewenAI** has joined the **Kolon Benit AI Alliance** to drive AI transformation projects at industrial sites"
+              },
+              "groundingChunkIndices": [
+                2
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 696,
                 "endIndex": 862,
-                "text": "*   **Model Releases and Updates:** \n    *   **Gemini 4 Argon:** Reports indicate this model is dominating standard benchmarks, and Google has begun restricting its high-capability models behind paid developer tiers"
-              },
-              "groundingChunkIndices": [
-                4
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 973,
-                "endIndex": 1113,
-                "text": "5) and updates such as **GPT-6.1 Sol** and **Claude Opus 5.5**, which are being integrated into professional coding and automation workflows"
-              },
-              "groundingChunkIndices": [
-                5,
-                2
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 1115,
-                "endIndex": 1320,
-                "text": "*   **Corporate & Strategic Moves:**\n    *   **US-China Relations:** The U.S. and China are reportedly planning an AI incident communication channel to manage risks as international competition intensifies"
-              },
-              "groundingChunkIndices": [
-                6
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 1326,
-                "endIndex": 1518,
-                "text": "*   **Microsoft Copilot:** Microsoft has introduced a new usage-based billing model for \"agentic work\" (Copilot Credits), shifting away from fixed per-user pricing for certain autonomous tasks"
-              },
-              "groundingChunkIndices": [
-                1,
-                7
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 1524,
-                "endIndex": 1642,
-                "text": "*   **Nvidia & Infrastructure:** Nvidia’s $20 billion Groq deal is reportedly facing legal challenges from engineers"
-              },
-              "groundingChunkIndices": [
-                6
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 1524,
-                "endIndex": 1711,
-                "text": "*   **Nvidia & Infrastructure:** Nvidia’s $20 billion Groq deal is reportedly facing legal challenges from engineers, while global AI spending is forecast to reach $2.7 trillion in 2026"
-              },
-              "groundingChunkIndices": [
-                2
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 1713,
-                "endIndex": 2061,
-                "text": "*   **National AI Strategies:**\n    *   **Japan:** The Japanese Digital Transformation Minister, Toshiharu Furukawa, has signaled a strategic pivot toward **\"Narrow AI\"** (vertical and physical AI) to compete with global powers, emphasizing the use of proprietary high-quality data (e.g., medical records) that is not available on the open internet"
-              },
-              "groundingChunkIndices": [
-                8
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 2063,
-                "endIndex": 2192,
-                "text": "*   **Developer Ecosystem:** \n    *   Silicon Labs has expanded its AI developer platform to simplify IoT and edge AI integration"
-              },
-              "groundingChunkIndices": [
-                9
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 2198,
-                "endIndex": 2374,
-                "text": "*   There is a growing trend of \"governance as a sales asset,\" where businesses are increasingly required to provide clear logs and security protocols before deploying AI tools"
+                "text": "Additionally, **Doosan Enerbility** recently completed the shipment of a gas turbine to **SpaceXAI**, marking its deeper entry into the AI infrastructure supply chain"
               },
               "groundingChunkIndices": [
                 3
@@ -210,12 +137,85 @@
             },
             {
               "segment": {
-                "startIndex": 2381,
-                "endIndex": 2516,
-                "text": "*   Some open-source communities, such as those behind the COSMIC desktop environment, have begun formally rejecting LLM-generated code"
+                "startIndex": 865,
+                "endIndex": 1111,
+                "text": "### **Economic & Market Trends**\n*   **AI Bubble Concerns:** Financier **Ray Dalio** has cautioned that the massive borrowing by tech giants to fund AI investments, combined with high interest rates, could potentially trigger an \"AI bubble\" burst"
               },
               "groundingChunkIndices": [
-                4
+                4,
+                5
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 1113,
+                "endIndex": 1389,
+                "text": "*   **Logistics & Infrastructure:** **DHL Express** identified the AI boom as the primary driver of global trade, noting that the massive infrastructure required to support AI—such as chips and networking gear—has made logistics a critical component of the sector's growth"
+              },
+              "groundingChunkIndices": [
+                6
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 1484,
+                "endIndex": 1725,
+                "text": "For example, the **Edelweiss US Technology Fund** has allocated approximately 40% of its portfolio to the AI supply chain, focusing on compute, networking, and power infrastructure bottlenecks rather than just the model developers themselves"
+              },
+              "groundingChunkIndices": [
+                7
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 1728,
+                "endIndex": 1920,
+                "text": "### **AI Regulation & Policy**\n*   **Global Regulatory Approaches:** International observers continue to highlight the diverging paths being taken by the **US, China, and the EU** to govern AI"
+              },
+              "groundingChunkIndices": [
+                8,
+                9
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 1922,
+                "endIndex": 2147,
+                "text": "In the US, the policy environment remains largely focused on voluntary industry pledges and executive actions, particularly following the removal of requirements for developers to share safety test results with the government"
+              },
+              "groundingChunkIndices": [
+                8,
+                9
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 2149,
+                "endIndex": 2433,
+                "text": "*   **Public Oversight:** In South Korea, Reform Party lawmaker Lee Jun-seok reported that an **AI-powered analysis** of public procurement data identified approximately 562.8 billion won in potentially suspicious government contracts, prompting a new citizen-led verification project"
+              },
+              "groundingChunkIndices": [
+                10
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 2436,
+                "endIndex": 2615,
+                "text": "### **Workplace & Human Impact**\n*   **AI Trust Issues:** New research from **Appian** indicates that 60% of Australian workers have encountered errors made by AI in the workplace"
+              },
+              "groundingChunkIndices": [
+                11
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 2617,
+                "endIndex": 2792,
+                "text": "The study found that low trust in AI outputs, combined with a cultural reluctance to challenge AI recommendations, is leading to operational and financial risks for businesses"
+              },
+              "groundingChunkIndices": [
+                11
               ]
             }
           ]
@@ -223,9 +223,9 @@
       }
     ],
     "usageMetadata": {
-      "promptTokenCount": 75,
-      "candidatesTokenCount": 662,
-      "totalTokenCount": 737
+      "promptTokenCount": 69,
+      "candidatesTokenCount": 659,
+      "totalTokenCount": 728
     },
     "modelVersion": "gemini-3.1-flash-lite",
     "responseId": "mock-response-id-0004"
