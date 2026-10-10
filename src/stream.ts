@@ -224,6 +224,10 @@ function processLine(
         delta,
       });
     } else if (part.functionCall) {
+      // A functionCall part with no name is the backend's "Function call is empty"
+      // shape: the model opened a call and never filled it in. It is not a tool call,
+      // and surfacing it would also flip the turn to toolUse and replay a nameless call.
+      if (!part.functionCall.name) continue;
       closeOpenBlock(state, onEvent);
       if (state.stopReason === "pending" || state.stopReason === "stop") {
         state.stopReason = "toolUse";
@@ -347,7 +351,7 @@ function isRetryableMalformedCall(output: AssistantMessage, attempt: number): bo
   return (
     output.rawStopReason === "MALFORMED_FUNCTION_CALL" &&
     attempt < MAX_MALFORMED_RETRIES &&
-    !output.content.some((c) => c.type === "toolCall" || c.type === "text")
+    !output.content.some((c) => c.type === "toolCall")
   );
 }
 
@@ -495,9 +499,9 @@ export function streamAntigravity(
       // Gemini intermittently ends a turn with MALFORMED_FUNCTION_CALL ("Function call
       // is empty") after emitting only thinking: the model started a tool call and never
       // filled it in. Pi treats the resulting error as terminal, but sampling is
-      // non-deterministic, so re-issuing the request usually recovers. A turn that
-      // already streamed text or a tool call is not retried: those events reached the
-      // UI and cannot be taken back.
+      // non-deterministic, so re-issuing the request usually recovers. Streamed text
+      // is discarded with the failed attempt (tool calls only execute after the message
+      // ends, so nothing has acted on it); a turn holding a real tool call is not retried.
       const contentBase = output.content.length;
       for (let attempt = 0; ; attempt++) {
         const { response, stream: streamBody } = await client.streamGenerateContent({

@@ -94,9 +94,30 @@ test("MALFORMED_FUNCTION_CALL: gives up after 2 retries and surfaces the provide
   assert.match(message.errorMessage, /MALFORMED_FUNCTION_CALL/);
 });
 
-test("MALFORMED_FUNCTION_CALL after streamed text: not retried (text already reached the UI)", async () => {
+test("MALFORMED_FUNCTION_CALL after streamed text: retried, text from the failed attempt is discarded", async () => {
   const { message, calls } = await run([malformedAfterText, okTurn]);
+  assert.equal(calls, 2);
+  assert.equal(message.stopReason, "stop");
+  assert.deepEqual(message.content.map((c) => c.text), ["ok"]);
+});
+
+test("nameless functionCall part is not a tool call: no toolCall block, retried", async () => {
+  const emptyCall = [
+    event([{ thought: true, text: "hmm" }]),
+    event([{ functionCall: {}, thoughtSignature: "U2lnbmF0dXJlRm9yVGVzdA==" }], "MALFORMED_FUNCTION_CALL", "Function call is empty"),
+  ].join("\n");
+  const { message, calls } = await run([emptyCall, okTurn]);
+  assert.equal(calls, 2);
+  assert.equal(message.stopReason, "stop");
+  assert.deepEqual(message.content.map((c) => c.type), ["text"]);
+});
+
+test("MALFORMED_FUNCTION_CALL after a real tool call: not retried", async () => {
+  const realCall = [
+    event([{ functionCall: { name: "bash", args: { command: "ls" } } }]),
+    event([{ text: "" }], "MALFORMED_FUNCTION_CALL", "Function call is empty"),
+  ].join("\n");
+  const { message, calls } = await run([realCall, okTurn]);
   assert.equal(calls, 1);
   assert.equal(message.stopReason, "error");
-  assert.match(message.errorMessage, /MALFORMED_FUNCTION_CALL/);
 });
