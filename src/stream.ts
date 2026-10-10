@@ -340,6 +340,17 @@ export function normalizeOverflowError(rawMessage: string): string {
   return rawMessage;
 }
 
+/** Retries after the first attempt for a MALFORMED_FUNCTION_CALL turn. */
+const MAX_MALFORMED_RETRIES = 2;
+
+function isRetryableMalformedCall(output: AssistantMessage, attempt: number): boolean {
+  return (
+    output.rawStopReason === "MALFORMED_FUNCTION_CALL" &&
+    attempt < MAX_MALFORMED_RETRIES &&
+    !output.content.some((c) => c.type === "toolCall" || c.type === "text")
+  );
+}
+
 async function consumeAntigravityStream(
   streamBody: ReadableStream<Uint8Array>,
   output: AssistantMessage,
@@ -481,26 +492,43 @@ export function streamAntigravity(
         }
       }
 
-      const { response, stream: streamBody } = await client.streamGenerateContent({
-        source: options,
-        endpoint,
-        headers: mergedHeaders,
-        body: requestBody,
-        signal: options?.signal,
-      });
-
-      if (options?.onResponse) {
-        const resHeaders: Record<string, string> = {};
-        response.headers.forEach((val, key) => {
-          resHeaders[key] = val;
+      // Gemini intermittently ends a turn with MALFORMED_FUNCTION_CALL ("Function call
+      // is empty") after emitting only thinking: the model started a tool call and never
+      // filled it in. Pi treats the resulting error as terminal, but sampling is
+      // non-deterministic, so re-issuing the request usually recovers. A turn that
+      // already streamed text or a tool call is not retried: those events reached the
+      // UI and cannot be taken back.
+      const contentBase = output.content.length;
+      for (let attempt = 0; ; attempt++) {
+        const { response, stream: streamBody } = await client.streamGenerateContent({
+          source: options,
+          endpoint,
+          headers: mergedHeaders,
+          body: requestBody,
+          signal: options?.signal,
         });
-        await options.onResponse({ status: response.status, headers: resHeaders }, model);
-      }
 
-      await consumeAntigravityStream(streamBody, output, stream, model, options?.signal);
+        if (options?.onResponse) {
+          const resHeaders: Record<string, string> = {};
+          response.headers.forEach((val, key) => {
+            resHeaders[key] = val;
+          });
+          await options.onResponse({ status: response.status, headers: resHeaders }, model);
+        }
 
-      if (options?.signal?.aborted) {
-        throw new Error("Request was aborted");
+        await consumeAntigravityStream(streamBody, output, stream, model, options?.signal);
+
+        if (options?.signal?.aborted) {
+          throw new Error("Request was aborted");
+        }
+
+        if (!isRetryableMalformedCall(output, attempt)) break;
+
+        // The failed attempt shares `output.content`: drop its thinking blocks so they
+        // (and their signatures) never reach the final message or the next replay.
+        output.content.length = contentBase;
+        output.stopReason = "pending";
+        delete output.rawStopReason;
       }
 
       if (output.stopReason === "pending") {
