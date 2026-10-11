@@ -535,6 +535,17 @@ export function streamAntigravity(
         delete output.rawStopReason;
       }
 
+      // A valid tool call followed by a trailing empty one: the complete call is all
+      // the model produced that can run, so finish the turn as toolUse instead of
+      // discarding it behind an error.
+      if (
+        output.rawStopReason === "MALFORMED_FUNCTION_CALL" &&
+        output.content.some((c) => c.type === "toolCall")
+      ) {
+        output.stopReason = "toolUse";
+        delete output.rawStopReason;
+      }
+
       if (output.stopReason === "pending") {
         throw new Error("Provider stream ended without a stop reason");
       }

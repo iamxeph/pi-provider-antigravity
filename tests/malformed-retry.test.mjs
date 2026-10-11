@@ -112,12 +112,13 @@ test("nameless functionCall part is not a tool call: no toolCall block, retried"
   assert.deepEqual(message.content.map((c) => c.type), ["text"]);
 });
 
-test("MALFORMED_FUNCTION_CALL after a real tool call: not retried", async () => {
+test("MALFORMED_FUNCTION_CALL after a real tool call: not retried, the real call is kept as toolUse", async () => {
   const realCall = [
     event([{ functionCall: { name: "bash", args: { command: "ls" } } }]),
     event([{ text: "" }], "MALFORMED_FUNCTION_CALL", "Function call is empty"),
   ].join("\n");
   const { message, calls } = await run([realCall, okTurn]);
   assert.equal(calls, 1);
-  assert.equal(message.stopReason, "error");
+  assert.equal(message.stopReason, "toolUse");
+  assert.deepEqual(message.content.map((c) => c.type), ["toolCall"]);
 });
