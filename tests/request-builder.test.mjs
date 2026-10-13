@@ -382,7 +382,6 @@ test("Seam 1: integer thinkingBudget matches PR #39 / #36 matrix across models",
   // Claude 5.5 ships no token budget: the effort is named instead.
   assert.deepEqual(budget("claude-sonnet-5-5-high"), {
     includeThoughts: true,
-    thinkingBudget: 0,
     thinkingLevel: "HIGH",
   });
   // GPT-OSS -> 8192
@@ -653,7 +652,6 @@ test("Seam 1: resolveModelPlan bundles enum, thinking budget, and non-Gemini fla
   assert.equal(claude.modelEnum, "MODEL_PLACEHOLDER_M402");
   assert.deepEqual(claude.thinkingConfig, {
     includeThoughts: true,
-    thinkingBudget: 0,
     thinkingLevel: "HIGH",
   });
   assert.equal(claude.isNonGemini, true);

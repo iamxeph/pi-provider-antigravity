@@ -434,7 +434,6 @@ test("Seam 3: resolveModelPlan dynamically resolves tiers for new models", () =>
   // runtime id names is still forwarded as thinkingLevel, never a token count.
   assert.deepEqual(catalog.resolvePlan("gemini-99.9-flash", "medium").thinkingConfig, {
     includeThoughts: true,
-    thinkingBudget: 0,
     thinkingLevel: "MEDIUM",
   });
 });
@@ -478,7 +477,6 @@ test("Seam 3: -max/-xhigh tiered runtime IDs group under the base and resolve", 
     // Budget-less tiered entry: the effort is named on the request
     assert.deepEqual(catalog.resolvePlan("gemini-4-argon", "max").thinkingConfig, {
       includeThoughts: true,
-      thinkingBudget: 0,
       thinkingLevel: "MAX",
     });
   } finally {
@@ -508,13 +506,12 @@ test("Seam 3: resolveModelPlan resolves thinking from snapshot wire values", () 
     });
   }
 
-  // 1.2.16 Claude 5.5: the catalog carries no budget for those tiers, so the
-  // effort rides thinkingLevel (uppercase tier) with a zero budget instead.
+  // Claude 5.5: the catalog carries no budget for those tiers, so the
+  // effort rides thinkingLevel (uppercase tier) with thinkingBudget omitted.
   const claude = catalog.resolvePlan("claude-sonnet-5-5", "high");
   assert.equal(claude.runtimeModelId, "claude-sonnet-5-5-high");
   assert.deepEqual(claude.thinkingConfig, {
     includeThoughts: true,
-    thinkingBudget: 0,
     thinkingLevel: "HIGH",
   });
   assert.equal(catalog.resolvePlan("claude-sonnet-5-5", "low").thinkingConfig.thinkingLevel, "LOW");

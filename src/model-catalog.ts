@@ -169,7 +169,7 @@ export interface PersistedSnapshot {
 export interface ModelPlan {
   runtimeModelId: string;
   modelEnum: string;
-  thinkingConfig: { includeThoughts: boolean; thinkingBudget: number; thinkingLevel?: string };
+  thinkingConfig: { includeThoughts: boolean; thinkingBudget?: number; thinkingLevel?: string };
   isNonGemini: boolean;
   isClaude: boolean;
 }
@@ -413,10 +413,10 @@ function followRenames(runtimeModelId: string, snapshot: CatalogSnapshot): strin
 
 /**
  * Wire effort name for a tiered runtime model whose catalog entry carries no
- * thinkingBudget. agy 1.2.16 names the effort on those entries instead of a token
- * count (Claude 5.5: thinkingBudget 0 plus thinkingLevel HIGH/MEDIUM/LOW). Higher
- * tiers follow the same uppercase-effort naming (XHIGH/MAX) — unverified until a
- * budget-less tier with such a suffix ships; a capture then settles the spelling.
+ * thinkingBudget. agy 1.2.16 named the effort on those entries instead of a token
+ * count (Claude 5.5: thinkingLevel HIGH/MEDIUM/LOW; thinkingBudget 0 on <=1.3.3, omitted
+ * on >=1.3.4 wire). Higher tiers follow the same uppercase-effort naming (XHIGH/MAX) —
+ * unverified until a budget-less tier with such a suffix ships; a capture then settles the spelling.
  */
 function thinkingLevelFor(runtimeModelId: string): string | undefined {
   for (const tier of Object.keys(CANONICAL_TIER_SUFFIXES) as CanonicalTier[]) {
@@ -430,7 +430,7 @@ function thinkingLevelFor(runtimeModelId: string): string | undefined {
 function resolveThinkingConfig(
   runtimeModelId: string,
   snapshot: CatalogSnapshot
-): { includeThoughts: boolean; thinkingBudget: number; thinkingLevel?: string } {
+): { includeThoughts: boolean; thinkingBudget?: number; thinkingLevel?: string } {
   const budget = snapshot.thinking[runtimeModelId]?.budget;
   if (typeof budget === "number") {
     return { includeThoughts: true, thinkingBudget: budget };
@@ -439,7 +439,7 @@ function resolveThinkingConfig(
   // budget-less entry with no tier name stays disabled rather than guessed.
   const thinkingLevel = thinkingLevelFor(runtimeModelId);
   return thinkingLevel
-    ? { includeThoughts: true, thinkingBudget: 0, thinkingLevel }
+    ? { includeThoughts: true, thinkingLevel }
     : { includeThoughts: false, thinkingBudget: 0 };
 }
 
