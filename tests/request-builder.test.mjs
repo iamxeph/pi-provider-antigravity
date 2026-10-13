@@ -50,13 +50,13 @@ test("Seam 1: buildAntigravityRequestBody creates strict envelope and PR #39 lab
 
   const body = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context,
   });
 
   // Strict wire envelope assertions based on capture fixture
   assert.equal(body.project, "aicode-consumers");
-  assert.equal(body.model, "gemini-3.7-flash-high");
+  assert.equal(body.model, "gemini-3.8-flash-high");
   assert.equal(body.userAgent, "antigravity");
   assert.equal(body.requestType, "agent");
   assert.match(body.requestId, /^agent\/[0-9a-f-]+\/\d+\/[0-9a-f-]+\/1$/);
@@ -65,7 +65,7 @@ test("Seam 1: buildAntigravityRequestBody creates strict envelope and PR #39 lab
   // PR #39 Wire labels check
   const labels = body.request.labels;
   assert.equal(labels.last_step_index, "0");
-  assert.equal(labels.model_enum, "MODEL_PLACEHOLDER_M298");
+  assert.equal(labels.model_enum, "MODEL_PLACEHOLDER_M318");
   assert.match(labels.trajectory_id, /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
   assert.equal(labels.request_id, `${labels.trajectory_id}-0`);
   assert.equal(labels.used_claude, "false");
@@ -88,7 +88,7 @@ test("Seam 1: 1.2.16 cascade labels and requestId lead with the cascade UUID", (
 
   const body = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context,
   });
 
@@ -104,7 +104,7 @@ test("Seam 1: 1.2.16 cascade labels and requestId lead with the cascade UUID", (
   // conversation, same cascade — distinct from the per-conversation trajectory.
   const again = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context,
   });
   assert.equal(again.request.labels.cascade_id, labels.cascade_id, "cascade is deterministic per conversation");
@@ -142,7 +142,7 @@ test("Seam 1: multi-turn tool call increments request_id sequence and preserves 
 
   const body = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context,
   });
 
@@ -196,7 +196,7 @@ test("Seam 1: assistant thinking blocks replay as a thought part on a text turn 
 
   const body = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context,
   });
 
@@ -234,7 +234,7 @@ test("Seam 1: a turn ending in functionCall replays no thought part (1.2.16 gene
 
   const body = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context,
   });
 
@@ -316,7 +316,7 @@ test("Seam 1: toolResult role from pi-ai is properly formatted as functionRespon
 
   const body = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context,
   });
 
@@ -348,7 +348,7 @@ test("Seam 1: trailing model turn appends continuation user turn to prevent 400 
 
   const body = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context,
   });
 
@@ -369,15 +369,16 @@ test("Seam 1: integer thinkingBudget matches PR #39 / #36 matrix across models",
   assert.deepEqual(budget("gemini-3.8-flash", "medium"), { includeThoughts: true, thinkingBudget: 4000 });
   // Flash low -> 1000
   assert.deepEqual(budget("gemini-3.8-flash", "low"), { includeThoughts: true, thinkingBudget: 1000 });
-  // Live-captured 2026-09-06 (agy 1.1.26, --model gemini-3.7-flash --effort low|medium|high):
+  // Live-captured 2026-10-13 (agy 1.3.3, --model gemini-3.8-flash --effort low|medium|high):
   // variant runtime ID + integer budget, never -tiered / thinkingLevel.
-  assert.deepEqual(budget("gemini-3.7-flash-low"), { includeThoughts: true, thinkingBudget: 1000 });
-  assert.deepEqual(budget("gemini-3.7-flash-medium"), { includeThoughts: true, thinkingBudget: 4000 });
-  assert.deepEqual(budget("gemini-3.7-flash-high"), { includeThoughts: true, thinkingBudget: -1 });
-  // Pro high -> 10001
-  assert.deepEqual(budget("gemini-pro-agent", "high"), { includeThoughts: true, thinkingBudget: 10001 });
-  // Pro low -> 1001
-  assert.deepEqual(budget("gemini-3.1-pro-low"), { includeThoughts: true, thinkingBudget: 1001 });
+  assert.deepEqual(budget("gemini-3.8-flash-low"), { includeThoughts: true, thinkingBudget: 1000 });
+  assert.deepEqual(budget("gemini-3.8-flash-medium"), { includeThoughts: true, thinkingBudget: 4000 });
+  assert.deepEqual(budget("gemini-3.8-flash-high"), { includeThoughts: true, thinkingBudget: -1 });
+  // A -1 catalog budget rides the wire verbatim (agy 1.3.3 turn1: 3.8-flash-high → -1).
+  // 2.5 Pro keeps a small numeric budget.
+  assert.deepEqual(budget("gemini-2.5-pro"), { includeThoughts: true, thinkingBudget: 1024 });
+  // A budget-less runtime ID with no tier suffix stays disabled rather than guessed.
+  assert.deepEqual(budget("gemini-3.1-flash-lite"), { includeThoughts: false, thinkingBudget: 0 });
   // Claude 5.5 ships no token budget: the effort is named instead.
   assert.deepEqual(budget("claude-sonnet-5-5-high"), {
     includeThoughts: true,
@@ -395,17 +396,17 @@ test("Seam 1: trajectory is a per-conversation v5 UUID and the numeric sessionId
 
   const bodyA = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context: contextA,
   });
   const bodyB = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context: contextB,
   });
   const bodyC = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context: contextC,
   });
 
@@ -420,7 +421,7 @@ test("Seam 1: trajectory is a per-conversation v5 UUID and the numeric sessionId
   // An explicit numeric sessionId (stream.ts override) wins verbatim
   const bodyOverride = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context: contextA,
     sessionId: "5539610016189382010",
   });
@@ -475,7 +476,7 @@ test("Seam 1: tool conversion formats legacy parameters for Gemini (agy parity, 
 
   const body = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context: { messages: [{ role: "user", content: "hi" }], tools: [agentTool, todoTool] },
   });
 
@@ -589,7 +590,7 @@ test("Seam 1: tool conversion strips $defs and $schema metadata", () => {
 
   const geminiBody = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context: { messages: [{ role: "user", content: "hi" }], tools: [toolWithMeta] },
   });
   const geminiDecl = geminiBody.request.tools[0].functionDeclarations[0];
@@ -614,9 +615,6 @@ test("Seam 1: resolveModelPlan maps Public Model IDs to Runtime Model IDs", () =
   assert.equal(fixtureCatalog.resolvePlan("gemini-3.8-flash", "medium").runtimeModelId, "gemini-3.8-flash-medium");
   assert.equal(fixtureCatalog.resolvePlan("gemini-3.8-flash", "low").runtimeModelId, "gemini-3.8-flash-low");
 
-  assert.equal(fixtureCatalog.resolvePlan("gemini-3.1-pro", "high").runtimeModelId, "gemini-pro-agent");
-  assert.equal(fixtureCatalog.resolvePlan("gemini-3.1-pro", "low").runtimeModelId, "gemini-3.1-pro-low");
-
   assert.equal(fixtureCatalog.resolvePlan("claude-opus-5-5-high", undefined).runtimeModelId, "claude-opus-5-5-high");
   assert.equal(fixtureCatalog.resolvePlan("claude-sonnet-5-5-high", undefined).runtimeModelId, "claude-sonnet-5-5-high");
   assert.equal(fixtureCatalog.resolvePlan("gpt-oss-120b", undefined).runtimeModelId, "gpt-oss-120b-medium");
@@ -627,17 +625,21 @@ test("Seam 1: resolveModelPlan maps Public Model IDs to Runtime Model IDs", () =
     assert.equal(fixtureCatalog.resolvePlan("gpt-oss-120b", effort).runtimeModelId, "gpt-oss-120b-medium");
     assert.equal(fixtureCatalog.resolvePlan("claude-opus-5-5-high", effort).runtimeModelId, "claude-opus-5-5-high");
   }
-  // Gemini 3.1 Pro lists no medium tier (-high/-low only); medium
-  // resolves to the high variant, which the server renames to gemini-pro-agent.
-  assert.equal(fixtureCatalog.resolvePlan("gemini-3.1-pro", "medium").runtimeModelId, "gemini-pro-agent");
 
-  // Live-captured 2026-09-06 (agy 1.1.26): effort selects the variant runtime ID.
-  assert.equal(fixtureCatalog.resolvePlan("gemini-3.7-flash", "high").runtimeModelId, "gemini-3.7-flash-high");
-  assert.equal(fixtureCatalog.resolvePlan("gemini-3.7-flash", "medium").runtimeModelId, "gemini-3.7-flash-medium");
-  assert.equal(fixtureCatalog.resolvePlan("gemini-3.7-flash", "low").runtimeModelId, "gemini-3.7-flash-low");
+  // A tier gap (here: no -medium in the catalog) falls up to the next listed
+  // tier — 1.3.2-era Gemini 3.1 Pro spelled -high/-low only. Synthetic catalog:
+  // the current capture carries no such gap to pin this against.
+  const gapCatalog = createModelCatalog();
+  gapCatalog.restore({
+    enums: { "model-x-high": "E_HIGH" },
+    runtimeIds: ["model-x-high"],
+    thinking: {},
+    deprecated: {},
+  });
+  assert.equal(gapCatalog.resolvePlan("model-x", "medium").runtimeModelId, "model-x-high");
 
   // If already suffixed, keep it unchanged
-  assert.equal(fixtureCatalog.resolvePlan("gemini-3.7-flash-high", undefined).runtimeModelId, "gemini-3.7-flash-high");
+  assert.equal(fixtureCatalog.resolvePlan("gemini-3.8-flash-high", undefined).runtimeModelId, "gemini-3.8-flash-high");
 });
 
 test("Seam 1: resolveModelPlan bundles enum, thinking budget, and non-Gemini flag", () => {
@@ -794,7 +796,7 @@ test("Seam 1: multi-turn conversation maintains fixed trajectoryId/sessionId and
 
   const body1 = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context: contextTurn1,
   });
 
@@ -831,7 +833,7 @@ test("Seam 1: multi-turn conversation maintains fixed trajectoryId/sessionId and
 
   const body2 = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context: contextTurn2,
   });
 
@@ -862,7 +864,7 @@ test("Seam 1: multi-turn conversation maintains fixed trajectoryId/sessionId and
 
   const body3 = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context: contextTurn3,
   });
 
@@ -882,7 +884,7 @@ test("Seam 1: multi-turn conversation maintains fixed trajectoryId/sessionId and
   };
   const bodyDifferent = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context: differentContext,
   });
   assert.notEqual(bodyDifferent.request.labels.trajectory_id, trajectoryId1);
@@ -937,7 +939,7 @@ test("Seam 1 (Strict Wire Parity): buildAntigravityRequestBody reproduces Turn 4
   // Turn 4 has contents.length = 21, so 9 assistant turns gives request_id sequence 9
   const bodyTurn4 = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context: { messages: mockMessagesTurn4 },
   });
 
@@ -958,7 +960,7 @@ test("Seam 1 (Strict Wire Parity): buildAntigravityRequestBody reproduces Turn 4
 
   const bodyTurn5 = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context: { messages: mockMessagesTurn5 },
   });
 
@@ -988,7 +990,7 @@ test("Seam 1: labels.request_id counts replayed model turns, never dropped ones"
     ];
     const body = buildAntigravityRequestBody({
       projectId: "aicode-consumers",
-      plan: staticPlan("gemini-3.7-flash-high"),
+      plan: staticPlan("gemini-3.8-flash-high"),
       context: { messages },
     });
     const modelTurns = body.request.contents.filter(
@@ -1034,7 +1036,7 @@ test("Seam 1 (400 fix, agy 1.1.26 capture 2026-09-05): toolResult wire shape mat
 
   const body = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context,
   });
 
@@ -1062,7 +1064,7 @@ test("Seam 1 (400 fix, agy 1.1.26 capture 2026-09-05): toolResult wire shape mat
   };
   const errBody = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context: errContext,
   });
   assert.deepEqual(errBody.request.contents[2].parts[0].functionResponse.response, {
@@ -1091,7 +1093,7 @@ test("Seam 1 (400 fix, agy 1.1.26 capture 2026-09-05): toolResult wire shape mat
   };
   const imgBody = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context: imgContext,
   });
   const imgTurn = imgBody.request.contents[2];
@@ -1136,7 +1138,7 @@ test("Seam 1: Thought Signature validation accepts base64 and strips invalid/for
   for (const badSig of invalidSignatures) {
     const body = buildAntigravityRequestBody({
       projectId: "aicode-consumers",
-      plan: staticPlan("gemini-3.7-flash-high"),
+      plan: staticPlan("gemini-3.8-flash-high"),
       context: {
         messages: [
           { role: "user", content: "hi" },
@@ -1159,7 +1161,7 @@ test("Seam 1: Thought Signature validation accepts base64 and strips invalid/for
   for (const goodSig of validSignatures) {
     const body = buildAntigravityRequestBody({
       projectId: "aicode-consumers",
-      plan: staticPlan("gemini-3.7-flash-high"),
+      plan: staticPlan("gemini-3.8-flash-high"),
       context: {
         messages: [
           { role: "user", content: "hi" },
@@ -1226,7 +1228,7 @@ test("Seam 1: buildAntigravityRequestBody ignores foreign JSON thoughtSignatures
 
   const body = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context,
   });
 
@@ -1448,7 +1450,7 @@ test("Seam 1: buildAntigravityRequestBody extracts summary from foreign JSON sig
 
   const body = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context,
   });
 
@@ -1482,7 +1484,7 @@ test("Seam 1: buildAntigravityRequestBody drops cross-model thoughtSignature bet
 
   const body = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context,
   });
 
@@ -1502,7 +1504,7 @@ test("Seam 1: buildAntigravityRequestBody preserves valid thoughtSignature for s
       {
         role: "assistant",
         provider: "antigravity",
-        model: "gemini-3.7-flash",
+        model: "gemini-3.8-flash",
         content: [
           {
             type: "thinking",
@@ -1523,7 +1525,7 @@ test("Seam 1: buildAntigravityRequestBody preserves valid thoughtSignature for s
 
   const body = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"), // same base model: gemini-3.7-flash
+    plan: staticPlan("gemini-3.8-flash-high"), // same base model: gemini-3.8-flash
     context,
   });
 
@@ -1545,7 +1547,7 @@ test("Seam 1 (Verified wire parity): Gemini 3.7 and Gemini 3.8 share thoughtSign
       {
         role: "assistant",
         provider: "antigravity",
-        model: "gemini-3.7-flash-high",
+        model: "gemini-3.8-flash-high",
         content: [
           {
             type: "text",
@@ -1628,7 +1630,7 @@ test("Seam 1: tool call IDs sanitize special characters and truncate to 64 chars
 
   const bodyLong = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context: contextLong,
   });
 
@@ -1666,7 +1668,7 @@ test("Seam 1: tool call IDs sanitize special characters and truncate to 64 chars
 
   const body = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context,
   });
 
@@ -1692,7 +1694,7 @@ test("Seam 1: buildAntigravityRequestBody skips aborted and errored assistant me
 
   const body = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context,
   });
 
@@ -1883,7 +1885,7 @@ test("Seam 1 (#15): thinking signature forwards onto a following functionCall", 
       {
         role: "assistant",
         provider: "antigravity",
-        model: "gemini-3.7-flash-high",
+        model: "gemini-3.8-flash-high",
         content: [
           { type: "thinking", thinking: "Need a directory listing.", thinkingSignature: sig },
           { type: "toolCall", id: "call_1", name: "bash", arguments: { command: "ls" } },
@@ -1895,7 +1897,7 @@ test("Seam 1 (#15): thinking signature forwards onto a following functionCall", 
 
   const body = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context,
   });
 
@@ -1913,7 +1915,7 @@ test("Seam 1 (#15): thinking-only turn falls back to the last part (uncovered ed
       {
         role: "assistant",
         provider: "antigravity",
-        model: "gemini-3.7-flash-high",
+        model: "gemini-3.8-flash-high",
         content: [{ type: "thinking", thinking: "Silent reasoning.", thinkingSignature: sig }],
       },
       { role: "user", content: "next" },
@@ -1922,7 +1924,7 @@ test("Seam 1 (#15): thinking-only turn falls back to the last part (uncovered ed
 
   const body = buildAntigravityRequestBody({
     projectId: "aicode-consumers",
-    plan: staticPlan("gemini-3.7-flash-high"),
+    plan: staticPlan("gemini-3.8-flash-high"),
     context,
   });
 

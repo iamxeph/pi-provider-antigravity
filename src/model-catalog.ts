@@ -39,20 +39,12 @@ const TIER_ALIASES: Record<CanonicalTier, readonly string[]> = Object.freeze({
 });
 
 /**
- * Special suffixes in the catalog that designate non-effort variant types (e.g. server-directed
- * dynamic thinking selection). Stripped for base model grouping and recognized as runtime IDs,
- * but not selectable as a user thinking effort tier.
- */
-const SPECIAL_TIER_SUFFIXES: readonly string[] = Object.freeze(["-tiered"]);
-
-/**
- * Union of all known model ID tier suffixes (canonical, aliases, and special tokens).
+ * Union of all known model ID tier suffixes (canonical and aliases).
  */
 const ALL_TIER_SUFFIXES: readonly string[] = Object.freeze([
   ...new Set([
     ...Object.values(CANONICAL_TIER_SUFFIXES),
     ...Object.values(TIER_ALIASES).flat(),
-    ...SPECIAL_TIER_SUFFIXES,
   ]),
 ]);
 
@@ -68,9 +60,10 @@ function tierSpellings(tier: CanonicalTier): readonly string[] {
 }
 
 function extractBaseModelId(runtimeId: string): string {
-  if (runtimeId === "gemini-pro-agent") return "gemini-3.1-pro";
-  if (runtimeId.startsWith("gemini-3.1-pro-")) return "gemini-3.1-pro";
-
+  // No per-model special cases: legacy IDs like `gemini-pro-agent` (Gemini 3.1
+  // Pro High, 1.3.2 generation) group by the generic tier-strip here, and their
+  // Public Model ID resolves through the server's deprecatedModelIds rename
+  // map — which persists inside stored snapshots, so old sessions keep working.
   return runtimeId.replace(TIER_SUFFIX_PATTERN, "");
 }
 
@@ -81,7 +74,7 @@ function extractBaseModelId(runtimeId: string): string {
 const TIER_FALLBACKS: Record<string, readonly string[]> = Object.freeze({
   minimal: Object.freeze(["-low", "-extra-low", ""]),
   low: Object.freeze(["-extra-low", ""]),
-  medium: Object.freeze(["", "-high"]), // Gemini 3.1 Pro lists no -medium: up to high, never down
+  medium: Object.freeze(["", "-high"]), // tier gap: fall up to high, never down
   high: Object.freeze(["-thinking", "-agent", ""]), // Claude's high tier is -thinking
   xhigh: Object.freeze(["-max", "-high", "-thinking", "-agent", ""]), // up to max, never down
   max: Object.freeze(["-high", "-thinking", "-agent", ""]),
