@@ -3,8 +3,8 @@
   "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:generateContent",
   "headers": {
     "Host": "daily-cloudcode-pa.googleapis.com",
-    "User-Agent": "antigravity/cli/1.3.2 (aidev_client; os_type=linux; arch=amd64; cl=995389363; auth_method=consumer)",
-    "Content-Length": "688",
+    "User-Agent": "antigravity/cli/1.3.3 (aidev_client; os_type=linux; arch=amd64; cl=996823801; auth_method=consumer)",
+    "Content-Length": "698",
     "Authorization": "Bearer <REDACTED_ACCESS_TOKEN>",
     "Content-Type": "application/json",
     "Accept-Encoding": "gzip"
@@ -17,7 +17,7 @@
           "role": "user",
           "parts": [
             {
-              "text": "artificial intelligence AI news today"
+              "text": "artificial intelligence news today October 2026"
             }
           ]
         }
@@ -45,7 +45,7 @@
         "candidateCount": 1
       }
     },
-    "model": "gemini-3.1-flash-lite",
+    "model": "gemini-3.5-flash-lite",
     "userAgent": "antigravity",
     "requestType": "web_search"
   }

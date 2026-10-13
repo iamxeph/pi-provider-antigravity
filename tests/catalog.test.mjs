@@ -23,23 +23,23 @@ test("Seam 3: parseAvailableModels extracts models and model_enum", () => {
 
   assert.ok(items.models.length >= 10);
 
-  const flash37 = items.models.find((m) => m.id === "gemini-3.7-flash-high");
-  assert.ok(flash37);
-  assert.equal(flash37.modelEnum, "MODEL_PLACEHOLDER_M298");
-  assert.equal(flash37.supportsThinking, true);
+  const flash38 = items.models.find((m) => m.id === "gemini-3.8-flash-high");
+  assert.ok(flash38);
+  assert.equal(flash38.modelEnum, "MODEL_PLACEHOLDER_M318");
+  assert.equal(flash38.supportsThinking, true);
 
   // thinkingBudget/minThinkingBudget ride the wire per Runtime Model ID
   // (the newest capture's models.resp.json) — parse must keep them.
-  assert.equal(flash37.thinkingBudget, -1);
-  assert.equal(flash37.minThinkingBudget, 32);
+  assert.equal(flash38.thinkingBudget, -1);
+  assert.equal(flash38.minThinkingBudget, 32);
 
-  const flash37med = items.models.find((m) => m.id === "gemini-3.7-flash-medium");
-  assert.ok(flash37med);
-  assert.equal(flash37med.thinkingBudget, 4000);
+  const flash38med = items.models.find((m) => m.id === "gemini-3.8-flash-medium");
+  assert.ok(flash38med);
+  assert.equal(flash38med.thinkingBudget, 4000);
 
-  const flash37low = items.models.find((m) => m.id === "gemini-3.7-flash-low");
-  assert.ok(flash37low);
-  assert.equal(flash37low.thinkingBudget, 1000);
+  const flash38low = items.models.find((m) => m.id === "gemini-3.8-flash-low");
+  assert.ok(flash38low);
+  assert.equal(flash38low.thinkingBudget, 1000);
 
   const claudeSonnet = items.models.find((m) => m.id === "claude-sonnet-5-5-high");
   assert.ok(claudeSonnet);
@@ -57,7 +57,7 @@ test("Seam 3: parseAvailableModels extracts models and model_enum", () => {
   assert.ok(withoutThinking.length > 0, "the capture must contain a model without thinking fields");
 
   // modelEnums dictionary mapping
-  assert.equal(items.modelEnums["gemini-3.7-flash-high"], "MODEL_PLACEHOLDER_M298");
+  assert.equal(items.modelEnums["gemini-3.8-flash-high"], "MODEL_PLACEHOLDER_M318");
 });
 
 test("Seam 3: synthesizeDynamicModel static fallbacks match captured catalog (Claude 250000/64000)", async () => {
@@ -99,15 +99,16 @@ test("Seam 3: formatModelsList shows recommended-only detailed table in sort ord
   catalog.record(modelsJson);
   const output = catalog.formatList();
 
-  assert.match(output, /\(18 recommended\)/);
+  assert.match(output, /\(10 recommended\)/);
   assert.match(output, /Model\s+Name\s+Context\s+Features\s+Rem/);
   // non-recommended runtimes excluded
   assert.doesNotMatch(output, /gemini-2\.5-flash/);
+  assert.doesNotMatch(output, /gemini-3\.1-pro/);
   // recommended order from agentModelSorts
   const idx38 = output.indexOf("gemini-3.8-flash-high");
-  const idx37 = output.indexOf("gemini-3.7-flash-high");
+  const idxOpus = output.indexOf("claude-opus-5-5-high");
   const idxSonnet = output.indexOf("claude-sonnet-5-5-high");
-  assert.ok(idx38 !== -1 && idx37 !== -1 && idxSonnet !== -1 && idx38 < idx37 && idx37 < idxSonnet);
+  assert.ok(idx38 !== -1 && idxOpus !== -1 && idxSonnet !== -1 && idx38 < idxOpus && idxOpus < idxSonnet);
   // detail columns, no reset column
   assert.match(output, /Gemini 3\.8 Flash/);
   assert.match(output, /1M\/64k/);
@@ -127,19 +128,18 @@ test("Seam 3: buildDynamicPublicModels generates models dynamically from agy mod
       stored: {},
     });
 
-    assert.equal(publicModels.length, 7);
+    assert.equal(publicModels.length, 4);
     const ids = publicModels.map((m) => m.id);
     assert.ok(ids.includes("gemini-3.8-flash"));
-    assert.ok(ids.includes("gemini-3.7-flash"));
-    assert.ok(ids.includes("gemini-3.6-flash"));
-    assert.ok(ids.includes("gemini-3.1-pro"));
     assert.ok(ids.includes("claude-sonnet-5-5"));
     assert.ok(ids.includes("claude-opus-5-5"));
     assert.ok(ids.includes("gpt-oss-120b"));
+    // 3.1 Pro is catalog-listed but no longer recommended: it must not surface.
+    assert.ok(!ids.includes("gemini-3.1-pro"));
 
     // Verify ordering follows recommended agentModelSorts
     assert.equal(publicModels[0].id, "gemini-3.8-flash");
-    assert.equal(publicModels[1].id, "gemini-3.7-flash");
+    assert.equal(publicModels[1].id, "claude-opus-5-5");
   } finally {
     globalThis.fetch = realFetch;
   }
@@ -323,7 +323,7 @@ test("Seam 3: synthesized models declare promptCache lifetimes per model family"
     const byId = new Map(publicModels.map((m) => [m.id, m]));
 
     assert.deepEqual(byId.get("gemini-3.8-flash")?.promptCache, { short: 300 });
-    assert.deepEqual(byId.get("gemini-3.1-pro")?.promptCache, { short: 300 });
+    assert.deepEqual(byId.get("gpt-oss-120b")?.promptCache, { short: 300 });
     assert.deepEqual(byId.get("claude-sonnet-5-5")?.promptCache, { short: 300, long: 3600 });
     assert.deepEqual(byId.get("claude-opus-5-5")?.promptCache, { short: 300, long: 3600 });
   } finally {
@@ -333,7 +333,17 @@ test("Seam 3: synthesized models declare promptCache lifetimes per model family"
 
 test("Seam 3: synthesized models hide effort levels the snapshot has no variant for", async () => {
   const realFetch = globalThis.fetch;
-  globalThis.fetch = async () => ({ ok: true, json: async () => modelsJson });
+  // The current capture spells every Gemini tier for 3.8-flash, so a tier gap
+  // (low+high listed, no medium) rides a synthetic sort entry for gemini-3-flash,
+  // whose variants the catalog already lists (bare + -agent).
+  const withGap = {
+    ...modelsJson,
+    agentModelSorts: [
+      ...(modelsJson.agentModelSorts || []),
+      { groups: [{ modelIds: ["gemini-3-flash"] }] },
+    ],
+  };
+  globalThis.fetch = async () => ({ ok: true, json: async () => withGap });
   try {
     const catalog = createModelCatalog();
     const publicModels = await catalog.refresh({ allowNetwork: true, credential: TEST_CREDENTIAL, stored: {} });
@@ -345,7 +355,7 @@ test("Seam 3: synthesized models hide effort levels the snapshot has no variant 
         .sort();
 
     assert.deepEqual(hiddenLevels("gemini-3.8-flash"), ["minimal", "off"]);
-    assert.deepEqual(hiddenLevels("gemini-3.1-pro"), ["medium", "minimal", "off"]);
+    assert.deepEqual(hiddenLevels("gemini-3-flash"), ["low", "medium", "minimal", "off"]);
     assert.deepEqual(hiddenLevels("gpt-oss-120b"), ["high", "low", "minimal", "off"]);
     // Claude 5.5 is tiered like Gemini now, so only the two levels it never
     // spells out stay hidden.
@@ -385,7 +395,9 @@ test("Seam 3: catalog resolves canonical tier order and preserves picker invaria
   assert.equal(aliasCatalog.resolvePlan("model-b", "low").runtimeModelId, "model-b-extra-low");
   assert.equal(aliasCatalog.resolvePlan("model-b", "high").runtimeModelId, "model-b-thinking");
 
-  // 3. Exact runtime ID lookup with special suffix (-tiered)
+  // 3. An exact runtime ID outside the tier vocabulary (-tiered: server-directed
+  // dynamic thinking, never a user effort) resolves to itself through the
+  // generic single-variant path.
   const tieredCatalog = createModelCatalog();
   tieredCatalog.record({
     models: {
@@ -479,11 +491,10 @@ test("Seam 3: resolveModelPlan resolves thinking from snapshot wire values", () 
   catalog.record(modelsJson);
 
   const cases = [
-    ["gemini-3.7-flash", "high", "gemini-3.7-flash-high"],
-    ["gemini-3.7-flash", "medium", "gemini-3.7-flash-medium"],
-    ["gemini-3.7-flash", "low", "gemini-3.7-flash-low"],
-    ["gemini-3.1-pro", "high", "gemini-pro-agent"],
-    ["gemini-3.1-pro", "low", "gemini-3.1-pro-low"],
+    ["gemini-3.8-flash", "high", "gemini-3.8-flash-high"],
+    ["gemini-3.8-flash", "medium", "gemini-3.8-flash-medium"],
+    ["gemini-3.8-flash", "low", "gemini-3.8-flash-low"],
+    ["gemini-2.5-pro", undefined, "gemini-2.5-pro"],
     ["gpt-oss-120b", undefined, "gpt-oss-120b-medium"],
   ];
   for (const [publicId, effort, runtimeId] of cases) {
@@ -590,19 +601,39 @@ test("Seam 3: buildAntigravityRequestBody uses the plan model_enum", () => {
 test("Seam 3: parseAvailableModels extracts server-directed renames", () => {
   const catalog = createModelCatalog();
   catalog.record(modelsJson);
-  assert.deepEqual(catalog.generation().items.deprecated, {
-    "gemini-3.1-pro-high": "gemini-pro-agent",
+  // The 1.3.3 capture carries no rename map (the backend A/Bs catalog variants;
+  // the 1.3.2 generation renamed gemini-3.1-pro-high → gemini-pro-agent).
+  assert.equal(catalog.generation().items.deprecated, undefined);
+
+  const renaming = createModelCatalog();
+  renaming.record({
+    models: { "old-high": { model: "E_OLD" }, "new-high": { model: "E_NEW" } },
+    deprecatedModelIds: { "old-high": { newModelId: "new-high" } },
   });
+  assert.deepEqual(renaming.generation().items.deprecated, { "old-high": "new-high" });
 });
 
 test("Seam 3: resolveModelPlan follows server-directed renames", () => {
+  // Variant B baseline: the current capture carries no 3.1 Pro IDs and no rename
+  // map, so its picker-era public ID no longer resolves…
+  const current = createModelCatalog();
+  current.record(modelsJson);
+  assert.throws(() => current.resolvePlan("gemini-3.1-pro", "high"), /Unknown model "gemini-3\.1-pro"/);
+
+  // …while a stored snapshot from the rename generation still does: the map rides
+  // the persisted snapshot, so old sessions keep resolving.
   const catalog = createModelCatalog();
-  catalog.record(modelsJson);
+  catalog.restore({
+    enums: { "gemini-pro-agent": "MODEL_PLACEHOLDER_M16", "gemini-3.1-pro-high": "MODEL_PLACEHOLDER_M37" },
+    runtimeIds: ["gemini-pro-agent", "gemini-3.1-pro-high"],
+    thinking: { "gemini-pro-agent": { budget: 10001, supportsThinking: true } },
+    deprecated: { "gemini-3.1-pro-high": "gemini-pro-agent" },
+  });
   assert.equal(catalog.resolvePlan("gemini-3.1-pro", "high").runtimeModelId, "gemini-pro-agent");
   assert.equal(catalog.resolvePlan("gemini-3.1-pro-high", undefined).runtimeModelId, "gemini-pro-agent");
   assert.equal(
     catalog.resolvePlan("gemini-3.1-pro-high", undefined).modelEnum,
-    modelsJson.models["gemini-pro-agent"].model
+    "MODEL_PLACEHOLDER_M16"
   );
 });
 
@@ -790,8 +821,8 @@ test("Catalog refresh: fresh fetch builds dynamic models and publishes", async (
     assert.equal(typeof persist.checkedAt, "number");
     assert.deepEqual(persist[PRIVATE_SNAPSHOT_KEY], catalog.toPersisted());
     assert.deepEqual(persist[PRIVATE_SNAPSHOT_KEY].modelEnums, expected.modelEnums);
-    assert.equal(persist[PRIVATE_SNAPSHOT_KEY].thinking["gemini-3.7-flash-medium"].budget, 4000);
-    assert.deepEqual(persist[PRIVATE_SNAPSHOT_KEY].deprecated, expected.deprecated);
+    assert.equal(persist[PRIVATE_SNAPSHOT_KEY].thinking["gemini-3.8-flash-medium"].budget, 4000);
+    assert.deepEqual(persist[PRIVATE_SNAPSHOT_KEY].deprecated, expected.deprecated ?? {});
   } finally {
     globalThis.fetch = realFetch;
   }
@@ -875,18 +906,18 @@ test("Catalog refresh: server-removed models evict uniformly, no pinned fallback
     ...modelsJson,
     models: { ...modelsJson.models },
   };
-  delete prunedJson.models["gemini-3.6-flash-high"];
+  delete prunedJson.models["gemini-2.5-pro"];
   try {
     const catalog = createModelCatalog();
     globalThis.fetch = async () => ({ ok: true, json: async () => modelsJson });
     await catalog.refresh({ allowNetwork: true, credential: TEST_CREDENTIAL, stored: {} });
-    assert.ok("gemini-3.6-flash-high" in catalog.generation().snapshot.enums);
+    assert.ok("gemini-2.5-pro" in catalog.generation().snapshot.enums);
 
     globalThis.fetch = async () => ({ ok: true, json: async () => prunedJson });
     await catalog.refresh({ allowNetwork: true, credential: TEST_CREDENTIAL, stored: {} });
     const { snapshot } = catalog.generation();
-    assert.ok(!("gemini-3.6-flash-high" in snapshot.enums), "retired IDs must evict like any other");
-    assert.ok(!snapshot.runtimeIds.includes("gemini-3.6-flash-high"));
+    assert.ok(!("gemini-2.5-pro" in snapshot.enums), "retired IDs must evict like any other");
+    assert.ok(!snapshot.runtimeIds.includes("gemini-2.5-pro"));
   } finally {
     globalThis.fetch = realFetch;
   }

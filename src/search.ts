@@ -11,7 +11,7 @@ import {
 } from "./protocol.ts";
 
 export const WEB_SEARCH_TOOL_NAME = "antigravity_websearch";
-export const SEARCH_MODEL = "gemini-3.1-flash-lite";
+export const SEARCH_MODEL = "gemini-3.5-flash-lite";
 
 export const SEARCH_SYSTEM_INSTRUCTION =
   "You are a search engine bot. You will be given a query from a user. " +

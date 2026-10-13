@@ -3,7 +3,7 @@
   "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse",
   "headers": {
     "Host": "daily-cloudcode-pa.googleapis.com",
-    "User-Agent": "antigravity/cli/1.3.2 (aidev_client; os_type=linux; arch=amd64; cl=995389363; auth_method=consumer)",
+    "User-Agent": "antigravity/cli/1.3.3 (aidev_client; os_type=linux; arch=amd64; cl=996823801; auth_method=consumer)",
     "Transfer-Encoding": "chunked",
     "Authorization": "Bearer <REDACTED_ACCESS_TOKEN>",
     "Content-Type": "application/json",
@@ -259,7 +259,7 @@
           "functionDeclarations": [
             {
               "name": "invoke_subagent",
-              "description": "Invokes one or more subagents by name with a single tool call. Each subagent runs in the background with its own prompt and reports back when done.\n\nSpecify the Subagents array with one or more entries. Each entry defines a subagent to launch.\n\nCommunicate with subagents using the send_message tool. Examples of when to do this:\n* To check on the status of a subagent.\n* To send a running subagent further instructions.\n* To send an idle subagent new instructions.\n\nGuidelines:\n* Each invoked subagent will be uniquely identified by its conversationID.\n* Multiple subagents with the same type name can be invoked, with each subagent receiving a unique conversationID.\n* If a task is a natural continuation of an existing subagent's work, send a message to that subagent with the task rather than invoking a new subagent to conserve resources.\n* When selecting the Model argument, default to 'inherit' unless the user explicitly requests a different model.",
+              "description": "Invokes one or more subagents by name with a single tool call. Each subagent runs in the background with its own prompt and reports back when done.\n\nSpecify the Subagents array with one or more entries. Each entry defines a subagent to launch.\n\nCommunicate with subagents using the send_message tool. Examples of when to do this:\n* To check on the status of a subagent.\n* To send a running subagent further instructions.\n* To send an idle subagent new instructions.\n\nGuidelines:\n* Each invoked subagent will be uniquely identified by its conversationID.\n* Multiple subagents with the same type name can be invoked, with each subagent receiving a unique conversationID.\n* If a task is a natural continuation of an existing subagent's work, send a message to that subagent with the task rather than invoking a new subagent to conserve resources.\n* When selecting the Model argument, always use 'inherit' unless the user explicitly requests a different model or tier. Do not switch to another tier on your own based on task complexity.",
               "parameters": {
                 "type": "OBJECT",
                 "properties": {
@@ -271,7 +271,7 @@
                       "properties": {
                         "Model": {
                           "type": "STRING",
-                          "description": "Model to use for the subagent. 'inherit' (default) uses the calling agent's model. 'flash_lite' uses a very light model. 'flash' uses a smaller, faster model suited for simple tasks like research lookups, file reading, or quick searches. 'pro' uses a larger, more capable model suited for complex tasks requiring deep reasoning, large refactors, or multi-step planning.",
+                          "description": "Model to use for the subagent. Always use 'inherit' (default), which uses the calling agent's model, unless the user explicitly requests a different model or tier. 'flash_lite' uses a very light model. 'flash' uses a smaller, faster model suited for simple tasks like research lookups, file reading, or quick searches. 'pro' uses a larger, more capable model suited for complex tasks requiring deep reasoning, large refactors, or multi-step planning.",
                           "enum": [
                             "inherit",
                             "flash_lite",
