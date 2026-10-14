@@ -122,6 +122,12 @@ export interface AvailableModelItem {
   resetTime?: string;
   supportsThinking?: boolean;
   thinkingBudget?: number;
+  /**
+   * Named effort rank from the catalog (1 LOW / 2 MEDIUM / 3 HIGH). Present on most
+   * entries, including ones that also carry a thinkingBudget — see
+   * resolveThinkingConfig for which one agy actually puts on the wire.
+   */
+  thinkingLevel?: number;
   minThinkingBudget?: number;
   supportsImages?: boolean;
   maxTokens?: number;
@@ -138,6 +144,8 @@ export interface AvailableModelsCatalog {
 
 export interface CatalogThinking {
   budget?: number;
+  /** Catalog thinkingLevel rank, when the entry carries one. */
+  level?: number;
   supportsThinking: boolean;
 }
 
@@ -228,6 +236,7 @@ export function buildThinkingMap(models: AvailableModelItem[]): Record<string, C
       m.id,
       {
         ...(typeof m.thinkingBudget === "number" ? { budget: m.thinkingBudget } : {}),
+        ...(typeof m.thinkingLevel === "number" ? { level: m.thinkingLevel } : {}),
         supportsThinking: m.supportsThinking ?? false,
       },
     ]),
@@ -282,6 +291,7 @@ export function parseAvailableModels(data: any): AvailableModelsCatalog {
       resetTime: quotaInfo.resetTime,
       supportsThinking: Boolean(info.supportsThinking),
       thinkingBudget: typeof info.thinkingBudget === "number" ? info.thinkingBudget : undefined,
+      thinkingLevel: typeof info.thinkingLevel === "number" ? info.thinkingLevel : undefined,
       minThinkingBudget: typeof info.minThinkingBudget === "number" ? info.minThinkingBudget : undefined,
       supportsImages: Boolean(info.supportsImages),
       maxTokens: typeof info.maxTokens === "number" ? info.maxTokens : undefined,
@@ -427,15 +437,34 @@ function thinkingLevelFor(runtimeModelId: string): string | undefined {
   return undefined;
 }
 
+/**
+ * Catalog thinkingLevel rank -> wire effort name. Only the ranks a capture has actually
+ * shown are mapped: agy 1.3.5 sends LOW for rank 1 (Claude 5.5 low, and the
+ * gemini-3.5-flash-lite checkpoint call) and HIGH for rank 3 (Claude 5.5 high); rank 2
+ * sits between them. A rank outside this table is not guessed — resolution falls through
+ * to the budget, then to the tier suffix.
+ */
+const CATALOG_LEVEL_NAMES: Record<number, string> = { 1: "LOW", 2: "MEDIUM", 3: "HIGH" };
+
 function resolveThinkingConfig(
   runtimeModelId: string,
   snapshot: CatalogSnapshot
 ): { includeThoughts: boolean; thinkingBudget?: number; thinkingLevel?: string } {
-  const budget = snapshot.thinking[runtimeModelId]?.budget;
-  if (typeof budget === "number") {
-    return { includeThoughts: true, thinkingBudget: budget };
+  const entry = snapshot.thinking[runtimeModelId];
+  // The named effort outranks the token budget when an entry carries both. agy 1.3.5's
+  // checkpoint call is the evidence: gemini-3.5-flash-lite is catalogued with
+  // thinkingBudget -1 AND thinkingLevel 1, and agy puts thinkingLevel LOW on the wire —
+  // never thinkingBudget -1. Entries carrying only one field resolve the same either way
+  // (gemini-3.8-flash-high: budget -1 alone -> thinkingBudget -1; claude-sonnet-5-5-*:
+  // level alone -> thinkingLevel).
+  const named = entry?.level != null ? CATALOG_LEVEL_NAMES[entry.level] : undefined;
+  if (named) {
+    return { includeThoughts: true, thinkingLevel: named };
   }
-  // Budget-less tiered entries keep thoughts on and carry the effort name; a
+  if (typeof entry?.budget === "number") {
+    return { includeThoughts: true, thinkingBudget: entry.budget };
+  }
+  // No catalog effort at all: a tier-suffixed runtime ID still names its effort, and a
   // budget-less entry with no tier name stays disabled rather than guessed.
   const thinkingLevel = thinkingLevelFor(runtimeModelId);
   return thinkingLevel
