@@ -99,7 +99,11 @@ test("Seam 3: formatModelsList shows recommended-only detailed table in sort ord
   catalog.record(modelsJson);
   const output = catalog.formatList();
 
-  assert.match(output, /\(10 recommended\)/);
+  // 11, not 10: the 1.3.5 Recommended group gained gemini-4-argon-disabled, a
+  // server-gated entry (disabled: true) that agy advertises in agentModelSorts and then
+  // hides from its own model list. The provider lists the catalog as-is and does not
+  // special-case it, so the row shows up here.
+  assert.match(output, /\(11 recommended\)/);
   assert.match(output, /Model\s+Name\s+Context\s+Features\s+Rem/);
   // non-recommended runtimes excluded
   assert.doesNotMatch(output, /gemini-2\.5-flash/);
@@ -128,7 +132,9 @@ test("Seam 3: buildDynamicPublicModels generates models dynamically from agy mod
       stored: {},
     });
 
-    assert.equal(publicModels.length, 4);
+    // 5, not 4, for the same reason: gemini-4-argon-disabled resolves to its own base
+    // model. It is not selectable on the backend, so this is a listing difference only.
+    assert.equal(publicModels.length, 5);
     const ids = publicModels.map((m) => m.id);
     assert.ok(ids.includes("gemini-3.8-flash"));
     assert.ok(ids.includes("claude-sonnet-5-5"));
@@ -430,11 +436,11 @@ test("Seam 3: resolveModelPlan dynamically resolves tiers for new models", () =>
   assert.equal(catalog.resolvePlan("gemini-99.9-flash", "medium").runtimeModelId, "gemini-99.9-flash-medium");
   assert.equal(catalog.resolvePlan("gemini-99.9-flash", "low").runtimeModelId, "gemini-99.9-flash-low");
   assert.equal(catalog.resolvePlan("gemini-99.9-flash", undefined).runtimeModelId, "gemini-99.9-flash-high");
-  // No per-ID thinking data in this snapshot: no budget is guessed. The tier the
-  // runtime id names is still forwarded as thinkingLevel, never a token count.
+  // A snapshot that names no effort for the runtime id gets no effort on the wire: the
+  // tier suffix is not read back as a wire name, and no token count is guessed either.
   assert.deepEqual(catalog.resolvePlan("gemini-99.9-flash", "medium").thinkingConfig, {
-    includeThoughts: true,
-    thinkingLevel: "MEDIUM",
+    includeThoughts: false,
+    thinkingBudget: 0,
   });
 });
 
@@ -444,10 +450,14 @@ test("Seam 3: -max/-xhigh tiered runtime IDs group under the base and resolve", 
     ok: true,
     json: async () => ({
       models: {
-        "gemini-4-argon-max": { model: "gemini_4_argon_max", supportsThinking: true },
-        "gemini-4-argon-high": { model: "gemini_4_argon_high", supportsThinking: true },
-        "gemini-4-krypton-xhigh": { model: "gemini_4_krypton_xhigh", supportsThinking: true },
-        "gemini-4-krypton-high": { model: "gemini_4_krypton_high", supportsThinking: true },
+        // thinkingLevel is what a real entry carries, and it is what the wire name comes
+        // from: the -max/-xhigh suffix decides which variant the effort resolves to, never
+        // what the request says. A rank this table cannot spell would run without thoughts
+        // until a capture spells it.
+        "gemini-4-argon-max": { model: "gemini_4_argon_max", supportsThinking: true, thinkingLevel: 3 },
+        "gemini-4-argon-high": { model: "gemini_4_argon_high", supportsThinking: true, thinkingLevel: 3 },
+        "gemini-4-krypton-xhigh": { model: "gemini_4_krypton_xhigh", supportsThinking: true, thinkingLevel: 3 },
+        "gemini-4-krypton-high": { model: "gemini_4_krypton_high", supportsThinking: true, thinkingLevel: 3 },
       },
     }),
   });
@@ -474,16 +484,39 @@ test("Seam 3: -max/-xhigh tiered runtime IDs group under the base and resolve", 
     // Up to max, never down: xhigh rides the model's top tier
     assert.equal(catalog.resolvePlan("gemini-4-argon", "xhigh").runtimeModelId, "gemini-4-argon-max");
     assert.equal(catalog.resolvePlan("gemini-4-argon", "high").runtimeModelId, "gemini-4-argon-high");
-    // Budget-less tiered entry: the effort is named on the request
+    // Budget-less tiered entry: the effort is named on the request, spelled from the
+    // catalog's rank — not from the -max suffix that picked the variant.
     assert.deepEqual(catalog.resolvePlan("gemini-4-argon", "max").thinkingConfig, {
       includeThoughts: true,
-      thinkingLevel: "MAX",
+      thinkingLevel: "HIGH",
     });
   } finally {
     globalThis.fetch = realFetch;
   }
 });
 
+test("Seam 3: no selectable model resolves to the disabled thinking fallback", () => {
+  // Every id the picker offers comes from the catalog Recommended group, and every one of
+  // them has to name an effort: either a rank the table spells or a token budget. The
+  // disabled fallback ({includeThoughts: false}) is for entries the catalog says nothing
+  // about, and those are not selectable — so a selectable id landing there means the catalog
+  // grew a shape the resolution does not cover.
+  //
+  // Verified live against agy 1.3.5 before this was written: all 11 recommended ids resolve
+  // to includeThoughts true, and gemini-4-argon-disabled — the one entry carrying BOTH
+  // thinkingBudget -1 and thinkingLevel 2 — goes out as thinkingLevel MEDIUM, which is the
+  // level > budget order holding on the wire.
+  const catalog = createModelCatalog();
+  catalog.record(modelsJson);
+
+  const recommended = modelsJson.agentModelSorts.flatMap((s) => s.groups.flatMap((g) => g.modelIds));
+  assert.ok(recommended.length > 0);
+
+  const disabled = recommended.filter(
+    (id) => catalog.resolvePlan(id, undefined).thinkingConfig.includeThoughts !== true
+  );
+  assert.deepEqual(disabled, [], "selectable ids that resolve to disabled thinking");
+});
 test("Seam 3: resolveModelPlan resolves thinking from snapshot wire values", () => {
   const catalog = createModelCatalog();
   catalog.record(modelsJson);

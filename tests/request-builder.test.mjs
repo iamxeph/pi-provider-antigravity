@@ -377,8 +377,14 @@ test("Seam 1: integer thinkingBudget matches PR #39 / #36 matrix across models",
   // A -1 catalog budget rides the wire verbatim (agy 1.3.3 turn1: 3.8-flash-high → -1).
   // 2.5 Pro keeps a small numeric budget.
   assert.deepEqual(budget("gemini-2.5-pro"), { includeThoughts: true, thinkingBudget: 1024 });
-  // A budget-less runtime ID with no tier suffix stays disabled rather than guessed.
-  assert.deepEqual(budget("gemini-3.1-flash-lite"), { includeThoughts: false, thinkingBudget: 0 });
+  // agy 1.3.5 catalogued gemini-3.1-flash-lite with BOTH thinkingBudget -1 and
+  // thinkingLevel 1, and the named effort wins: the 1.3.5 checkpoint call proves it on
+  // the wire for the sibling entry gemini-3.5-flash-lite (same both-fields shape), which
+  // agy sends as thinkingLevel LOW rather than thinkingBudget -1.
+  assert.deepEqual(budget("gemini-3.1-flash-lite"), { includeThoughts: true, thinkingLevel: "LOW" });
+  // A runtime ID carrying neither a catalog effort nor a tier suffix stays disabled
+  // rather than guessed.
+  assert.deepEqual(budget("gemini-3.1-flash-image"), { includeThoughts: false, thinkingBudget: 0 });
   // Claude 5.5 ships no token budget: the effort is named instead.
   assert.deepEqual(budget("claude-sonnet-5-5-high"), {
     includeThoughts: true,
@@ -1719,7 +1725,12 @@ test("Seam 1 (#15): thinking replay matches the agy CLI part-split byte-for-byte
   let fixtureTurn;
   let runtimeModel;
   for (const file of geminiReqs) {
-    const body = JSON.parse(fs.readFileSync(newestCapture(file), "utf-8")).body;
+    const candidate = newestCapture(file);
+    // The candidate list spans slots a capture may omit (the pro slots are omitted from
+    // 1.3.3 on), and whether any candidate carries the split is sampling-dependent, so a
+    // missing file is a candidate that cannot match, not a failure.
+    if (!fs.existsSync(candidate)) continue;
+    const body = JSON.parse(fs.readFileSync(candidate, "utf-8")).body;
     const turn = body.request.contents.find(
       (c) =>
         c.role === "model" &&
