@@ -495,6 +495,28 @@ test("Seam 3: -max/-xhigh tiered runtime IDs group under the base and resolve", 
   }
 });
 
+test("Seam 3: no selectable model resolves to the disabled thinking fallback", () => {
+  // Every id the picker offers comes from the catalog Recommended group, and every one of
+  // them has to name an effort: either a rank the table spells or a token budget. The
+  // disabled fallback ({includeThoughts: false}) is for entries the catalog says nothing
+  // about, and those are not selectable — so a selectable id landing there means the catalog
+  // grew a shape the resolution does not cover.
+  //
+  // Verified live against agy 1.3.5 before this was written: all 11 recommended ids resolve
+  // to includeThoughts true, and gemini-4-argon-disabled — the one entry carrying BOTH
+  // thinkingBudget -1 and thinkingLevel 2 — goes out as thinkingLevel MEDIUM, which is the
+  // level > budget order holding on the wire.
+  const catalog = createModelCatalog();
+  catalog.record(modelsJson);
+
+  const recommended = modelsJson.agentModelSorts.flatMap((s) => s.groups.flatMap((g) => g.modelIds));
+  assert.ok(recommended.length > 0);
+
+  const disabled = recommended.filter(
+    (id) => catalog.resolvePlan(id, undefined).thinkingConfig.includeThoughts !== true
+  );
+  assert.deepEqual(disabled, [], "selectable ids that resolve to disabled thinking");
+});
 test("Seam 3: resolveModelPlan resolves thinking from snapshot wire values", () => {
   const catalog = createModelCatalog();
   catalog.record(modelsJson);
