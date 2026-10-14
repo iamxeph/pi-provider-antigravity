@@ -436,11 +436,11 @@ test("Seam 3: resolveModelPlan dynamically resolves tiers for new models", () =>
   assert.equal(catalog.resolvePlan("gemini-99.9-flash", "medium").runtimeModelId, "gemini-99.9-flash-medium");
   assert.equal(catalog.resolvePlan("gemini-99.9-flash", "low").runtimeModelId, "gemini-99.9-flash-low");
   assert.equal(catalog.resolvePlan("gemini-99.9-flash", undefined).runtimeModelId, "gemini-99.9-flash-high");
-  // No per-ID thinking data in this snapshot: no budget is guessed. The tier the
-  // runtime id names is still forwarded as thinkingLevel, never a token count.
+  // A snapshot that names no effort for the runtime id gets no effort on the wire: the
+  // tier suffix is not read back as a wire name, and no token count is guessed either.
   assert.deepEqual(catalog.resolvePlan("gemini-99.9-flash", "medium").thinkingConfig, {
-    includeThoughts: true,
-    thinkingLevel: "MEDIUM",
+    includeThoughts: false,
+    thinkingBudget: 0,
   });
 });
 
@@ -450,10 +450,14 @@ test("Seam 3: -max/-xhigh tiered runtime IDs group under the base and resolve", 
     ok: true,
     json: async () => ({
       models: {
-        "gemini-4-argon-max": { model: "gemini_4_argon_max", supportsThinking: true },
-        "gemini-4-argon-high": { model: "gemini_4_argon_high", supportsThinking: true },
-        "gemini-4-krypton-xhigh": { model: "gemini_4_krypton_xhigh", supportsThinking: true },
-        "gemini-4-krypton-high": { model: "gemini_4_krypton_high", supportsThinking: true },
+        // thinkingLevel is what a real entry carries, and it is what the wire name comes
+        // from: the -max/-xhigh suffix decides which variant the effort resolves to, never
+        // what the request says. A rank this table cannot spell would run without thoughts
+        // until a capture spells it.
+        "gemini-4-argon-max": { model: "gemini_4_argon_max", supportsThinking: true, thinkingLevel: 3 },
+        "gemini-4-argon-high": { model: "gemini_4_argon_high", supportsThinking: true, thinkingLevel: 3 },
+        "gemini-4-krypton-xhigh": { model: "gemini_4_krypton_xhigh", supportsThinking: true, thinkingLevel: 3 },
+        "gemini-4-krypton-high": { model: "gemini_4_krypton_high", supportsThinking: true, thinkingLevel: 3 },
       },
     }),
   });
@@ -480,10 +484,11 @@ test("Seam 3: -max/-xhigh tiered runtime IDs group under the base and resolve", 
     // Up to max, never down: xhigh rides the model's top tier
     assert.equal(catalog.resolvePlan("gemini-4-argon", "xhigh").runtimeModelId, "gemini-4-argon-max");
     assert.equal(catalog.resolvePlan("gemini-4-argon", "high").runtimeModelId, "gemini-4-argon-high");
-    // Budget-less tiered entry: the effort is named on the request
+    // Budget-less tiered entry: the effort is named on the request, spelled from the
+    // catalog's rank — not from the -max suffix that picked the variant.
     assert.deepEqual(catalog.resolvePlan("gemini-4-argon", "max").thinkingConfig, {
       includeThoughts: true,
-      thinkingLevel: "MAX",
+      thinkingLevel: "HIGH",
     });
   } finally {
     globalThis.fetch = realFetch;

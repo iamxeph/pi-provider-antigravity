@@ -422,27 +422,17 @@ function followRenames(runtimeModelId: string, snapshot: CatalogSnapshot): strin
 }
 
 /**
- * Wire effort name for a tiered runtime model whose catalog entry carries no
- * thinkingBudget. agy 1.2.16 named the effort on those entries instead of a token
- * count (Claude 5.5: thinkingLevel HIGH/MEDIUM/LOW; thinkingBudget 0 on <=1.3.3, omitted
- * on >=1.3.4 wire). Higher tiers follow the same uppercase-effort naming (XHIGH/MAX) —
- * unverified until a budget-less tier with such a suffix ships; a capture then settles the spelling.
- */
-function thinkingLevelFor(runtimeModelId: string): string | undefined {
-  for (const tier of Object.keys(CANONICAL_TIER_SUFFIXES) as CanonicalTier[]) {
-    if (tierSpellings(tier).some((suffix) => runtimeModelId.endsWith(suffix))) {
-      return tier.toUpperCase();
-    }
-  }
-  return undefined;
-}
-
-/**
- * Catalog thinkingLevel rank -> wire effort name. Only the ranks a capture has actually
- * shown are mapped: agy 1.3.5 sends LOW for rank 1 (Claude 5.5 low, and the
- * gemini-3.5-flash-lite checkpoint call) and HIGH for rank 3 (Claude 5.5 high); rank 2
- * sits between them. A rank outside this table is not guessed — resolution falls through
- * to the budget, then to the tier suffix.
+ * Catalog thinkingLevel rank -> wire effort name. The catalog is the only source: the
+ * runtime ID's tier suffix and this rank are two spellings of the same fact (Claude 5.5
+ * pairs -low/-medium/-high with 1/2/3), and reading it off the ID instead was a second
+ * path that could disagree with what the server actually said.
+ *
+ * Only the ranks a capture has actually shown are mapped: agy 1.3.5 sends LOW for rank 1
+ * (Claude 5.5 low, and the gemini-3.5-flash-lite checkpoint call) and HIGH for rank 3
+ * (Claude 5.5 high); rank 2 sits between them. No capture has shown a rank above 3 — every
+ * entry across agy_cli_1.3.3/1.3.4/1.3.5 reports 1, 2 or 3. A rank outside this table is
+ * not guessed: resolution falls through to the budget, and an entry with neither runs
+ * without thoughts until a capture spells the rank and the row is added here.
  */
 const CATALOG_LEVEL_NAMES: Record<number, string> = { 1: "LOW", 2: "MEDIUM", 3: "HIGH" };
 
@@ -464,12 +454,11 @@ function resolveThinkingConfig(
   if (typeof entry?.budget === "number") {
     return { includeThoughts: true, thinkingBudget: entry.budget };
   }
-  // No catalog effort at all: a tier-suffixed runtime ID still names its effort, and a
-  // budget-less entry with no tier name stays disabled rather than guessed.
-  const thinkingLevel = thinkingLevelFor(runtimeModelId);
-  return thinkingLevel
-    ? { includeThoughts: true, thinkingLevel }
-    : { includeThoughts: false, thinkingBudget: 0 };
+  // The catalog named no effort at all: stay disabled rather than read one off the runtime
+  // ID. The ID's tier suffix and the catalog's rank are the same fact, so the catalog is
+  // where it comes from; when a rank this table cannot spell ships, the capture that spells
+  // it adds the row here, and until then the entry runs without thoughts.
+  return { includeThoughts: false, thinkingBudget: 0 };
 }
 
 export function resolveModelPlan(
