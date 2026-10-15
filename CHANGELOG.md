@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.24.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.23.0...v0.24.0) (2026-10-15)
+
+
+### Features
+
+* **wire:** adopt agy 1.3.5 wire parity and catalog effort resolution ([#73](https://github.com/iamxeph/pi-provider-antigravity/issues/73)) ([6973152](https://github.com/iamxeph/pi-provider-antigravity/commit/6973152b3e30aaa4e6d12317ec2e00a8dd0e44f5))
+
+
+### Bug Fixes
+
+* **catalog:** hide disabled models and derive limits across tier variants ([#76](https://github.com/iamxeph/pi-provider-antigravity/issues/76)) ([ec31982](https://github.com/iamxeph/pi-provider-antigravity/commit/ec31982bef9acfb4f2a284e3a93a1ab8cce631b3))
+
 ## [0.23.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.22.0...v0.23.0) (2026-10-13)
 
 
