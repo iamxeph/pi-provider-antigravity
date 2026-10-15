@@ -507,6 +507,12 @@ function formatModelDisplayName(baseId: string, rawDisplayName?: string): string
   return words.join(" ");
 }
 
+/** Smallest positive value across variants, or undefined when none carries one. */
+function minAcrossVariants(values: Array<number | undefined>): number | undefined {
+  const known = values.filter((n): n is number => typeof n === "number" && n > 0);
+  return known.length > 0 ? Math.min(...known) : undefined;
+}
+
 function synthesizeDynamicModel(baseId: string, items: AvailableModelItem[]): Model<any> {
   const repItem = items.find((it) => it.id === `${baseId}-high` || it.id === baseId) || items[0];
 
@@ -534,13 +540,17 @@ function synthesizeDynamicModel(baseId: string, items: AvailableModelItem[]): Mo
     provider: PROVIDER_ID,
     api: "antigravity-api",
     baseUrl: DEFAULT_ENDPOINT,
-    reasoning: repItem?.supportsThinking ?? true,
+    // One Pi Model stands for every tier variant, and any of them may serve a request,
+    // so capabilities and limits are the ones every variant honors.
+    // ponytail: limits are the minimum across variants, so a larger tier's ceiling is
+    // under-reported when tiers differ; upgrade path is clamping per resolved variant.
+    reasoning: items.some((it) => it.supportsThinking),
     thinkingLevelMap,
-    input: repItem?.supportsImages ? ["text", "image"] : ["text"],
+    input: items.every((it) => it.supportsImages) ? ["text", "image"] : ["text"],
     cost: estimateModelCost(baseId),
     promptCache: profile.promptCache,
-    contextWindow: repItem?.maxTokens || defaultContext,
-    maxTokens: repItem?.maxOutputTokens || defaultMaxOutput,
+    contextWindow: minAcrossVariants(items.map((it) => it.maxTokens)) ?? defaultContext,
+    maxTokens: minAcrossVariants(items.map((it) => it.maxOutputTokens)) ?? defaultMaxOutput,
   };
 }
 

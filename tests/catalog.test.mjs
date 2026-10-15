@@ -105,6 +105,39 @@ test("Seam 3: server-gated (disabled: true) entries never reach the catalog", as
   }
 });
 
+test("Seam 3: synthesized model takes the limits every tier variant honors", async () => {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => ({
+      models: {
+        "gemini-77-flash-low": {
+          model: "E_LOW", supportsThinking: false, supportsImages: false,
+          maxTokens: 524288, maxOutputTokens: 32768,
+        },
+        "gemini-77-flash-high": {
+          model: "E_HIGH", supportsThinking: true, supportsImages: true,
+          maxTokens: 1048576, maxOutputTokens: 65536,
+        },
+        // No limits on the wire: defers to its siblings, not the profile default.
+        "gemini-77-flash-medium": { model: "E_MED", supportsThinking: true, supportsImages: true },
+      },
+    }),
+  });
+  try {
+    const catalog = createModelCatalog();
+    const [model] = await catalog.refresh({ allowNetwork: true, credential: TEST_CREDENTIAL, stored: {} });
+    assert.equal(model.id, "gemini-77-flash");
+    // Read off -high alone, these were 1048576 / 65536 / image input.
+    assert.equal(model.contextWindow, 524288);
+    assert.equal(model.maxTokens, 32768);
+    assert.deepEqual(model.input, ["text"]);
+    assert.equal(model.reasoning, true, "any thinking-capable variant makes the model reasoning");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
 test("Seam 3: formatModelsList formats clean table view", () => {
   const catalog = createModelCatalog();
   catalog.record(modelsJson);
