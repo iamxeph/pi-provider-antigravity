@@ -56,6 +56,7 @@ test("Seam 2: stream adapter translates feeder events to Pi message", async () =
   try {
     const model = {
       id: "gemini-3.8-flash",
+      reasoning: true,
       provider: "antigravity",
       api: "antigravity-api",
       maxTokens: 65536,
@@ -93,6 +94,7 @@ test("Seam 2 (#16): lone thoughtSignature surfaces on the message and replays in
     message = await streamAntigravity(
       {
         id: "gemini-3.8-flash",
+        reasoning: true,
         provider: "antigravity",
         api: "antigravity-api",
         maxTokens: 65536,
@@ -161,6 +163,7 @@ test("Seam 2 (0.86 Parity): streamAntigravity extracts systemPrompt and tools fr
     const message = await streamAntigravity(
       {
         id: "gemini-3.8-flash",
+        reasoning: true,
         provider: "antigravity",
         api: "antigravity-api",
         maxTokens: 65536,
@@ -316,6 +319,7 @@ test("Seam 2: calculateCost updates usage.cost with model pricing", async () => 
     const message = await streamAntigravity(
       {
         id: "gemini-3.8-flash",
+        reasoning: true,
         provider: "antigravity",
         api: "antigravity-api",
         maxTokens: 65536,
@@ -354,6 +358,7 @@ test("Seam 2 (H1 Fix): streamAntigravity throws error on non-STOP finishReason",
     const stream = streamAntigravity(
       {
         id: "gemini-3.8-flash",
+        reasoning: true,
         provider: "antigravity",
         api: "antigravity-api",
         maxTokens: 65536,
@@ -392,6 +397,7 @@ test("Seam 2 (H2 Fix): stream ending without finishReason is rejected as truncat
     const stream = streamAntigravity(
       {
         id: "gemini-3.8-flash",
+        reasoning: true,
         provider: "antigravity",
         api: "antigravity-api",
         maxTokens: 65536,
@@ -440,6 +446,7 @@ test("Seam 2 (H3 & H4 Fix): streamAntigravity invokes onPayload, onResponse, and
     const message = await streamAntigravity(
       {
         id: "gemini-3.8-flash",
+        reasoning: true,
         provider: "antigravity",
         api: "antigravity-api",
         baseUrl: "https://custom-gateway.example.com",
@@ -495,6 +502,7 @@ test("Seam 2 (M2 Fix): streamAntigravity throws on in-stream SSE error payload",
     const stream = streamAntigravity(
       {
         id: "gemini-3.8-flash",
+        reasoning: true,
         provider: "antigravity",
         api: "antigravity-api",
         maxTokens: 65536,
@@ -533,6 +541,7 @@ const runThinkingOnly = async (finishReason) => {
     return await streamAntigravity(
       {
         id: "gemini-3.8-flash",
+        reasoning: true,
         provider: "antigravity",
         api: "antigravity-api",
         maxTokens: 65536,
@@ -580,6 +589,7 @@ test("Seam 2: premature or empty STOP with no answer triggers auto-retryable err
       return await streamAntigravity(
         {
           id: "gemini-3.8-flash",
+          reasoning: true,
           provider: "antigravity",
           api: "antigravity-api",
           maxTokens: 65536,
@@ -645,6 +655,7 @@ test("Seam 2 (M4 Fix): streamAntigravity stops with aborted reason on AbortSigna
     const stream = streamAntigravity(
       {
         id: "gemini-3.8-flash",
+        reasoning: true,
         provider: "antigravity",
         api: "antigravity-api",
         maxTokens: 65536,
@@ -660,6 +671,51 @@ test("Seam 2 (M4 Fix): streamAntigravity stops with aborted reason on AbortSigna
 
     const message = await stream.result();
     assert.equal(message.stopReason, "aborted");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Seam 2: requested thinking level is clamped to the model's catalog tiers before resolving", async () => {
+  const realFetch = globalThis.fetch;
+  try {
+    // A model whose catalog ships -high and -max only (no -low/-medium/-xhigh).
+    globalThis.fetch = async () => ({
+      ok: true,
+      json: async () => ({
+        models: {
+          "gemini-4-argon-high": { model: "E_HIGH", supportsThinking: true, thinkingLevel: 3 },
+          "gemini-4-argon-max": { model: "E_MAX", supportsThinking: true, thinkingLevel: 3 },
+        },
+      }),
+    });
+    const catalog = createModelCatalog();
+    const [argon] = await catalog.refresh({
+      allowNetwork: true,
+      credential: { type: "oauth", access: JSON.stringify({ token: "t", projectId: "p" }) },
+      stored: {},
+    });
+
+    const sentModelFor = async (reasoning) => {
+      let body;
+      const sse = stubFetchWithSse(sseLoneSig);
+      globalThis.fetch = async (url, init) => {
+        body = JSON.parse(init.body);
+        return sse();
+      };
+      await streamAntigravity(
+        argon,
+        { messages: [{ role: "user", content: "hi" }] },
+        { apiKey: JSON.stringify({ token: "t", projectId: "p" }), reasoning },
+        catalog
+      ).result();
+      return body.model;
+    };
+
+    // Pi hands the raw level to the provider; xhigh rides up to -max, low up to -high.
+    assert.equal(await sentModelFor("xhigh"), "gemini-4-argon-max");
+    assert.equal(await sentModelFor("low"), "gemini-4-argon-high");
+    assert.equal(await sentModelFor(undefined), "gemini-4-argon-high");
   } finally {
     globalThis.fetch = realFetch;
   }

@@ -10,7 +10,7 @@ import {
   PRIVATE_SNAPSHOT_KEY,
 } from "../src/model-catalog.ts";
 import { buildAntigravityRequestBody } from "../src/builder.ts";
-import { normalizeContext } from "@earendil-works/pi-ai";
+import { clampThinkingLevel, getSupportedThinkingLevels, normalizeContext } from "@earendil-works/pi-ai";
 
 const modelsJson = JSON.parse(fs.readFileSync(newestCapture("models.resp.json"), "utf-8"));
 const TEST_CREDENTIAL = { type: "oauth", access: JSON.stringify({ token: "test-token", projectId: "test-project" }) };
@@ -28,10 +28,9 @@ test("Seam 3: parseAvailableModels extracts models and model_enum", () => {
   assert.equal(flash38.modelEnum, "MODEL_PLACEHOLDER_M318");
   assert.equal(flash38.supportsThinking, true);
 
-  // thinkingBudget/minThinkingBudget ride the wire per Runtime Model ID
-  // (the newest capture's models.resp.json) — parse must keep them.
+  // thinkingBudget rides the wire per Runtime Model ID
+  // (the newest capture's models.resp.json) — parse must keep it.
   assert.equal(flash38.thinkingBudget, -1);
-  assert.equal(flash38.minThinkingBudget, 32);
 
   const flash38med = items.models.find((m) => m.id === "gemini-3.8-flash-medium");
   assert.ok(flash38med);
@@ -365,7 +364,9 @@ test("Seam 3: buildDynamicPublicModels dynamically synthesizes unreleased future
     assert.equal(synthesized.reasoning, true);
     assert.deepEqual(synthesized.input, ["text", "image"]);
     assert.deepEqual(synthesized.cost, { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 });
-    assert.deepEqual(synthesized.thinkingLevelMap, { off: null, minimal: null });
+    assert.deepEqual(synthesized.thinkingLevelMap, {
+      off: null, minimal: null, low: "low", medium: "medium", high: "high", xhigh: null, max: null,
+    });
     assert.deepEqual(synthesized.promptCache, { short: 300 });
   } finally {
     globalThis.fetch = realFetch;
@@ -406,54 +407,37 @@ test("Seam 3: synthesized models hide effort levels the snapshot has no variant 
     const catalog = createModelCatalog();
     const publicModels = await catalog.refresh({ allowNetwork: true, credential: TEST_CREDENTIAL, stored: {} });
     const byId = new Map(publicModels.map((m) => [m.id, m]));
-    const hiddenLevels = (id) =>
-      Object.entries(byId.get(id).thinkingLevelMap)
-        .filter(([, mapped]) => mapped === null)
-        .map(([level]) => level)
-        .sort();
+    // What Pi's picker offers, read through Pi's own level filter.
+    const offered = (id) => getSupportedThinkingLevels(byId.get(id));
 
-    assert.deepEqual(hiddenLevels("gemini-3.8-flash"), ["minimal", "off"]);
-    assert.deepEqual(hiddenLevels("gemini-3-flash"), ["low", "medium", "minimal", "off"]);
-    assert.deepEqual(hiddenLevels("gpt-oss-120b"), ["high", "low", "minimal", "off"]);
-    // Claude 5.5 is tiered like Gemini now, so only the two levels it never
-    // spells out stay hidden.
-    assert.deepEqual(hiddenLevels("claude-opus-5-5"), ["minimal", "off"]);
-    assert.deepEqual(hiddenLevels("claude-sonnet-5-5"), ["minimal", "off"]);
+    assert.deepEqual(offered("gemini-3.8-flash"), ["low", "medium", "high"]);
+    // Unsuffixed runtime ID only: it serves the default (high) effort.
+    assert.deepEqual(offered("gemini-3-flash"), ["high"]);
+    assert.deepEqual(offered("gpt-oss-120b"), ["medium"]);
+    assert.deepEqual(offered("claude-opus-5-5"), ["low", "medium", "high"]);
+    assert.deepEqual(offered("claude-sonnet-5-5"), ["low", "medium", "high"]);
   } finally {
     globalThis.fetch = realFetch;
   }
 });
 
-test("Seam 3: catalog resolves canonical tier order and preserves picker invariants", () => {
+test("Seam 3: catalog resolves tiers spelled with Pi level names", () => {
   const catalog = createModelCatalog();
   catalog.record({
     models: {
       "model-a-low": { model: "model_a_low" },
-      "model-a-extra-low": { model: "model_a_extra_low" },
       "model-a-medium": { model: "model_a_medium" },
       "model-a-high": { model: "model_a_high" },
-      "model-a-thinking": { model: "model_a_thinking" },
       "model-a-tiered": { model: "model_a_tiered" },
     },
   });
 
-  // 1. Canonical suffix is resolved when available
+  // 1. The tier named after the effort is resolved
   assert.equal(catalog.resolvePlan("model-a", "low").runtimeModelId, "model-a-low");
   assert.equal(catalog.resolvePlan("model-a", "medium").runtimeModelId, "model-a-medium");
   assert.equal(catalog.resolvePlan("model-a", "high").runtimeModelId, "model-a-high");
 
-  // 2. Alias fallback is resolved when canonical suffix is absent
-  const aliasCatalog = createModelCatalog();
-  aliasCatalog.record({
-    models: {
-      "model-b-extra-low": { model: "model_b_extra_low" },
-      "model-b-thinking": { model: "model_b_thinking" },
-    },
-  });
-  assert.equal(aliasCatalog.resolvePlan("model-b", "low").runtimeModelId, "model-b-extra-low");
-  assert.equal(aliasCatalog.resolvePlan("model-b", "high").runtimeModelId, "model-b-thinking");
-
-  // 3. An exact runtime ID outside the tier vocabulary (-tiered: server-directed
+  // 2. An exact runtime ID outside the tier vocabulary (-tiered: server-directed
   // dynamic thinking, never a user effort) resolves to itself through the
   // generic single-variant path.
   const tieredCatalog = createModelCatalog();
@@ -478,7 +462,6 @@ test("Seam 3: resolveModelPlan dynamically resolves tiers for new models", () =>
       "gemini-99.9-flash-low",
     ],
     thinking: {},
-    deprecated: {},
   };
 
   const catalog = createModelCatalog();
@@ -527,15 +510,18 @@ test("Seam 3: -max/-xhigh tiered runtime IDs group under the base and resolve", 
     const krypton = publicModels.find((m) => m.id === "gemini-4-krypton");
     assert.ok(argon);
     assert.ok(krypton);
-    assert.equal(argon.thinkingLevelMap.max, "max");
-    assert.equal(argon.thinkingLevelMap.xhigh, undefined);
-    assert.equal(krypton.thinkingLevelMap.xhigh, "xhigh");
-    assert.equal(krypton.thinkingLevelMap.max, undefined);
+    assert.deepEqual(getSupportedThinkingLevels(argon), ["high", "max"]);
+    assert.deepEqual(getSupportedThinkingLevels(krypton), ["high", "xhigh"]);
 
-    assert.equal(catalog.resolvePlan("gemini-4-argon", "max").runtimeModelId, "gemini-4-argon-max");
-    // Up to max, never down: xhigh rides the model's top tier
-    assert.equal(catalog.resolvePlan("gemini-4-argon", "xhigh").runtimeModelId, "gemini-4-argon-max");
-    assert.equal(catalog.resolvePlan("gemini-4-argon", "high").runtimeModelId, "gemini-4-argon-high");
+    // stream.ts clamps the requested level with Pi before resolving, as Pi's built-in
+    // providers do: an xhigh request on a model without -xhigh rides up to its -max tier.
+    const resolveFor = (model, level) =>
+      catalog.resolvePlan(model.id, clampThinkingLevel(model, level)).runtimeModelId;
+    assert.equal(resolveFor(argon, "max"), "gemini-4-argon-max");
+    assert.equal(resolveFor(argon, "xhigh"), "gemini-4-argon-max");
+    assert.equal(resolveFor(argon, "high"), "gemini-4-argon-high");
+    assert.equal(resolveFor(argon, "medium"), "gemini-4-argon-high");
+    assert.equal(resolveFor(krypton, "max"), "gemini-4-krypton-xhigh");
     // Budget-less tiered entry: the effort is named on the request, spelled from the
     // catalog's rank — not from the -max suffix that picked the variant.
     assert.deepEqual(catalog.resolvePlan("gemini-4-argon", "max").thinkingConfig, {
@@ -607,7 +593,7 @@ test("Seam 3: resolveModelPlan disables thoughts for wire-marked non-thinking mo
   const catalog = createModelCatalog();
   catalog.record(modelsJson);
   const plain = catalog.generation().items.models.find(
-    (m) => m.thinkingBudget === undefined && !/-(low|medium|high|extra-low|thinking|agent)$/.test(m.id)
+    (m) => m.thinkingBudget === undefined && !/-(low|medium|high)$/.test(m.id)
   );
   assert.ok(plain, "the capture must contain a non-tiered model without thinking fields");
   const plan = catalog.resolvePlan(plain.id, undefined);
@@ -629,14 +615,13 @@ test("Seam 3: resolveModelPlan degrades to disabled thoughts without per-ID thin
     enums,
     runtimeIds,
     thinking: { "gemini-3.8-flash-high": { supportsThinking: true } },
-    deprecated: {},
   });
   assert.deepEqual(catalog2.resolvePlan("gemini-3.1-flash-lite", "high").thinkingConfig, disabled);
 });
 
 test("Seam 3: resolveModelPlan fails fast without runtime IDs instead of guessing a tier", () => {
   const enums = { "gemini-3.8-flash-high": "MODEL_PLACEHOLDER_M318" };
-  const empty = { enums, runtimeIds: [], thinking: {}, deprecated: {} };
+  const empty = { enums, runtimeIds: [], thinking: {} };
 
   const catalog = createModelCatalog();
   catalog.restore(empty);
@@ -653,7 +638,6 @@ test("Seam 3: resolveModelPlan throws for IDs missing from the snapshot", () => 
     enums: { "gemini-3.7-flash-high": "MODEL_PLACEHOLDER_M298" },
     runtimeIds: ["gemini-3.7-flash-high"],
     thinking: {},
-    deprecated: {},
   });
   assert.throws(
     () => catalog.resolvePlan("gemini-3.6-flash-high", undefined),
@@ -667,7 +651,6 @@ test("Seam 3: buildAntigravityRequestBody uses the plan model_enum", () => {
     enums: { "gemini-99.9-flash-high": "MODEL_PLACEHOLDER_M999" },
     runtimeIds: [],
     thinking: {},
-    deprecated: {},
   });
 
   const body = buildAntigravityRequestBody({
@@ -679,52 +662,6 @@ test("Seam 3: buildAntigravityRequestBody uses the plan model_enum", () => {
   });
 
   assert.equal(body.request.labels.model_enum, "MODEL_PLACEHOLDER_M999");
-});
-
-test("Seam 3: parseAvailableModels extracts server-directed renames", () => {
-  const catalog = createModelCatalog();
-  catalog.record(modelsJson);
-  // The 1.3.3 capture carries no rename map (the backend A/Bs catalog variants;
-  // the 1.3.2 generation renamed gemini-3.1-pro-high → gemini-pro-agent).
-  assert.equal(catalog.generation().items.deprecated, undefined);
-
-  const renaming = createModelCatalog();
-  renaming.record({
-    models: { "old-high": { model: "E_OLD" }, "new-high": { model: "E_NEW" } },
-    deprecatedModelIds: { "old-high": { newModelId: "new-high" } },
-  });
-  assert.deepEqual(renaming.generation().items.deprecated, { "old-high": "new-high" });
-});
-
-test("Seam 3: resolveModelPlan follows server-directed renames", () => {
-  // Variant B baseline: the current capture carries no 3.1 Pro IDs and no rename
-  // map, so its picker-era public ID no longer resolves…
-  const current = createModelCatalog();
-  current.record(modelsJson);
-  assert.throws(() => current.resolvePlan("gemini-3.1-pro", "high"), /Unknown model "gemini-3\.1-pro"/);
-
-  // …while a stored snapshot from the rename generation still does: the map rides
-  // the persisted snapshot, so old sessions keep resolving.
-  const catalog = createModelCatalog();
-  catalog.restore({
-    enums: { "gemini-pro-agent": "MODEL_PLACEHOLDER_M16", "gemini-3.1-pro-high": "MODEL_PLACEHOLDER_M37" },
-    runtimeIds: ["gemini-pro-agent", "gemini-3.1-pro-high"],
-    thinking: { "gemini-pro-agent": { budget: 10001, supportsThinking: true } },
-    deprecated: { "gemini-3.1-pro-high": "gemini-pro-agent" },
-  });
-  assert.equal(catalog.resolvePlan("gemini-3.1-pro", "high").runtimeModelId, "gemini-pro-agent");
-  assert.equal(catalog.resolvePlan("gemini-3.1-pro-high", undefined).runtimeModelId, "gemini-pro-agent");
-  assert.equal(
-    catalog.resolvePlan("gemini-3.1-pro-high", undefined).modelEnum,
-    "MODEL_PLACEHOLDER_M16"
-  );
-});
-
-test("Seam 3: unlisted 3.5 tiers fail fast instead of guessing", () => {
-  const catalog = createModelCatalog();
-  catalog.record(modelsJson);
-  assert.equal(catalog.resolvePlan("gemini-3.5-flash", "low").runtimeModelId, "gemini-3.5-flash-low");
-  assert.throws(() => catalog.resolvePlan("gemini-3.5-flash", "medium"), /Unknown model/);
 });
 
 // --- Consolidated Model Catalog Deep Module Tests ---
@@ -857,7 +794,6 @@ test("Catalog refresh: stored enums and runtime IDs restore active state", async
         modelEnums: { "x-high": "ENUM_X" },
         runtimeIds: ["x-high"],
         thinking: { "x-high": { budget: 4000, supportsThinking: true } },
-        deprecated: { "old-high": "x-high" },
       },
     },
   });
@@ -866,7 +802,6 @@ test("Catalog refresh: stored enums and runtime IDs restore active state", async
   assert.deepEqual(snapshot.enums, { "x-high": "ENUM_X" });
   assert.deepEqual(snapshot.runtimeIds, ["x-high"]);
   assert.deepEqual(snapshot.thinking["x-high"], { budget: 4000, supportsThinking: true });
-  assert.deepEqual(snapshot.deprecated, { "old-high": "x-high" });
   assert.equal(version, 0);
   assert.equal(items, undefined);
 });
@@ -905,7 +840,6 @@ test("Catalog refresh: fresh fetch builds dynamic models and publishes", async (
     assert.deepEqual(persist[PRIVATE_SNAPSHOT_KEY], catalog.toPersisted());
     assert.deepEqual(persist[PRIVATE_SNAPSHOT_KEY].modelEnums, expected.modelEnums);
     assert.equal(persist[PRIVATE_SNAPSHOT_KEY].thinking["gemini-3.8-flash-medium"].budget, 4000);
-    assert.deepEqual(persist[PRIVATE_SNAPSHOT_KEY].deprecated, expected.deprecated ?? {});
   } finally {
     globalThis.fetch = realFetch;
   }
@@ -970,7 +904,6 @@ test("Catalog refresh: persisted state never clobbers a fresher snapshot", async
           modelEnums: { "stale-model-high": "MODEL_STALE" },
           runtimeIds: ["stale-model-high"],
           thinking: {},
-          deprecated: {},
         },
       },
     });
@@ -1011,12 +944,11 @@ test("Catalog Persistence codec: the file spelling round-trips, garbage restores
     enums: { "gemini-3.8-flash-high": "MODEL_PLACEHOLDER_M18" },
     runtimeIds: ["gemini-3.8-flash-high"],
     thinking: { "gemini-3.8-flash-high": { budget: 4000, supportsThinking: true } },
-    deprecated: { "gemini-3.1-pro-high": "gemini-pro-agent" },
   };
   const catalog = createModelCatalog();
   catalog.restore(snapshot);
   const persisted = catalog.toPersisted();
-  assert.deepEqual(Object.keys(persisted).sort(), ["deprecated", "modelEnums", "runtimeIds", "thinking"]);
+  assert.deepEqual(Object.keys(persisted).sort(), ["modelEnums", "runtimeIds", "thinking"]);
 
   const restoredCatalog = createModelCatalog();
   restoredCatalog.restore(persisted);
@@ -1044,6 +976,5 @@ test("Catalog Persistence codec: the file spelling round-trips, garbage restores
     enums: {},
     runtimeIds: ["x"],
     thinking: {},
-    deprecated: {},
   });
 });

@@ -639,7 +639,6 @@ test("Seam 1: resolveModelPlan maps Public Model IDs to Runtime Model IDs", () =
     enums: { "model-x-high": "E_HIGH" },
     runtimeIds: ["model-x-high"],
     thinking: {},
-    deprecated: {},
   });
   assert.equal(gapCatalog.resolvePlan("model-x", "medium").runtimeModelId, "model-x-high");
 
@@ -682,7 +681,6 @@ test("Seam 1: resolveModelPlan reads the snapshot it is handed", async () => {
         modelEnums: { "x-high": "ENUM_X" },
         runtimeIds: ["x-high"],
         thinking: {},
-        deprecated: {},
       },
     },
   });
