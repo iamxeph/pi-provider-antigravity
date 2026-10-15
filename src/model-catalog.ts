@@ -1,4 +1,4 @@
-import type { AnyModel, Model, RefreshModelsContext } from "@earendil-works/pi-ai";
+import type { AnyModel, Model, RefreshModelsContext, ThinkingLevel, ThinkingLevelMap } from "@earendil-works/pi-ai";
 import { type CredentialSource, type AntigravityCredentials } from "./auth.ts";
 import {
   type AntigravityClient,
@@ -10,89 +10,16 @@ import { getModelProfile } from "./model-identity.ts";
 
 export const PRIVATE_SNAPSHOT_KEY = "pi-provider-antigravity";
 
-type CanonicalTier = "low" | "medium" | "high" | "xhigh" | "max";
-
 /**
- * Canonical Tier Suffix: The wire suffix that mirrors the user-requested thinking
- * effort by name (-low, -medium, -high, -xhigh, -max), attempted first when
- * resolving a Runtime Model ID.
+ * Tier suffixes: exactly the efforts `agy --effort` accepts, all of them Pi level names,
+ * so a tier the server ships under one of them (e.g. -xhigh, -max) needs no code change.
  */
-const CANONICAL_TIER_SUFFIXES: Record<CanonicalTier, string> = Object.freeze({
-  low: "-low",
-  medium: "-medium",
-  high: "-high",
-  xhigh: "-xhigh",
-  max: "-max",
-});
+const THINKING_LEVELS: readonly ThinkingLevel[] = Object.freeze(["low", "medium", "high", "xhigh", "max"]);
 
-/**
- * Tier Alias: Alternative wire spellings representing the same thinking effort tier
- * (-thinking or -agent for high, -extra-low for low, or an unsuffixed base identifier
- * for the default tier), resolved when the canonical suffix is absent.
- */
-const TIER_ALIASES: Record<CanonicalTier, readonly string[]> = Object.freeze({
-  low: Object.freeze(["-extra-low"]),
-  medium: Object.freeze([]),
-  high: Object.freeze(["-thinking", "-agent"]),
-  xhigh: Object.freeze([]),
-  max: Object.freeze([]),
-});
-
-/**
- * Union of all known model ID tier suffixes (canonical and aliases).
- */
-const ALL_TIER_SUFFIXES: readonly string[] = Object.freeze([
-  ...new Set([
-    ...Object.values(CANONICAL_TIER_SUFFIXES),
-    ...Object.values(TIER_ALIASES).flat(),
-  ]),
-]);
-
-/**
- * Strips any known tier suffix from a model ID for grouping.
- */
-const TIER_SUFFIX_PATTERN = new RegExp(
-  `-(?:${ALL_TIER_SUFFIXES.map((s) => s.replace(/^-/, "")).join("|")})$`,
-);
-
-function tierSpellings(tier: CanonicalTier): readonly string[] {
-  return [CANONICAL_TIER_SUFFIXES[tier], ...TIER_ALIASES[tier]];
-}
+const TIER_SUFFIX_PATTERN = new RegExp(`-(?:${THINKING_LEVELS.join("|")})$`);
 
 function extractBaseModelId(runtimeId: string): string {
-  // No per-model special cases: legacy IDs like `gemini-pro-agent` (Gemini 3.1
-  // Pro High, 1.3.2 generation) group by the generic tier-strip here, and their
-  // Public Model ID resolves through the server's deprecatedModelIds rename
-  // map — which persists inside stored snapshots, so old sessions keep working.
   return runtimeId.replace(TIER_SUFFIX_PATTERN, "");
-}
-
-/**
- * Ordered candidate suffixes attempted when resolving a Runtime Model ID for an effort.
- * Canonical suffix comes first, followed by fallbacks.
- */
-const TIER_FALLBACKS: Record<string, readonly string[]> = Object.freeze({
-  minimal: Object.freeze(["-low", "-extra-low", ""]),
-  low: Object.freeze(["-extra-low", ""]),
-  medium: Object.freeze(["", "-high"]), // tier gap: fall up to high, never down
-  high: Object.freeze(["-thinking", "-agent", ""]), // Claude's high tier is -thinking
-  xhigh: Object.freeze(["-max", "-high", "-thinking", "-agent", ""]), // up to max, never down
-  max: Object.freeze(["-high", "-thinking", "-agent", ""]),
-});
-
-const DEFAULT_TIER_ORDER: readonly string[] = Object.freeze([
-  CANONICAL_TIER_SUFFIXES.high,
-  ...TIER_ALIASES.high,
-  "",
-]);
-
-function tierCandidateOrder(effort?: string): readonly string[] {
-  if (!effort) return DEFAULT_TIER_ORDER;
-  const canonical = effort in CANONICAL_TIER_SUFFIXES
-    ? [CANONICAL_TIER_SUFFIXES[effort as CanonicalTier]]
-    : [`-${effort}`];
-  const fallbacks = TIER_FALLBACKS[effort] ?? DEFAULT_TIER_ORDER;
-  return [...new Set([...canonical, ...fallbacks])];
 }
 
 type StoreEntry = NonNullable<RefreshModelsContext["stored"]>;
@@ -119,7 +46,6 @@ export interface AvailableModelItem {
   displayName?: string;
   modelEnum?: string;
   remainingFraction?: number;
-  resetTime?: string;
   supportsThinking?: boolean;
   thinkingBudget?: number;
   /**
@@ -128,7 +54,6 @@ export interface AvailableModelItem {
    * resolveThinkingConfig for which one agy actually puts on the wire.
    */
   thinkingLevel?: number;
-  minThinkingBudget?: number;
   supportsImages?: boolean;
   maxTokens?: number;
   maxOutputTokens?: number;
@@ -138,22 +63,18 @@ export interface AvailableModelsCatalog {
   models: AvailableModelItem[];
   modelEnums: Record<string, string>;
   agentModelSorts?: string[];
-  /** Server-directed renames: old Runtime Model ID → current Runtime Model ID. */
-  deprecated?: Record<string, string>;
 }
 
 export interface CatalogThinking {
   budget?: number;
   /** Catalog thinkingLevel rank, when the entry carries one. */
   level?: number;
-  supportsThinking: boolean;
 }
 
 export interface CatalogSnapshot {
   enums: Record<string, string>;
   runtimeIds: string[];
   thinking: Record<string, CatalogThinking>;
-  deprecated: Record<string, string>;
 }
 
 export interface CatalogGeneration {
@@ -171,7 +92,6 @@ export interface PersistedSnapshot {
   modelEnums: Record<string, string>;
   runtimeIds: string[];
   thinking: Record<string, CatalogThinking>;
-  deprecated: Record<string, string>;
 }
 
 export interface ModelPlan {
@@ -228,8 +148,6 @@ export interface ModelCatalog {
   formatList(): string;
 }
 
-export type CatalogStore = ModelCatalog;
-
 export function buildThinkingMap(models: AvailableModelItem[]): Record<string, CatalogThinking> {
   return Object.fromEntries(
     models.map((m) => [
@@ -237,7 +155,6 @@ export function buildThinkingMap(models: AvailableModelItem[]): Record<string, C
       {
         ...(typeof m.thinkingBudget === "number" ? { budget: m.thinkingBudget } : {}),
         ...(typeof m.thinkingLevel === "number" ? { level: m.thinkingLevel } : {}),
-        supportsThinking: m.supportsThinking ?? false,
       },
     ]),
   );
@@ -248,7 +165,6 @@ function snapshotFromCatalog(catalog: AvailableModelsCatalog): CatalogSnapshot {
     enums: { ...catalog.modelEnums },
     runtimeIds: [...new Set(catalog.models.map((m) => m.id))],
     thinking: buildThinkingMap(catalog.models),
-    deprecated: { ...(catalog.deprecated ?? {}) },
   };
 }
 
@@ -259,11 +175,10 @@ function copySnapshot(snapshot: CatalogSnapshot): CatalogSnapshot {
     thinking: Object.fromEntries(
       Object.entries(snapshot.thinking).map(([id, info]) => [id, { ...info }]),
     ),
-    deprecated: { ...snapshot.deprecated },
   };
 }
 
-const EMPTY_SNAPSHOT = (): CatalogSnapshot => ({ enums: {}, runtimeIds: [], thinking: {}, deprecated: {} });
+const EMPTY_SNAPSHOT = (): CatalogSnapshot => ({ enums: {}, runtimeIds: [], thinking: {} });
 
 export function parseAvailableModels(data: any): AvailableModelsCatalog {
   if (!data || typeof data !== "object") {
@@ -290,11 +205,9 @@ export function parseAvailableModels(data: any): AvailableModelsCatalog {
       displayName: info.displayName || info.label || id,
       modelEnum,
       remainingFraction: quotaInfo.remainingFraction,
-      resetTime: quotaInfo.resetTime,
       supportsThinking: Boolean(info.supportsThinking),
       thinkingBudget: typeof info.thinkingBudget === "number" ? info.thinkingBudget : undefined,
       thinkingLevel: typeof info.thinkingLevel === "number" ? info.thinkingLevel : undefined,
-      minThinkingBudget: typeof info.minThinkingBudget === "number" ? info.minThinkingBudget : undefined,
       supportsImages: Boolean(info.supportsImages),
       maxTokens: typeof info.maxTokens === "number" ? info.maxTokens : undefined,
       maxOutputTokens: typeof info.maxOutputTokens === "number" ? info.maxOutputTokens : undefined,
@@ -316,22 +229,10 @@ export function parseAvailableModels(data: any): AvailableModelsCatalog {
 
   models.sort((a, b) => a.id.localeCompare(b.id));
 
-  // Server-directed renames (old Runtime Model ID → current one).
-  const deprecated: Record<string, string> = {};
-  const rawDeprecated = (data as any).deprecatedModelIds;
-  if (rawDeprecated && typeof rawDeprecated === "object") {
-    for (const [oldId, info] of Object.entries<any>(rawDeprecated)) {
-      if (info && typeof info.newModelId === "string") {
-        deprecated[oldId] = info.newModelId;
-      }
-    }
-  }
-
   return {
     models,
     modelEnums,
     ...(agentModelSorts.length > 0 ? { agentModelSorts } : {}),
-    ...(Object.keys(deprecated).length > 0 ? { deprecated } : {}),
   };
 }
 
@@ -349,7 +250,6 @@ function toPersistedSnapshot(snapshot: CatalogSnapshot): PersistedSnapshot {
     modelEnums: { ...snapshot.enums },
     runtimeIds: [...snapshot.runtimeIds],
     thinking: { ...snapshot.thinking },
-    deprecated: { ...snapshot.deprecated },
   };
 }
 
@@ -379,48 +279,20 @@ function fromPersistedSnapshot(raw: unknown): CatalogSnapshot | undefined {
     ? entry.runtimeIds.filter((id): id is string => typeof id === "string")
     : undefined;
   const thinking = isThinkingRecord(entry.thinking) ? entry.thinking : undefined;
-  const deprecated = isStringRecord(entry.deprecated) ? entry.deprecated : undefined;
-  if (!enums && !runtimeIds && !thinking && !deprecated) return undefined;
-  return { enums: enums ?? {}, runtimeIds: runtimeIds ?? [], thinking: thinking ?? {}, deprecated: deprecated ?? {} };
+  if (!enums && !runtimeIds && !thinking) return undefined;
+  return { enums: enums ?? {}, runtimeIds: runtimeIds ?? [], thinking: thinking ?? {} };
 }
 
-function resolveRuntimeModelId(
-  modelId: string,
-  effort: string | undefined,
-  availableRuntimeIds: string[]
-): string {
-  if (ALL_TIER_SUFFIXES.some((suffix) => modelId.endsWith(suffix))) {
-    return modelId;
-  }
-
-  if (availableRuntimeIds.length > 0) {
-    const variants = new Set(availableRuntimeIds.filter((id) => extractBaseModelId(id) === modelId));
-    const order = tierCandidateOrder(effort);
-
-    for (const suffix of order) {
-      if (variants.has(`${modelId}${suffix}`)) {
-        return `${modelId}${suffix}`;
-      }
-    }
-
-    if (variants.size === 1) {
-      return [...variants][0];
-    }
-  }
-
-  return modelId;
-}
-
-function followRenames(runtimeModelId: string, snapshot: CatalogSnapshot): string {
-  const renamed = snapshot.deprecated;
-  if (!renamed) return runtimeModelId;
-  let current = runtimeModelId;
-  const seen = new Set<string>([current]);
-  while (renamed[current] && !seen.has(renamed[current])) {
-    current = renamed[current];
-    seen.add(current);
-  }
-  return current;
+/**
+ * Runtime Model ID for a public ID and an effort Pi has already clamped to the model's
+ * thinkingLevelMap (stream.ts). The tier named after the effort wins; otherwise an exact
+ * runtime ID, or a base with a single variant, serves every effort.
+ */
+function resolveRuntimeModelId(modelId: string, effort: string | undefined, runtimeIds: string[]): string {
+  const tiered = `${modelId}-${effort ?? "high"}`;
+  if (runtimeIds.includes(tiered)) return tiered;
+  const variants = runtimeIds.filter((id) => extractBaseModelId(id) === modelId);
+  return variants.length === 1 ? variants[0] : modelId;
 }
 
 /**
@@ -468,10 +340,7 @@ export function resolveModelPlan(
   effort: string | undefined,
   snapshot: CatalogSnapshot
 ): ModelPlan {
-  const runtimeModelId = followRenames(
-    resolveRuntimeModelId(publicModelId, effort, snapshot.runtimeIds),
-    snapshot
-  );
+  const runtimeModelId = resolveRuntimeModelId(publicModelId, effort, snapshot.runtimeIds);
   const modelEnum = snapshot.enums[runtimeModelId];
   if (!modelEnum) {
     throw new Error(
@@ -487,10 +356,6 @@ export function resolveModelPlan(
     isNonGemini: profile.isNonGemini,
     isClaude: profile.isClaude,
   };
-}
-
-function estimateModelCost(_baseId: string): Model<any>["cost"] {
-  return { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
 }
 
 function formatModelDisplayName(baseId: string, rawDisplayName?: string): string {
@@ -516,19 +381,12 @@ function minAcrossVariants(values: Array<number | undefined>): number | undefine
 function synthesizeDynamicModel(baseId: string, items: AvailableModelItem[]): Model<any> {
   const repItem = items.find((it) => it.id === `${baseId}-high` || it.id === baseId) || items[0];
 
-  const hasVariant = (suffixes: readonly string[]) =>
-    items.some((it) => suffixes.some((suffix) => it.id.endsWith(suffix)));
-  const thinkingLevelMap = {
-    off: null,
-    minimal: null,
-    ...(hasVariant(tierSpellings("low")) ? {} : { low: null }),
-    ...(hasVariant(tierSpellings("medium")) ? {} : { medium: null }),
-    ...(hasVariant(tierSpellings("high")) || items.some((it) => it.id === baseId)
-      ? {}
-      : { high: null }),
-    ...(hasVariant(tierSpellings("xhigh")) ? { xhigh: "xhigh" } : {}),
-    ...(hasVariant(tierSpellings("max")) ? { max: "max" } : {}),
-  };
+  // Offer exactly the levels the catalog has a variant for; an unsuffixed runtime ID
+  // serves the default (high) effort. agy has no off or minimal effort, and Pi treats an
+  // absent key as supported, so both are hidden explicitly.
+  const tiers = new Set(items.map((it) => (it.id === baseId ? "high" : it.id.slice(baseId.length + 1))));
+  const thinkingLevelMap: ThinkingLevelMap = { off: null, minimal: null };
+  for (const level of THINKING_LEVELS) thinkingLevelMap[level] = tiers.has(level) ? level : null;
 
   const profile = getModelProfile(baseId);
   const defaultContext = profile.defaultContextWindow;
@@ -547,7 +405,7 @@ function synthesizeDynamicModel(baseId: string, items: AvailableModelItem[]): Mo
     reasoning: items.some((it) => it.supportsThinking),
     thinkingLevelMap,
     input: items.every((it) => it.supportsImages) ? ["text", "image"] : ["text"],
-    cost: estimateModelCost(baseId),
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
     promptCache: profile.promptCache,
     contextWindow: minAcrossVariants(items.map((it) => it.maxTokens)) ?? defaultContext,
     maxTokens: minAcrossVariants(items.map((it) => it.maxOutputTokens)) ?? defaultMaxOutput,
@@ -747,10 +605,4 @@ export function createModelCatalog(deps?: { client?: AntigravityClient }): Model
     resolvePlan: (publicModelId, effort) => resolveModelPlan(publicModelId, effort, generation.snapshot),
     formatList: () => (generation.items ? formatModelsList(generation.items) : "No models available."),
   };
-}
-
-export const createCatalogStore = createModelCatalog;
-
-export async function refreshCatalog(context: RefreshContext, store: ModelCatalog): Promise<Array<AnyModel>> {
-  return store.refresh(context);
 }

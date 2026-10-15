@@ -8,6 +8,7 @@ import {
   type ToolCall,
   type TranscriptContext,
   calculateCost,
+  clampThinkingLevel,
   createAssistantMessageEventStream,
 } from "@earendil-works/pi-ai";
 import { requireCredentials } from "./auth.ts";
@@ -441,7 +442,9 @@ export function streamAntigravity(
 
       const { token, projectId } = await requireCredentials(options);
 
-      const effort = options?.reasoning;
+      // Pi hands providers the raw requested level; clamp it to the levels this model's
+      // catalog offers (thinkingLevelMap), as Pi's built-in providers do.
+      const effort = clampThinkingLevel(model, options?.reasoning ?? "high");
       // trajectoryId is provider-specific (absent from the SDK options
       // type), so read it via runtime-checked `in` narrowing instead of a cast.
       const trajectoryId =

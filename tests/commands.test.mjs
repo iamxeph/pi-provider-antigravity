@@ -5,7 +5,7 @@ import { newestCapture } from "./fixtures.mjs";
 import os from "node:os";
 import path from "node:path";
 import { createAntigravityCommands } from "../src/commands.ts";
-import { createCatalogStore, refreshCatalog } from "../src/model-catalog.ts";
+import { createModelCatalog } from "../src/model-catalog.ts";
 import initExtension from "../src/index.ts";
 import { QuotaStatusCoordinator, fileQuotaStatusStore } from "../src/quota-status.ts";
 
@@ -38,7 +38,7 @@ function memStore(mode = "smart") {
 // that never touch the catalog pass a throwaway one; the refresh cases build
 // one and let their `refresh` stub record into it, which is exactly what Pi's
 // refresh hook does in production.
-const store = () => createCatalogStore();
+const store = () => createModelCatalog();
 
 function commands(quotaStatus, catalog = store()) {
   return createAntigravityCommands({ quotaStatus, catalog });
@@ -88,11 +88,11 @@ test("Subcommand: models without a cached generation reports fetch failure", asy
     const catalog = store();
     const ctx = makeCtx(outputs, {
       refresh: async () =>
-        refreshCatalog({
+        catalog.refresh({
           allowNetwork: true,
           credential: { type: "oauth", access: JSON.stringify({ token: "t", projectId: "p" }) },
           stored: {},
-        }, catalog),
+        }),
     });
     const cmds = commands(undefined, catalog);
     await cmds.handle("models", ctx);
@@ -112,11 +112,11 @@ test("Subcommand: models prints Model Catalog", async () => {
     const ctx = makeCtx(outputs, {
       refresh: async (opts) => {
         refreshCalls.push(opts);
-        await refreshCatalog({
+        await catalog.refresh({
           allowNetwork: true,
           credential: { type: "oauth", access: JSON.stringify({ token: "t", projectId: "p" }) },
           stored: {},
-        }, catalog);
+        });
       },
     });
     const cmds = commands(undefined, catalog);
@@ -137,11 +137,11 @@ test("Subcommand: models shows the retained list with a warning when refresh fai
     // does not rely on other tests having ingested anything).
     const catalog = store();
     globalThis.fetch = stubFetchRouter();
-    await refreshCatalog({ allowNetwork: true, credential, stored: {} }, catalog);
+    await catalog.refresh({ allowNetwork: true, credential, stored: {} });
     globalThis.fetch = async () => ({ ok: false, status: 500, text: async () => "boom" });
     const outputs = [];
     const ctx = makeCtx(outputs, {
-      refresh: async () => refreshCatalog({ allowNetwork: true, credential, stored: {} }, catalog),
+      refresh: async () => catalog.refresh({ allowNetwork: true, credential, stored: {} }),
     });
     const cmds = commands(undefined, catalog);
     await cmds.handle("models", ctx);
@@ -170,11 +170,11 @@ test("Subcommand: refresh delegates to the model registry", async () => {
     const ctx = makeCtx(outputs, {
       refresh: async (opts) => {
         calls.push(opts);
-        await refreshCatalog({
+        await catalog.refresh({
           allowNetwork: true,
           credential: { type: "oauth", access: JSON.stringify({ token: "t", projectId: "p" }) },
           stored: {},
-        }, catalog);
+        });
       },
     });
     const cmds = commands(undefined, catalog);
@@ -194,14 +194,14 @@ test("Subcommand: refresh warns but keeps the retained list when refresh fails",
     // Prime one generation through the real refresh path first.
     const catalog = store();
     globalThis.fetch = stubFetchRouter();
-    await refreshCatalog({ allowNetwork: true, credential, stored: {} }, catalog);
+    await catalog.refresh({ allowNetwork: true, credential, stored: {} });
     globalThis.fetch = async () => ({ ok: false, status: 500, text: async () => "boom" });
     const calls = [];
     const outputs = [];
     const ctx = makeCtx(outputs, {
       refresh: async (opts) => {
         calls.push(opts);
-        await refreshCatalog({ allowNetwork: true, credential, stored: {} }, catalog);
+        await catalog.refresh({ allowNetwork: true, credential, stored: {} });
       },
     });
     const cmds = commands(undefined, catalog);
