@@ -85,6 +85,26 @@ test("Seam 3: synthesizeDynamicModel static fallbacks match captured catalog (Cl
   }
 });
 
+test("Seam 3: server-gated (disabled: true) entries never reach the catalog", async () => {
+  const gatedId = "gemini-4-argon-disabled";
+  assert.equal(modelsJson.models[gatedId]?.disabled, true, "capture must carry a disabled entry");
+
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({ ok: true, json: async () => modelsJson });
+  try {
+    const catalog = createModelCatalog();
+    const publicModels = await catalog.refresh({ allowNetwork: true, credential: TEST_CREDENTIAL, stored: {} });
+    const { items } = catalog.generation();
+
+    assert.ok(!items.models.some((m) => m.id === gatedId));
+    assert.equal(items.modelEnums[gatedId], undefined);
+    assert.ok(!publicModels.some((m) => m.id.startsWith("gemini-4-argon")));
+    assert.throws(() => catalog.resolvePlan(gatedId, "high"), /Unknown model/);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
 test("Seam 3: formatModelsList formats clean table view", () => {
   const catalog = createModelCatalog();
   catalog.record(modelsJson);
@@ -99,11 +119,11 @@ test("Seam 3: formatModelsList shows recommended-only detailed table in sort ord
   catalog.record(modelsJson);
   const output = catalog.formatList();
 
-  // 11, not 10: the 1.3.5 Recommended group gained gemini-4-argon-disabled, a
+  // 10, not 11: the 1.3.5 Recommended group also names gemini-4-argon-disabled, a
   // server-gated entry (disabled: true) that agy advertises in agentModelSorts and then
-  // hides from its own model list. The provider lists the catalog as-is and does not
-  // special-case it, so the row shows up here.
-  assert.match(output, /\(11 recommended\)/);
+  // hides from its own model list. The provider hides it the same way.
+  assert.match(output, /\(10 recommended\)/);
+  assert.doesNotMatch(output, /gemini-4-argon/);
   assert.match(output, /Model\s+Name\s+Context\s+Features\s+Rem/);
   // non-recommended runtimes excluded
   assert.doesNotMatch(output, /gemini-2\.5-flash/);
@@ -132,9 +152,8 @@ test("Seam 3: buildDynamicPublicModels generates models dynamically from agy mod
       stored: {},
     });
 
-    // 5, not 4, for the same reason: gemini-4-argon-disabled resolves to its own base
-    // model. It is not selectable on the backend, so this is a listing difference only.
-    assert.equal(publicModels.length, 5);
+    // gemini-4-argon-disabled is recommended but server-gated (disabled: true): not offered.
+    assert.equal(publicModels.length, 4);
     const ids = publicModels.map((m) => m.id);
     assert.ok(ids.includes("gemini-3.8-flash"));
     assert.ok(ids.includes("claude-sonnet-5-5"));
@@ -503,13 +522,14 @@ test("Seam 3: no selectable model resolves to the disabled thinking fallback", (
   // grew a shape the resolution does not cover.
   //
   // Verified live against agy 1.3.5 before this was written: all 11 recommended ids resolve
-  // to includeThoughts true, and gemini-4-argon-disabled — the one entry carrying BOTH
-  // thinkingBudget -1 and thinkingLevel 2 — goes out as thinkingLevel MEDIUM, which is the
-  // level > budget order holding on the wire.
+  // to includeThoughts true. Server-gated (disabled: true) ids are not selectable, so they
+  // are left out here.
   const catalog = createModelCatalog();
   catalog.record(modelsJson);
 
-  const recommended = modelsJson.agentModelSorts.flatMap((s) => s.groups.flatMap((g) => g.modelIds));
+  const recommended = modelsJson.agentModelSorts
+    .flatMap((s) => s.groups.flatMap((g) => g.modelIds))
+    .filter((id) => modelsJson.models[id]?.disabled !== true);
   assert.ok(recommended.length > 0);
 
   const disabled = recommended.filter(

@@ -276,6 +276,8 @@ export function parseAvailableModels(data: any): AvailableModelsCatalog {
   const modelsObj = data.models || {};
   for (const [id, info] of Object.entries<any>(modelsObj)) {
     if (id.startsWith("tab_") || id.startsWith("chat_")) continue; // hide internal completions
+    // Server-gated for this account (e.g. plan-locked): agy hides these too.
+    if (info?.disabled === true) continue;
 
     const modelEnum = typeof info.model === "string" ? info.model : undefined;
     if (modelEnum) {
