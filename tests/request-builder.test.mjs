@@ -1180,7 +1180,7 @@ test("Seam 1: Thought Signature validation accepts base64 and strips invalid/for
   }
 });
 
-test("Seam 1: buildAntigravityRequestBody ignores foreign JSON thoughtSignatures (OpenAI Responses) and converts thinking to plain text", () => {
+test("Seam 1: buildAntigravityRequestBody ignores foreign JSON thoughtSignatures (OpenAI Responses) and drops foreign thinking", () => {
   const openAiJsonSig = JSON.stringify({
     id: "rs_6a9bd223f3963fc53d7f4ea6:rs_01a070acd9f57f63ac229b9a658e398d",
     type: "reasoning",
@@ -1243,14 +1243,13 @@ test("Seam 1: buildAntigravityRequestBody ignores foreign JSON thoughtSignatures
 
   const modelTurn = body.request.contents[1];
   assert.equal(modelTurn.role, "model");
-  // Foreign thinking was converted to plain text (no thought: true, no thoughtSignature)
-  assert.equal(modelTurn.parts[0].thought, undefined);
-  assert.equal(modelTurn.parts[0].thoughtSignature, undefined);
-  assert.equal(modelTurn.parts[0].text, "Analyzing previous test runs...");
+  // Foreign thinking is dropped, not replayed as text (Pi 1.3.0 #10995).
+  assert.equal(serialized.includes("Analyzing previous test runs..."), false);
+  assert.equal(modelTurn.parts.length, 1);
 
   // Tool call does not carry the foreign signature — it gets the Gemini sentinel instead.
-  assert.equal(modelTurn.parts[1].functionCall.name, "bash");
-  assert.equal(modelTurn.parts[1].thoughtSignature, SKIP_THOUGHT_SIGNATURE_VALIDATOR);
+  assert.equal(modelTurn.parts[0].functionCall.name, "bash");
+  assert.equal(modelTurn.parts[0].thoughtSignature, SKIP_THOUGHT_SIGNATURE_VALIDATOR);
 });
 
 // --- Cross-provider model switch inside an open tool turn (live probe 2026-09-10) ---
@@ -1412,7 +1411,7 @@ test("Seam 1: sentinel is Gemini-scoped, foreign-only and independent of the tur
   assert.equal(violatesThoughtSignatureRule(lostSignatureContents), true);
 });
 
-test("Seam 1: buildAntigravityRequestBody extracts summary from foreign JSON signature when thinking text is empty", () => {
+test("Seam 1: buildAntigravityRequestBody drops foreign reasoning carried only by a JSON summary", () => {
   const openAiJsonSig = JSON.stringify({
     id: "rs_summary_only",
     type: "reasoning",
@@ -1458,11 +1457,7 @@ test("Seam 1: buildAntigravityRequestBody extracts summary from foreign JSON sig
 
   const modelTurn = body.request.contents[1];
   assert.equal(modelTurn.role, "model");
-  assert.equal(modelTurn.parts.length, 2);
-  assert.equal(modelTurn.parts[0].text, "Summary extracted from foreign reasoning item.");
-  assert.equal(modelTurn.parts[0].thought, undefined);
-  assert.equal(modelTurn.parts[0].thoughtSignature, undefined);
-  assert.equal(modelTurn.parts[1].text, "Here is the response.");
+  assert.deepEqual(modelTurn.parts, [{ text: "Here is the response." }]);
 });
 
 test("Seam 1: buildAntigravityRequestBody drops cross-model thoughtSignature between Claude and Gemini", () => {
@@ -1479,6 +1474,7 @@ test("Seam 1: buildAntigravityRequestBody drops cross-model thoughtSignature bet
             thinking: "Claude thinking...",
             thinkingSignature: "claude_sig_1234",
           },
+          { type: "text", text: "Claude answer." },
         ],
       },
     ],
@@ -1492,10 +1488,8 @@ test("Seam 1: buildAntigravityRequestBody drops cross-model thoughtSignature bet
 
   const modelTurn = body.request.contents[1];
   assert.equal(modelTurn.role, "model");
-  // Incompatible model: thinking converted to plain text, signature dropped
-  assert.equal(modelTurn.parts[0].thought, undefined);
-  assert.equal(modelTurn.parts[0].thoughtSignature, undefined);
-  assert.equal(modelTurn.parts[0].text, "Claude thinking...");
+  // Incompatible model: thinking and its signature are dropped (Pi 1.3.0 #10995)
+  assert.deepEqual(modelTurn.parts, [{ text: "Claude answer." }]);
 });
 
 test("Seam 1: buildAntigravityRequestBody preserves valid thoughtSignature for same provider and model family", () => {
