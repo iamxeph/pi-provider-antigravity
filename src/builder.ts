@@ -364,44 +364,24 @@ function translateTurnTrace(
             parts.push(part);
           } else if (item.type === "thinking") {
             const candidateSig = item.thinkingSignature;
-            const isForeignReasoning =
+            // Reasoning from another provider/model family (or an OpenAI JSON reasoning
+            // envelope) is dropped, matching Pi 1.3.0 transformMessages (#10995): its
+            // signature is invalid here, and replaying it as text makes the new model
+            // read the old model's reasoning as part of its visible reply. Same-family
+            // gpt reasoning is dropped too: the wire has no shape for it.
+            if (
               !isSameProviderAndModel ||
-              (typeof candidateSig === "string" && candidateSig.trim().startsWith("{"));
-
-            // Same-family gpt reasoning is dropped, not serialized: the wire has no
-            // shape for it. Foreign reasoning keeps the
-            // context-preserving text fallback below, which has no single-provider counterpart.
-            if (isGptRequest && !isForeignReasoning) continue;
-
-            if (!isForeignReasoning) {
-              const sig = resolveThoughtSignature(true, candidateSig);
-              if (sig) {
-                pendingThinkingSig = sig;
-              }
-              if (!isToolTurn) {
-                parts.push({ thought: true, text: item.thinking || "" });
-              }
-            } else {
-              // Cross-provider/model or foreign reasoning item: drop foreign signature and
-              // serialize reasoning text (or summary) as plain text so the model retains
-              // conversation context without failing Google's TYPE_BYTES base64 validation.
-              let text = item.thinking || "";
-              if (!text && typeof candidateSig === "string" && candidateSig.trim().startsWith("{")) {
-                try {
-                  const parsed = JSON.parse(candidateSig);
-                  if (Array.isArray(parsed.summary)) {
-                    text = parsed.summary
-                      .filter((s: any) => s && typeof s.text === "string")
-                      .map((s: any) => s.text)
-                      .join("\n");
-                  }
-                } catch {
-                  // Ignore JSON parse errors
-                }
-              }
-              if (text && text.trim() !== "") {
-                parts.push({ text });
-              }
+              isGptRequest ||
+              (typeof candidateSig === "string" && candidateSig.trim().startsWith("{"))
+            ) {
+              continue;
+            }
+            const sig = resolveThoughtSignature(true, candidateSig);
+            if (sig) {
+              pendingThinkingSig = sig;
+            }
+            if (!isToolTurn) {
+              parts.push({ thought: true, text: item.thinking || "" });
             }
           } else if (item.type === "tool_use" || item.type === "toolCall") {
             const part: any = {
