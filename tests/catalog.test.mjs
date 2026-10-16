@@ -257,6 +257,13 @@ test("Seam 3: getModelProfile unifies identity and capabilities across ID spaces
   assert.equal(getModelProfile("gemini-3.8-flash").family, "gemini");
   assert.equal(getModelProfile("gemini-pro-agent").family, "gemini");
   assert.equal(getModelProfile("antigravity/gemini-3-flash").family, "gemini");
+  assert.equal(gemini.isArgon, false);
+
+  const argon = getModelProfile("antigravity/gemini-4-argon-high");
+  assert.equal(argon.family, "gemini");
+  assert.equal(argon.isArgon, true);
+  assert.equal(argon.quotaPoolKind, "argon");
+  assert.equal(argon.replaysReasoningHistory, true);
 
   const claude = getModelProfile("claude-sonnet-4-6");
   assert.equal(claude.family, "claude");

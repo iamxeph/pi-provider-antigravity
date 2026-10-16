@@ -1,6 +1,6 @@
 import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext, Theme } from "@earendil-works/pi-coding-agent";
 import { resolveCredentials } from "./auth.ts";
-import { getModelProfile } from "./model-identity.ts";
+import { getModelProfile, type QuotaPoolKind } from "./model-identity.ts";
 import {
   type AntigravityClient,
   defaultAntigravityClient,
@@ -165,19 +165,18 @@ function formatQuotaSummary(summary: QuotaSummary, nowFn: () => number = Date.no
   return lines.join("\n");
 }
 
-function isGeminiQuotaGroup(group: QuotaGroup): boolean {
-  // Bucket ids ("gemini-5h" vs "3p-5h") — not display prose ("Gemini Models").
-  return (group.buckets || []).some((b) => (b.bucketId || "").toLowerCase().includes("gemini"));
+// Pool of one bucket, by wire id ("gemini-5h", "gemini-argon-wtu-weekly", "3p-5h") — not
+// display prose. Argon first: its id contains "gemini" too.
+function bucketPool(bucket: QuotaBucket): QuotaPoolKind {
+  const id = (bucket.bucketId || "").toLowerCase();
+  return id.includes("argon") ? "argon" : id.includes("gemini") ? "gemini" : "3p";
 }
 
 function selectQuotaGroup(groups: QuotaGroup[], modelId?: string): QuotaGroup | undefined {
-  if (groups.length === 0) return undefined;
-  const profile = getModelProfile(modelId);
-  if (profile.quotaPoolKind === "3p") {
-    const found = groups.find((g) => !isGeminiQuotaGroup(g));
-    if (found) return found;
-  }
-  return groups.find((g) => isGeminiQuotaGroup(g)) || groups[0];
+  // Per bucket, not per group: a group that merges Argon's bucket into the Gemini pool
+  // still serves both. No Argon bucket at all (Ultra plans) falls back to Gemini.
+  const byPool = (kind: QuotaPoolKind) => groups.find((g) => (g.buckets || []).some((b) => bucketPool(b) === kind));
+  return byPool(getModelProfile(modelId).quotaPoolKind) ?? byPool("gemini") ?? groups[0];
 }
 
 // Compact one-line footer text (e.g. "Wk 6% (2d 15h)") showing the most

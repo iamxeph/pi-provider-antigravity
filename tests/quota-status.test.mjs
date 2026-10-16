@@ -81,6 +81,37 @@ test("parseQuotaSummary parses 5h and weekly buckets for Gemini and Claude", asy
   assert.match(claudeFooter, fiveHourRe(thirdParty5hPct));
 });
 
+test("Gemini 4 Argon reads its own weekly pool, and falls back to the Gemini pool without one", () => {
+  // 1.3.6: paid Pro plans get a separate "Gemini 4 Argon" group (one weekly bucket,
+  // gemini-argon-wtu-weekly). Its bucket id also contains "gemini", so it must not be
+  // mistaken for the Gemini pool, and Argon must not read the Gemini pool while it exists.
+  const json = structuredClone(quotaJson);
+  const argon = json.groups.find((g) => g.buckets.some((b) => b.bucketId.includes("argon")));
+  assert.ok(argon, "fixture carries the Argon group");
+  argon.buckets[0].remainingFraction = 0.42;
+  json.groups = [argon, ...json.groups.filter((g) => g !== argon)]; // order must not matter
+  const coord = createQuotaStatus(memStore("smart").store);
+  coord.ingest(json);
+  assert.match(coord.renderFooter("antigravity/gemini-4-argon-high", "all").plain, /^Wk 42%/);
+  assert.match(coord.renderFooter("antigravity/gemini-3.8-flash-high", "smart").plain, fiveHourRe(gemini5hPct));
+
+  // Ultra plans fold Argon into the Gemini pool: no Argon group on the wire.
+  const others = json.groups.filter((g) => g !== argon);
+  const ultra = createQuotaStatus(memStore("smart").store);
+  ultra.ingest({ groups: others });
+  assert.match(ultra.renderFooter("antigravity/gemini-4-argon-high", "smart").plain, fiveHourRe(gemini5hPct));
+
+  // Argon's bucket merged into the Gemini group, 3p listed first: Gemini models must still
+  // read that group, not fall through to the first (3p) one.
+  const gem = others.find((g) => g.displayName === "Gemini Models");
+  const merged = createQuotaStatus(memStore("smart").store);
+  merged.ingest({
+    groups: [...others.filter((g) => g !== gem), { ...gem, buckets: [...gem.buckets, ...argon.buckets] }],
+  });
+  assert.match(merged.renderFooter("antigravity/gemini-3.8-flash-high", "smart").plain, fiveHourRe(gemini5hPct));
+  assert.match(merged.renderFooter("antigravity/gemini-4-argon-high", "all").plain, /Wk 42%/);
+});
+
 test("formatQuotaSummary renders clear progress bar text", async () => {
   const coord = createQuotaStatus({
     store: memStore("smart").store,
