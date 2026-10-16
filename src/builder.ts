@@ -45,13 +45,18 @@ const BASE64_SIGNATURE_PATTERN = /^[A-Za-z0-9+/_-]+={0,2}$/;
  * of the current turn → 400 with the message above; the identical body with this
  * sentinel on that single part → 200.
  *
+ * Spelled the way agy sends it: base64 of the sentinel string, since the field is
+ * bytes on the wire (agy 1.4.0 stream_turn23_tool_switch_flash replays a Claude
+ * functionCall to Gemini with exactly this value). The plain string is accepted too
+ * (probe B), but it is not agy's byte sequence.
+ *
  * Applied to foreign calls only. A signature we *should* have had —
  * same provider and family, yet missing or unreadable (pipeline regression, damaged
  * session) — keeps failing loudly with the 400 above instead of being papered over,
  * so a lost signature stays visible as a bug rather than silently degrading the
  * model's reasoning for that call.
  */
-export const SKIP_THOUGHT_SIGNATURE_VALIDATOR = "skip_thought_signature_validator";
+export const SKIP_THOUGHT_SIGNATURE_VALIDATOR = "c2tpcF90aG91Z2h0X3NpZ25hdHVyZV92YWxpZGF0b3I="; // base64("skip_thought_signature_validator")
 
 /**
  * Verifies that a thought signature candidate is a valid base64 string suitable
@@ -283,6 +288,10 @@ function translateTurnTrace(
   // Gemini and Claude both replay reasoning, so a gpt request drops the
   // block instead of serializing it.
   const isGptRequest = runtimeProfile.isGpt;
+  // agy sends a tool result as role "user" on the Claude wire and role "model" on the
+  // Gemini wire (agy 1.4.0 stream_turn22 vs stream_turn23). GPT has no captured tool
+  // turn, so it keeps the Gemini shape.
+  const toolResultRole = runtimeProfile.isClaude ? "user" : "model";
 
   for (const msg of messages) {
     if (msg.role === "user") {
@@ -481,7 +490,7 @@ function translateTurnTrace(
       }
 
       contents.push({
-        role: "model",
+        role: toolResultRole,
         parts: [{ functionResponse }],
       });
     }
@@ -543,6 +552,16 @@ export function buildAntigravityRequestBody(params: BuildRequestBodyParams): Rec
 
   const modelEnum = plan.modelEnum;
 
+  // agy scopes the used_* labels to the conversation, not the current turn: once a
+  // Claude (non-Gemini) turn is in the history, switching back to Gemini still sends
+  // "true" (agy 1.4.0 stream_turn17_switch_argon). Dropped turns are not carried, so
+  // they do not count.
+  const usedProfiles = conversation
+    .filter((m: any) => m.role === "assistant" && m.model && m.stopReason !== "error" && m.stopReason !== "aborted")
+    .map((m: any) => getModelProfile(m.model));
+  const usedClaude = plan.isClaude || usedProfiles.some((p) => p.isClaude);
+  const usedNonGemini = plan.isNonGemini || usedProfiles.some((p) => p.isNonGemini);
+
   const labels: Record<string, string> = {
     // agy names the conversation twice on 1.2.16 (cascade_id and its root) and the
     // per-turn trajectory once; the root is the same cascade for a plain session.
@@ -552,9 +571,9 @@ export function buildAntigravityRequestBody(params: BuildRequestBodyParams): Rec
     request_id: `${trajectoryId}-${requestIndex}`,
     root_cascade_id: cascadeId,
     trajectory_id: trajectoryId,
-    used_claude: String(plan.isClaude),
-    used_claude_conservative: String(plan.isClaude),
-    used_non_gemini_model: String(plan.isNonGemini),
+    used_claude: String(usedClaude),
+    used_claude_conservative: String(usedClaude),
+    used_non_gemini_model: String(usedNonGemini),
   };
 
   const generationConfig: Record<string, any> = {
