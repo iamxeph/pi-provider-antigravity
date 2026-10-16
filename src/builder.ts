@@ -288,6 +288,10 @@ function translateTurnTrace(
   // Gemini and Claude both replay reasoning, so a gpt request drops the
   // block instead of serializing it.
   const isGptRequest = runtimeProfile.isGpt;
+  // agy sends a tool result as role "user" on the Claude wire and role "model" on the
+  // Gemini wire (agy 1.4.0 stream_turn22 vs stream_turn23). GPT has no captured tool
+  // turn, so it keeps the Gemini shape.
+  const toolResultRole = runtimeProfile.isClaude ? "user" : "model";
 
   for (const msg of messages) {
     if (msg.role === "user") {
@@ -486,7 +490,7 @@ function translateTurnTrace(
       }
 
       contents.push({
-        role: "model",
+        role: toolResultRole,
         parts: [{ functionResponse }],
       });
     }

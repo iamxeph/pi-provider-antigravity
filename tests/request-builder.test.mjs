@@ -94,6 +94,22 @@ test("Seam 1: used_* labels stay set after switching back from Claude (agy 1.4.0
   assert.deepEqual(used(labels(history("error"))), ["false", "false", "false"]);
 });
 
+test("Seam 1: a tool result rides role user on Claude and role model on Gemini (agy 1.4.0 turn22/23)", () => {
+  const context = {
+    messages: [
+      { role: "user", content: [{ type: "text", text: "make a file" }] },
+      { role: "assistant", provider: "antigravity", model: "claude-sonnet-5-5-high", stopReason: "toolUse",
+        content: [{ type: "toolCall", id: "toolu_1", name: "write_to_file", arguments: {} }] },
+      { role: "toolResult", toolCallId: "toolu_1", toolName: "write_to_file", content: [{ type: "text", text: "ok" }] },
+    ],
+  };
+  const resultRole = (model) =>
+    buildAntigravityRequestBody({ projectId: "p", plan: staticPlan(model), context })
+      .request.contents.find((c) => c.parts.some((p) => p.functionResponse)).role;
+  assert.equal(resultRole("claude-sonnet-5-5-high"), "user");
+  assert.equal(resultRole("gemini-3.8-flash-low"), "model");
+});
+
 test("Seam 1: 1.2.16 cascade labels and requestId lead with the cascade UUID", () => {
   const context = {
     messages: [
