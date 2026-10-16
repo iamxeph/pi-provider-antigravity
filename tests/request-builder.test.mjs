@@ -1718,14 +1718,14 @@ test("Seam 1 (#15): thinking replay matches the agy CLI part-split byte-for-byte
     "stream_turn4_thinking.req.json",
     "stream_turn5_multiturn.req.json",
     "stream_turn6_toolerror.req.json",
-    "stream_turn11_pro_followup.req.json",
+    "stream_turn11_argon_followup.req.json",
   ];
   let fixtureTurn;
   let runtimeModel;
   for (const file of geminiReqs) {
     const candidate = newestCapture(file);
-    // The candidate list spans slots a capture may omit (the pro slots are omitted from
-    // 1.3.3 on), and whether any candidate carries the split is sampling-dependent, so a
+    // The candidate list spans slots a capture may omit (the argon slots only exist from
+    // 1.3.6 on), and whether any candidate carries the split is sampling-dependent, so a
     // missing file is a candidate that cannot match, not a failure.
     if (!fs.existsSync(candidate)) continue;
     const body = JSON.parse(fs.readFileSync(candidate, "utf-8")).body;

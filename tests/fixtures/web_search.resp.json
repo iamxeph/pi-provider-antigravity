@@ -6,58 +6,70 @@
           "role": "model",
           "parts": [
             {
-              "thoughtSignature": "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDA2",
-              "text": "Key artificial intelligence news, announcements, and breakthroughs shaping the landscape include:\n\n### 1. Major Partnerships & Public Sector Initiatives\n* **The Rockefeller Foundation & OpenAI Foundation Initiative:** A major **$50 million initiative** titled *“Cities Deliver: AI Solutions for Public Services”* was officially launched. The global program aims to fund nonprofit and civil society organizations partnering with city governments to implement AI solutions addressing public health, environmental resilience, and economic mobility. \n\n### 2. Enterprise Infrastructure, Silicon, and Security\n* **Intel’s OCP Global Summit Announcements:** Intel formally launched its inference-focused **GPU D270** architecture (formerly code-named *Crescent Island*), packing up to 480GB of LPDDR5X and targeted at power-efficient, high-bandwidth data center workloads.\n* **Network Security for AI Agents:** Quantum computing and networking firm IonQ announced a definitive agreement to acquire zero-trust security vendor Elisity for up to $1.3 billion, aiming to lock down and govern traffic specifically between enterprise networks and autonomous AI agent swarms.\n* **Anthropic’s Model Defenses:** Anthropic released new defensive updates (shipping via Claude Fable 5.1) designed to drastically disrupt automated model \"distillation\"—cutting down unauthorized data harvesting from reasoning models by up to 99%.\n\n### 3. Shift Toward \"Physical AI\" and Advanced Multimodal Models\n* **Moving Beyond Pure LLMs:** Industry discourse has increasingly pivoted away from text-only Large Language Models toward **\"Physical AI\"** and spatial reasoning. Research labs are heavily prioritizing models capable of advanced video analysis, robotics coordination, and real-world environmental interaction, noting that text-pattern matching alone hits hard limits when applied to physical execution.\n\n### 4. Human-AI Interaction and Cognitive Research\n* **Cognitive Impact Studies:** Presented at the Conference on Language Modeling, a landmark study co-authored by researchers including UC Berkeley’s Brian Christian highlighted a sobering psychological finding: relying on AI tools for just 10 minutes during complex math and reasoning tasks measurably impairs human focus, stamina, and independent problem-solving persistence."
+              "thoughtSignature": "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDA3",
+              "text": "Here is a roundup of the latest artificial intelligence news, trends, and market developments:\n\n### **1. Market Realities & Infrastructure Spending Concerns**\n* **Gartner's Warning on AI Infrastructure:** A prominent report from Gartner highlights that massive capital spending on AI data centers—expected to near $1 trillion in 2026 alone—faces heavy financial exposure. The study estimates that enterprise and consumer AI revenue may fall short of covering the anticipated costs, warning that over 80% of independent \"neocloud\" providers could face consolidation or closure by 2030.\n* **AI Stock Volatility:** Global semiconductor and AI hardware stocks experienced sharp corrections recently, with major players like SK Hynix, Samsung, ASML, and Advantest seeing significant pullbacks as markets reevaluate the near-term return on investment (ROI) for scaled hardware infrastructure.\n\n### **2. Regulatory and Government Actions**\n* **EU AI Act Enforcement:** Provisions under Article 50 of the European Union’s AI Act are officially in active enforcement, requiring providers and deployers of transparency-sensitive AI systems to comply with strict regulatory guidelines. Meanwhile, the EU AI Office has initiated formal probes into major lab developers like OpenAI and Anthropic.\n* **Global Legislative Proposals:** In the United States, a legislative bill has been introduced aiming to place bans on artificial superintelligence development. Concurrently, governments worldwide are ramping up oversight on digital replicas, deepfakes, and automated risk management frameworks (such as the UK's newly published AI Risk Management Toolkit).\n\n### **3. Shift Toward \"Agentic AI\" & Multi-Model Strategies**\n* **From Chatbots to Digital Coworkers:** The broader tech landscape has firmly shifted from simple prompt-and-response chatbots to **agentic workflows**—AI agents capable of executing multi-step tasks autonomously across software ecosystems. Enterprises are increasingly utilizing multi-model strategies, picking and choosing between various frontier models (such as Claude, ChatGPT, Gemini, and specialized open models) based on task complexity, speed, and cost (\"tokenomics\").\n* **Cybersecurity & Defense Collaboration:** Tech firms continue to roll out specialized security infrastructures. For instance, Google recently introduced the *Fairwind* program to supply governments and vetted partners with advanced AI-driven cyber-defense capabilities.\n\n### **4. Societal and Psychological Research**\n* **The \"Consciousness\" Gap:** A recent study published in *Cognition* (led by researchers at Ludwig Maximilian University of Munich) revealed that humans draw a very sharp line regarding AI consciousness. Even when an AI system behaves identically to a human, people steadfastly refuse to view it as conscious—though they are much more willing to attribute general \"awareness\" to it when prompted differently.\n* **UN Warnings on Inequality:** The United Nations issued new warnings that rapid transitions in artificial intelligence and green energy risk widening global socio-economic gaps, urging policymakers to ensure vulnerable and marginalized communities are not left behind in the tech boom."
             }
           ]
         },
         "finishReason": "STOP",
         "groundingMetadata": {
           "webSearchQueries": [
-            "latest artificial intelligence breakthroughs news October 2026",
-            "AI news today artificial intelligence breakthroughs announcements 2026"
+            "artificial intelligence news latest 2026",
+            "AI news headlines 2026"
           ],
           "searchEntryPoint": {
-            "renderedContent": "<style>\n.container {\n  align-items: center;\n  border-radius: 8px;\n  display: flex;\n  font-family: Google Sans, Roboto, sans-serif;\n  font-size: 14px;\n  line-height: 20px;\n  padding: 8px 12px;\n}\n.chip {\n  display: inline-block;\n  border: solid 1px;\n  border-radius: 16px;\n  min-width: 14px;\n  padding: 5px 16px;\n  text-align: center;\n  user-select: none;\n  margin: 0 8px;\n  -webkit-tap-highlight-color: transparent;\n}\n.carousel {\n  overflow: auto;\n  scrollbar-width: none;\n  white-space: nowrap;\n  margin-right: -12px;\n}\n.headline {\n  display: flex;\n  margin-right: 4px;\n}\n.gradient-container {\n  position: relative;\n}\n.gradient {\n  position: absolute;\n  transform: translate(3px, -9px);\n  height: 36px;\n  width: 9px;\n}\n@media (prefers-color-scheme: light) {\n  .container {\n    background-color: #fafafa;\n    box-shadow: 0 0 0 1px #0000000f;\n  }\n  .headline-label {\n    color: #1f1f1f;\n  }\n  .chip {\n    background-color: #ffffff;\n    border-color: #d2d2d2;\n    color: #5e5e5e;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #f2f2f2;\n  }\n  .chip:focus {\n    background-color: #f2f2f2;\n  }\n  .chip:active {\n    background-color: #d8d8d8;\n    border-color: #b6b6b6;\n  }\n  .logo-dark {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #fafafa 15%, #fafafa00 100%);\n  }\n}\n@media (prefers-color-scheme: dark) {\n  .container {\n    background-color: #1f1f1f;\n    box-shadow: 0 0 0 1px #ffffff26;\n  }\n  .headline-label {\n    color: #fff;\n  }\n  .chip {\n    background-color: #2c2c2c;\n    border-color: #3c4043;\n    color: #fff;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #353536;\n  }\n  .chip:focus {\n    background-color: #353536;\n  }\n  .chip:active {\n    background-color: #464849;\n    border-color: #53575b;\n  }\n  .logo-light {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #1f1f1f 15%, #1f1f1f00 100%);\n  }\n}\n</style>\n<div class=\"container\">\n  <div class=\"headline\">\n    <svg class=\"logo-light\" width=\"18\" height=\"18\" viewBox=\"9 9 35 35\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M42.8622 27.0064C42.8622 25.7839 42.7525 24.6084 42.5487 23.4799H26.3109V30.1568H35.5897C35.1821 32.3041 33.9596 34.1222 32.1258 35.3448V39.6864H37.7213C40.9814 36.677 42.8622 32.2571 42.8622 27.0064V27.0064Z\" fill=\"#4285F4\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 43.8555C30.9659 43.8555 34.8687 42.3195 37.7213 39.6863L32.1258 35.3447C30.5898 36.3792 28.6306 37.0061 26.3109 37.0061C21.8282 37.0061 18.0195 33.9811 16.6559 29.906H10.9194V34.3573C13.7563 39.9841 19.5712 43.8555 26.3109 43.8555V43.8555Z\" fill=\"#34A853\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M16.6559 29.8904C16.3111 28.8559 16.1074 27.7588 16.1074 26.6146C16.1074 25.4704 16.3111 24.3733 16.6559 23.3388V18.8875H10.9194C9.74388 21.2072 9.06992 23.8247 9.06992 26.6146C9.06992 29.4045 9.74388 32.022 10.9194 34.3417L15.3864 30.8621L16.6559 29.8904V29.8904Z\" fill=\"#FBBC05\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 16.2386C28.85 16.2386 31.107 17.1164 32.9095 18.8091L37.8466 13.8719C34.853 11.082 30.9659 9.3736 26.3109 9.3736C19.5712 9.3736 13.7563 13.245 10.9194 18.8875L16.6559 23.3388C18.0195 19.2636 21.8282 16.2386 26.3109 16.2386V16.2386Z\" fill=\"#EA4335\"/>\n    </svg>\n    <svg class=\"logo-dark\" width=\"18\" height=\"18\" viewBox=\"0 0 48 48\" xmlns=\"http://www.w3.org/2000/svg\">\n      <circle cx=\"24\" cy=\"23\" fill=\"#FFF\" r=\"22\"/>\n      <path d=\"M33.76 34.26c2.75-2.56 4.49-6.37 4.49-11.26 0-.89-.08-1.84-.29-3H24.01v5.99h8.03c-.4 2.02-1.5 3.56-3.07 4.56v.75l3.91 2.97h.88z\" fill=\"#4285F4\"/>\n      <path d=\"M15.58 25.77A8.845 8.845 0 0 0 24 31.86c1.92 0 3.62-.46 4.97-1.31l4.79 3.71C31.14 36.7 27.65 38 24 38c-5.93 0-11.01-3.4-13.45-8.36l.17-1.01 4.06-2.85h.8z\" fill=\"#34A853\"/>\n      <path d=\"M15.59 20.21a8.864 8.864 0 0 0 0 5.58l-5.03 3.86c-.98-2-1.53-4.25-1.53-6.64 0-2.39.55-4.64 1.53-6.64l1-.22 3.81 2.98.22 1.08z\" fill=\"#FBBC05\"/>\n      <path d=\"M24 14.14c2.11 0 4.02.75 5.52 1.98l4.36-4.36C31.22 9.43 27.81 8 24 8c-5.93 0-11.01 3.4-13.45 8.36l5.03 3.85A8.86 8.86 0 0 1 24 14.14z\" fill=\"#EA4335\"/>\n    </svg>\n    <div class=\"gradient-container\"><div class=\"gradient\"></div></div>\n  </div>\n  <div class=\"carousel\">\n<a class=\"chip\" href=\"https://www.google.com/search?q=latest+artificial+intelligence+breakthroughs+news+October+2026&client=app-vertex-grounding&safesearch=active\">latest artificial intelligence breakthroughs news October 2026</a>\n<a class=\"chip\" href=\"https://www.google.com/search?q=AI+news+today+artificial+intelligence+breakthroughs+announcements+2026&client=app-vertex-grounding&safesearch=active\">AI news today artificial intelligence breakthroughs announcements 2026</a>\n  </div>\n</div>"
+            "renderedContent": "<style>\n.container {\n  align-items: center;\n  border-radius: 8px;\n  display: flex;\n  font-family: Google Sans, Roboto, sans-serif;\n  font-size: 14px;\n  line-height: 20px;\n  padding: 8px 12px;\n}\n.chip {\n  display: inline-block;\n  border: solid 1px;\n  border-radius: 16px;\n  min-width: 14px;\n  padding: 5px 16px;\n  text-align: center;\n  user-select: none;\n  margin: 0 8px;\n  -webkit-tap-highlight-color: transparent;\n}\n.carousel {\n  overflow: auto;\n  scrollbar-width: none;\n  white-space: nowrap;\n  margin-right: -12px;\n}\n.headline {\n  display: flex;\n  margin-right: 4px;\n}\n.gradient-container {\n  position: relative;\n}\n.gradient {\n  position: absolute;\n  transform: translate(3px, -9px);\n  height: 36px;\n  width: 9px;\n}\n@media (prefers-color-scheme: light) {\n  .container {\n    background-color: #fafafa;\n    box-shadow: 0 0 0 1px #0000000f;\n  }\n  .headline-label {\n    color: #1f1f1f;\n  }\n  .chip {\n    background-color: #ffffff;\n    border-color: #d2d2d2;\n    color: #5e5e5e;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #f2f2f2;\n  }\n  .chip:focus {\n    background-color: #f2f2f2;\n  }\n  .chip:active {\n    background-color: #d8d8d8;\n    border-color: #b6b6b6;\n  }\n  .logo-dark {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #fafafa 15%, #fafafa00 100%);\n  }\n}\n@media (prefers-color-scheme: dark) {\n  .container {\n    background-color: #1f1f1f;\n    box-shadow: 0 0 0 1px #ffffff26;\n  }\n  .headline-label {\n    color: #fff;\n  }\n  .chip {\n    background-color: #2c2c2c;\n    border-color: #3c4043;\n    color: #fff;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #353536;\n  }\n  .chip:focus {\n    background-color: #353536;\n  }\n  .chip:active {\n    background-color: #464849;\n    border-color: #53575b;\n  }\n  .logo-light {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #1f1f1f 15%, #1f1f1f00 100%);\n  }\n}\n</style>\n<div class=\"container\">\n  <div class=\"headline\">\n    <svg class=\"logo-light\" width=\"18\" height=\"18\" viewBox=\"9 9 35 35\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M42.8622 27.0064C42.8622 25.7839 42.7525 24.6084 42.5487 23.4799H26.3109V30.1568H35.5897C35.1821 32.3041 33.9596 34.1222 32.1258 35.3448V39.6864H37.7213C40.9814 36.677 42.8622 32.2571 42.8622 27.0064V27.0064Z\" fill=\"#4285F4\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 43.8555C30.9659 43.8555 34.8687 42.3195 37.7213 39.6863L32.1258 35.3447C30.5898 36.3792 28.6306 37.0061 26.3109 37.0061C21.8282 37.0061 18.0195 33.9811 16.6559 29.906H10.9194V34.3573C13.7563 39.9841 19.5712 43.8555 26.3109 43.8555V43.8555Z\" fill=\"#34A853\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M16.6559 29.8904C16.3111 28.8559 16.1074 27.7588 16.1074 26.6146C16.1074 25.4704 16.3111 24.3733 16.6559 23.3388V18.8875H10.9194C9.74388 21.2072 9.06992 23.8247 9.06992 26.6146C9.06992 29.4045 9.74388 32.022 10.9194 34.3417L15.3864 30.8621L16.6559 29.8904V29.8904Z\" fill=\"#FBBC05\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 16.2386C28.85 16.2386 31.107 17.1164 32.9095 18.8091L37.8466 13.8719C34.853 11.082 30.9659 9.3736 26.3109 9.3736C19.5712 9.3736 13.7563 13.245 10.9194 18.8875L16.6559 23.3388C18.0195 19.2636 21.8282 16.2386 26.3109 16.2386V16.2386Z\" fill=\"#EA4335\"/>\n    </svg>\n    <svg class=\"logo-dark\" width=\"18\" height=\"18\" viewBox=\"0 0 48 48\" xmlns=\"http://www.w3.org/2000/svg\">\n      <circle cx=\"24\" cy=\"23\" fill=\"#FFF\" r=\"22\"/>\n      <path d=\"M33.76 34.26c2.75-2.56 4.49-6.37 4.49-11.26 0-.89-.08-1.84-.29-3H24.01v5.99h8.03c-.4 2.02-1.5 3.56-3.07 4.56v.75l3.91 2.97h.88z\" fill=\"#4285F4\"/>\n      <path d=\"M15.58 25.77A8.845 8.845 0 0 0 24 31.86c1.92 0 3.62-.46 4.97-1.31l4.79 3.71C31.14 36.7 27.65 38 24 38c-5.93 0-11.01-3.4-13.45-8.36l.17-1.01 4.06-2.85h.8z\" fill=\"#34A853\"/>\n      <path d=\"M15.59 20.21a8.864 8.864 0 0 0 0 5.58l-5.03 3.86c-.98-2-1.53-4.25-1.53-6.64 0-2.39.55-4.64 1.53-6.64l1-.22 3.81 2.98.22 1.08z\" fill=\"#FBBC05\"/>\n      <path d=\"M24 14.14c2.11 0 4.02.75 5.52 1.98l4.36-4.36C31.22 9.43 27.81 8 24 8c-5.93 0-11.01 3.4-13.45 8.36l5.03 3.85A8.86 8.86 0 0 1 24 14.14z\" fill=\"#EA4335\"/>\n    </svg>\n    <div class=\"gradient-container\"><div class=\"gradient\"></div></div>\n  </div>\n  <div class=\"carousel\">\n<a class=\"chip\" href=\"https://www.google.com/search?q=artificial+intelligence+news+latest+2026&client=app-vertex-grounding&safesearch=active\">artificial intelligence news latest 2026</a>\n<a class=\"chip\" href=\"https://www.google.com/search?q=AI+news+headlines+2026&client=app-vertex-grounding&safesearch=active\">AI news headlines 2026</a>\n  </div>\n</div>"
           },
           "groundingChunks": [
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHKL2YrgYDivHhGDV7waezJFka4sB6djuj1puSlTKHgOJMJo02zSyNx_GW2G3oPrH4tvXo2sumUZUMMVn33Nb96DkLWobOseUGeYjd1sXgLdeOcIGrF3JeAA8qw91h2AjQEKtu8imYMXhNvfXG5buqKGnQVh8ZABQEzHV6VBySgy6jgRsFMDQ9n2qcAAe21mEyHJt3N-b06hjKgOgd9WSxTg9PYS08v4A1Z8lzKRw==",
-                "title": "rockefellerfoundation.org"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHeD4SbNcduCxMqtP6_k6ik7FO20lXhn2DKGdSyoan2MYVVAfQijt5Tx8Of-bPOo8PnGTKluAwoeSWS7hw1XuHlmQPZ1__BErDq6vku0ObdR04lkAF6lUTEq4pDBgdK3EarFoKk0OB_Twd8agqTSFO2lr_k4cfivNnbvCKRZ5AE6cA5EtW6CWZFvndwvgb0LtzFKSTxhafjQDP97_Y6ry0a6Ayp5DrRK4MtGYRrklpfqe48zFF6TzgjPNNFsyHA5dx9uj4pjqIgFPrLHUWABr3YXaqGymZK_5Y5Yi3V87Ksowqr5vwYnOGAtzRgwdcqueWSq5-JXg-Vzjq_AA5fZz7xyOk-hclRRBQn4jCMk2NDmw==",
+                "title": "gartner.com"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHTdmhi0iRxC3XuM-LoPBvYEupA6sdmFC7YeEwBRgGpZ-N0rAPwTgJDB89vVCRAExouqTXJ0ZCIzZtIYhv6XruciycE6oSd57QZSIFPKqgdCY0INNImVdfUbhiKo2pFszV_KJ3WfshLfLEC",
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHpi8Kez-bXb-HD-eyQ9wO_L5IXFgUOH3jvLTfskQjAGlhSWaKaHnaj6iM80kV19L1FDtCqHPnuh6XuybFDweGhMZLEIdSlDUQFrtX6ytUw0-bDvARmNd8In4Mhh-fo9Yb82HT1QXqVE7vk",
                 "title": "aiweekly.co"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFOs_q1zGirMucDQEM_ueDdtcut9NbAJAO26L6V1qQpVg1JF-m0ECO_iW0PCKE2hENHlbEHMW5prEyFutElHiKIQQKRWfpNM1NNE1_tX7qV3sdNnT4inTOcA29o4UMDHCv_la5fjoFneLlXy5yAmwjKHnjerMwSIPAAsDnaIRF5Tg==",
-                "title": "taipeitimes.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG-QS2D_L123IA2BboTegyLgO-InZVog7gAdAbVNmeq2vfO5ZDr-XLjGyuX_dllXePTmCerNeliKfA1eg6anwjBh5XevSItNQCb95aWCMoAgDGir91gj78tRueq8WBdcd14CashYRiVbqIsKR62y58LGvELadR1LsOEF5sEIA==",
+                "title": "stephensonharwood.com"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQF5yj2IHfS1iwrHHHVt_v2upsAQddTk8iDvwbyKULHUn51mwaajxlUm_x_EVpqwvOkLwYIMUtagsDq1WXepoIv-DRGANxhuLcmk1LR9g6Bwqa0kCu0BFbEqvGa6I8G5uEOoqYzbI2S4aiKEUxFREPvzvDL-oNKQJsu1Fa0=",
-                "title": "emergent.sh"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQER2bl29nGRewCDy-EqUPOkUpDMAsf5QORh2KFx0NH3K-ag7v86tf7gJovxrYfaBuU1-iWXNxkQbxzSV3LA9xiS6bhEvU8ciO1Htspfl07sQPfKOqO8MXMTaIuuTqfSqUV-3wc8BT_xvLpC2qLrSEpzdHC9NjPUwqdpZ_Jz9Lkf739hbZ4J7bS-s-CK4ajH9isIZXF1qVVP1BTIZmA=",
+                "title": "reddit.com"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH3l8EKepfFJ-CxEj-VV9lnFXGGE8AfzZxY_7HyzoYXpZ4cSBNi6N3w1Kt4evjq3dPmaUJ6EFJc8j7V94JhjX-WkbxLwg4ekml77wyU_VYd5HDVB4DSWc8dr7zG2OoW52e0L3CvEhPi8FMuVjZm3-Ynk4hKF-6Rgu-SBpjr4svR8atbX46Z3N8RE4W-BoC2GFiL_BJ12a_ZWpsgbmUv2_dvyjjgs9Ar",
-                "title": "berkeley.edu"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHYHue-gqMB1PUkwtwFUHWUo2PXaao0MwmMLvnWmqdooRvKpHkCeQa5zxZaMtptkLnYjzBHn5ZEv_XAXccGTRsGb4ZmE1J-rQN1SfM2f39vIZZ0cZg4JNxKYKKWm3KYlULJ",
+                "title": "youtube.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH5z-FTeqpeCRUxy6GoF5gMCv27dPizaCutWayTWTMuGddf-MqqfkBnpVOU1MclNBcKT1IrzBMAU5WDUV5V11UUoe4mQ1tGhDE5KOeBaJe5Bp4046Be08vPV6zcLCjsX1f_K24ZYzC8oh--DS-RztWjhxZDWA==",
+                "title": "sciencedaily.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEZmeJqI0meuPKuGs5nmiponMlvICqu4-pDOq0GUgRVtTRnvLJIESz2e-FW_zh4pFoJzIQMBBZdXGLLUz3pNBMiq0Mtu_rJsgT8E_A0tsBsz3zUG6zf3ctBcn3xIeUJpdiAlA==",
+                "title": "un.org"
               }
             }
           ],
           "groundingSupports": [
             {
               "segment": {
-                "startIndex": 106,
-                "endIndex": 340,
-                "text": "Major Partnerships & Public Sector Initiatives\n* **The Rockefeller Foundation & OpenAI Foundation Initiative:** A major **$50 million initiative** titled *“Cities Deliver: AI Solutions for Public Services”* was officially launched"
+                "startIndex": 161,
+                "endIndex": 374,
+                "text": "**Gartner's Warning on AI Infrastructure:** A prominent report from Gartner highlights that massive capital spending on AI data centers—expected to near $1 trillion in 2026 alone—faces heavy financial exposure"
               },
               "groundingChunkIndices": [
                 0
@@ -65,9 +77,9 @@
             },
             {
               "segment": {
-                "startIndex": 342,
-                "endIndex": 548,
-                "text": "The global program aims to fund nonprofit and civil society organizations partnering with city governments to implement AI solutions addressing public health, environmental resilience, and economic mobility"
+                "startIndex": 376,
+                "endIndex": 587,
+                "text": "The study estimates that enterprise and consumer AI revenue may fall short of covering the anticipated costs, warning that over 80% of independent \"neocloud\" providers could face consolidation or closure by 2030"
               },
               "groundingChunkIndices": [
                 0
@@ -75,9 +87,9 @@
             },
             {
               "segment": {
-                "startIndex": 559,
-                "endIndex": 870,
-                "text": "Enterprise Infrastructure, Silicon, and Security\n* **Intel’s OCP Global Summit Announcements:** Intel formally launched its inference-focused **GPU D270** architecture (formerly code-named *Crescent Island*), packing up to 480GB of LPDDR5X and targeted at power-efficient, high-bandwidth data center workloads"
+                "startIndex": 591,
+                "endIndex": 889,
+                "text": "**AI Stock Volatility:** Global semiconductor and AI hardware stocks experienced sharp corrections recently, with major players like SK Hynix, Samsung, ASML, and Advantest seeing significant pullbacks as markets reevaluate the near-term return on investment (ROI) for scaled hardware infrastructure"
               },
               "groundingChunkIndices": [
                 1
@@ -85,9 +97,19 @@
             },
             {
               "segment": {
-                "startIndex": 872,
-                "endIndex": 1166,
-                "text": "* **Network Security for AI Agents:** Quantum computing and networking firm IonQ announced a definitive agreement to acquire zero-trust security vendor Elisity for up to $1.3 billion, aiming to lock down and govern traffic specifically between enterprise networks and autonomous AI agent swarms"
+                "startIndex": 939,
+                "endIndex": 1179,
+                "text": "**EU AI Act Enforcement:** Provisions under Article 50 of the European Union’s AI Act are officially in active enforcement, requiring providers and deployers of transparency-sensitive AI systems to comply with strict regulatory guidelines"
+              },
+              "groundingChunkIndices": [
+                2
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 1181,
+                "endIndex": 1288,
+                "text": "Meanwhile, the EU AI Office has initiated formal probes into major lab developers like OpenAI and Anthropic"
               },
               "groundingChunkIndices": [
                 1
@@ -95,44 +117,82 @@
             },
             {
               "segment": {
-                "startIndex": 1168,
-                "endIndex": 1418,
-                "text": "* **Anthropic’s Model Defenses:** Anthropic released new defensive updates (shipping via Claude Fable 5.1) designed to drastically disrupt automated model \"distillation\"—cutting down unauthorized data harvesting from reasoning models by up to 99%"
+                "startIndex": 1292,
+                "endIndex": 1451,
+                "text": "**Global Legislative Proposals:** In the United States, a legislative bill has been introduced aiming to place bans on artificial superintelligence development"
               },
               "groundingChunkIndices": [
-                1
+                2
               ]
             },
             {
               "segment": {
-                "startIndex": 1428,
-                "endIndex": 1649,
-                "text": "Shift Toward \"Physical AI\" and Advanced Multimodal Models\n* **Moving Beyond Pure LLMs:** Industry discourse has increasingly pivoted away from text-only Large Language Models toward **\"Physical AI\"** and spatial reasoning"
+                "startIndex": 1453,
+                "endIndex": 1648,
+                "text": "Concurrently, governments worldwide are ramping up oversight on digital replicas, deepfakes, and automated risk management frameworks (such as the UK's newly published AI Risk Management Toolkit)"
               },
               "groundingChunkIndices": [
-                2,
+                2
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 1715,
+                "endIndex": 1956,
+                "text": "**From Chatbots to Digital Coworkers:** The broader tech landscape has firmly shifted from simple prompt-and-response chatbots to **agentic workflows**—AI agents capable of executing multi-step tasks autonomously across software ecosystems"
+              },
+              "groundingChunkIndices": [
                 3
               ]
             },
             {
               "segment": {
-                "startIndex": 1651,
-                "endIndex": 1889,
-                "text": "Research labs are heavily prioritizing models capable of advanced video analysis, robotics coordination, and real-world environmental interaction, noting that text-pattern matching alone hits hard limits when applied to physical execution"
-              },
-              "groundingChunkIndices": [
-                2,
-                3
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 1899,
-                "endIndex": 2321,
-                "text": "Human-AI Interaction and Cognitive Research\n* **Cognitive Impact Studies:** Presented at the Conference on Language Modeling, a landmark study co-authored by researchers including UC Berkeley’s Brian Christian highlighted a sobering psychological finding: relying on AI tools for just 10 minutes during complex math and reasoning tasks measurably impairs human focus, stamina, and independent problem-solving persistence"
+                "startIndex": 1958,
+                "endIndex": 2193,
+                "text": "Enterprises are increasingly utilizing multi-model strategies, picking and choosing between various frontier models (such as Claude, ChatGPT, Gemini, and specialized open models) based on task complexity, speed, and cost (\"tokenomics\")"
               },
               "groundingChunkIndices": [
                 4
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 2310,
+                "endIndex": 2466,
+                "text": "For instance, Google recently introduced the *Fairwind* program to supply governments and vetted partners with advanced AI-driven cyber-defense capabilities"
+              },
+              "groundingChunkIndices": [
+                4
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 2518,
+                "endIndex": 2720,
+                "text": "**The \"Consciousness\" Gap:** A recent study published in *Cognition* (led by researchers at Ludwig Maximilian University of Munich) revealed that humans draw a very sharp line regarding AI consciousness"
+              },
+              "groundingChunkIndices": [
+                5
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 2722,
+                "endIndex": 2927,
+                "text": "Even when an AI system behaves identically to a human, people steadfastly refuse to view it as conscious—though they are much more willing to attribute general \"awareness\" to it when prompted differently"
+              },
+              "groundingChunkIndices": [
+                5
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 2931,
+                "endIndex": 3216,
+                "text": "**UN Warnings on Inequality:** The United Nations issued new warnings that rapid transitions in artificial intelligence and green energy risk widening global socio-economic gaps, urging policymakers to ensure vulnerable and marginalized communities are not left behind in the tech boom"
+              },
+              "groundingChunkIndices": [
+                6
               ]
             }
           ]
@@ -140,9 +200,9 @@
       }
     ],
     "usageMetadata": {
-      "promptTokenCount": 71,
-      "candidatesTokenCount": 510,
-      "totalTokenCount": 581
+      "promptTokenCount": 68,
+      "candidatesTokenCount": 698,
+      "totalTokenCount": 766
     },
     "modelVersion": "gemini-3.5-flash-lite",
     "responseId": "mock-response-id-0004"

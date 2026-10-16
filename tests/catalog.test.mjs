@@ -85,11 +85,16 @@ test("Seam 3: synthesizeDynamicModel static fallbacks match captured catalog (Cl
 });
 
 test("Seam 3: server-gated (disabled: true) entries never reach the catalog", async () => {
+  // 1.3.5 shipped Argon as a recommended but server-gated entry (gemini-4-argon-disabled,
+  // disabled: true); 1.3.6 dropped it once Argon went GA, so the gate is replayed from
+  // that 1.3.5 shape on top of the newest capture.
   const gatedId = "gemini-4-argon-disabled";
-  assert.equal(modelsJson.models[gatedId]?.disabled, true, "capture must carry a disabled entry");
+  const gatedJson = structuredClone(modelsJson);
+  gatedJson.models[gatedId] = { ...gatedJson.models["gemini-4-argon-medium"], model: "MODEL_PLACEHOLDER_M421", disabled: true };
+  gatedJson.agentModelSorts[0].groups[0].modelIds.unshift(gatedId);
 
   const realFetch = globalThis.fetch;
-  globalThis.fetch = async () => ({ ok: true, json: async () => modelsJson });
+  globalThis.fetch = async () => ({ ok: true, json: async () => gatedJson });
   try {
     const catalog = createModelCatalog();
     const publicModels = await catalog.refresh({ allowNetwork: true, credential: TEST_CREDENTIAL, stored: {} });
@@ -97,7 +102,7 @@ test("Seam 3: server-gated (disabled: true) entries never reach the catalog", as
 
     assert.ok(!items.models.some((m) => m.id === gatedId));
     assert.equal(items.modelEnums[gatedId], undefined);
-    assert.ok(!publicModels.some((m) => m.id.startsWith("gemini-4-argon")));
+    assert.ok(!publicModels.some((m) => m.id === gatedId));
     assert.throws(() => catalog.resolvePlan(gatedId, "high"), /Unknown model/);
   } finally {
     globalThis.fetch = realFetch;
@@ -151,11 +156,9 @@ test("Seam 3: formatModelsList shows recommended-only detailed table in sort ord
   catalog.record(modelsJson);
   const output = catalog.formatList();
 
-  // 10, not 11: the 1.3.5 Recommended group also names gemini-4-argon-disabled, a
-  // server-gated entry (disabled: true) that agy advertises in agentModelSorts and then
-  // hides from its own model list. The provider hides it the same way.
-  assert.match(output, /\(10 recommended\)/);
-  assert.doesNotMatch(output, /gemini-4-argon/);
+  // 1.3.6: Gemini 4 Argon is GA (its three tiers lead the Recommended group).
+  assert.match(output, /\(13 recommended\)/);
+  assert.match(output, /gemini-4-argon-high\s+Gemini 4 Argon/);
   assert.match(output, /Model\s+Name\s+Context\s+Features\s+Rem/);
   // non-recommended runtimes excluded
   assert.doesNotMatch(output, /gemini-2\.5-flash/);
@@ -184,9 +187,9 @@ test("Seam 3: buildDynamicPublicModels generates models dynamically from agy mod
       stored: {},
     });
 
-    // gemini-4-argon-disabled is recommended but server-gated (disabled: true): not offered.
-    assert.equal(publicModels.length, 4);
+    assert.equal(publicModels.length, 5);
     const ids = publicModels.map((m) => m.id);
+    assert.ok(ids.includes("gemini-4-argon"));
     assert.ok(ids.includes("gemini-3.8-flash"));
     assert.ok(ids.includes("claude-sonnet-5-5"));
     assert.ok(ids.includes("claude-opus-5-5"));
@@ -195,8 +198,9 @@ test("Seam 3: buildDynamicPublicModels generates models dynamically from agy mod
     assert.ok(!ids.includes("gemini-3.1-pro"));
 
     // Verify ordering follows recommended agentModelSorts
-    assert.equal(publicModels[0].id, "gemini-3.8-flash");
-    assert.equal(publicModels[1].id, "claude-opus-5-5");
+    assert.equal(publicModels[0].id, "gemini-4-argon");
+    assert.equal(publicModels[1].id, "gemini-3.8-flash");
+    assert.equal(publicModels[2].id, "claude-opus-5-5");
   } finally {
     globalThis.fetch = realFetch;
   }
