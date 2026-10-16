@@ -45,13 +45,18 @@ const BASE64_SIGNATURE_PATTERN = /^[A-Za-z0-9+/_-]+={0,2}$/;
  * of the current turn → 400 with the message above; the identical body with this
  * sentinel on that single part → 200.
  *
+ * Spelled the way agy sends it: base64 of the sentinel string, since the field is
+ * bytes on the wire (agy 1.4.0 stream_turn23_tool_switch_flash replays a Claude
+ * functionCall to Gemini with exactly this value). The plain string is accepted too
+ * (probe B), but it is not agy's byte sequence.
+ *
  * Applied to foreign calls only. A signature we *should* have had —
  * same provider and family, yet missing or unreadable (pipeline regression, damaged
  * session) — keeps failing loudly with the 400 above instead of being papered over,
  * so a lost signature stays visible as a bug rather than silently degrading the
  * model's reasoning for that call.
  */
-export const SKIP_THOUGHT_SIGNATURE_VALIDATOR = "skip_thought_signature_validator";
+export const SKIP_THOUGHT_SIGNATURE_VALIDATOR = "c2tpcF90aG91Z2h0X3NpZ25hdHVyZV92YWxpZGF0b3I="; // base64("skip_thought_signature_validator")
 
 /**
  * Verifies that a thought signature candidate is a valid base64 string suitable
