@@ -543,6 +543,16 @@ export function buildAntigravityRequestBody(params: BuildRequestBodyParams): Rec
 
   const modelEnum = plan.modelEnum;
 
+  // agy scopes the used_* labels to the conversation, not the current turn: once a
+  // Claude (non-Gemini) turn is in the history, switching back to Gemini still sends
+  // "true" (agy 1.4.0 stream_turn17_switch_argon). Dropped turns are not carried, so
+  // they do not count.
+  const usedProfiles = conversation
+    .filter((m: any) => m.role === "assistant" && m.model && m.stopReason !== "error" && m.stopReason !== "aborted")
+    .map((m: any) => getModelProfile(m.model));
+  const usedClaude = plan.isClaude || usedProfiles.some((p) => p.isClaude);
+  const usedNonGemini = plan.isNonGemini || usedProfiles.some((p) => p.isNonGemini);
+
   const labels: Record<string, string> = {
     // agy names the conversation twice on 1.2.16 (cascade_id and its root) and the
     // per-turn trajectory once; the root is the same cascade for a plain session.
@@ -552,9 +562,9 @@ export function buildAntigravityRequestBody(params: BuildRequestBodyParams): Rec
     request_id: `${trajectoryId}-${requestIndex}`,
     root_cascade_id: cascadeId,
     trajectory_id: trajectoryId,
-    used_claude: String(plan.isClaude),
-    used_claude_conservative: String(plan.isClaude),
-    used_non_gemini_model: String(plan.isNonGemini),
+    used_claude: String(usedClaude),
+    used_claude_conservative: String(usedClaude),
+    used_non_gemini_model: String(usedNonGemini),
   };
 
   const generationConfig: Record<string, any> = {
