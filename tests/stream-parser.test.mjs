@@ -24,12 +24,11 @@ const sseSignature = [...sseTurn1.matchAll(/"thoughtSignature":\s*"([^"]+)"/g)].
 test("Seam 2: parseWhole extracts thinking and thoughtSignature from Turn 1", () => {
   const result = parseWhole(sseTurn1);
 
-  // Turn 1 has thinking and a functionCall
-  assert.ok(result.content.length >= 2, "Expected at least thinking and toolCall blocks");
-
+  // Whether Turn 1 carries a thought summary is model output (1.3.6's has none), so the
+  // thinking block is pinned to the wire: present with the wire's text iff the SSE has one.
   const thinkingBlock = result.content.find((c) => c.type === "thinking");
-  assert.ok(thinkingBlock, "Should have a thinking block");
-  assert.equal(thinkingBlock.thinking, sseThoughtText, "thinking text must match the wire parts");
+  assert.equal(Boolean(thinkingBlock), sseThoughtText !== "", "thinking block iff the wire carries thought parts");
+  if (thinkingBlock) assert.equal(thinkingBlock.thinking, sseThoughtText, "thinking text must match the wire parts");
 
   const toolCallBlock = result.content.find((c) => c.type === "toolCall");
   assert.ok(toolCallBlock, "Should have a toolCall block");
@@ -40,9 +39,9 @@ test("Seam 2: parseWhole extracts thinking and thoughtSignature from Turn 1", ()
 
   // Critical: thoughtSignature must be captured, SDK-spelled by the parser:
   // toolCalls keep thoughtSignature, thinking blocks take thinkingSignature.
-  assert.ok(toolCallBlock.thoughtSignature || thinkingBlock.thinkingSignature, "thoughtSignature must be present");
-  assert.equal("thoughtSignature" in thinkingBlock, false, "thinking blocks must not carry the wire spelling");
-  const sig = toolCallBlock.thoughtSignature || thinkingBlock.thinkingSignature;
+  assert.ok(toolCallBlock.thoughtSignature || thinkingBlock?.thinkingSignature, "thoughtSignature must be present");
+  if (thinkingBlock) assert.equal("thoughtSignature" in thinkingBlock, false, "thinking blocks must not carry the wire spelling");
+  const sig = toolCallBlock.thoughtSignature || thinkingBlock?.thinkingSignature;
   assert.equal(sig, sseSignature, "signature must be the wire value verbatim");
 });
 

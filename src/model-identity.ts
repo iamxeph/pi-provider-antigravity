@@ -5,7 +5,7 @@
  */
 
 export type ModelFamily = "gemini" | "claude" | "gpt" | "unknown";
-export type QuotaPoolKind = "gemini" | "3p";
+export type QuotaPoolKind = "gemini" | "argon" | "3p";
 
 export interface ModelProfile {
   readonly id?: string;
@@ -13,6 +13,8 @@ export interface ModelProfile {
   readonly isGemini: boolean;
   readonly isClaude: boolean;
   readonly isGpt: boolean;
+  /** Gemini 4 Argon: Gemini family, but its own weekly quota pool on paid Pro plans (agy 1.3.6). */
+  readonly isArgon: boolean;
   readonly isNonGemini: boolean;
   readonly quotaPoolKind: QuotaPoolKind;
   readonly replaysReasoningHistory: boolean;
@@ -37,9 +39,10 @@ export function getModelProfile(modelId?: string): ModelProfile {
   const isGemini = family === "gemini";
   const isClaude = family === "claude";
   const isGpt = family === "gpt";
+  const isArgon = isGemini && bare.includes("-argon");
   const isNonGemini = family !== "gemini";
 
-  const quotaPoolKind: QuotaPoolKind = isClaude || isGpt ? "3p" : "gemini";
+  const quotaPoolKind: QuotaPoolKind = isClaude || isGpt ? "3p" : isArgon ? "argon" : "gemini";
   const replaysReasoningHistory = family !== "gpt";
 
   const isFlash = bare.includes("flash");
@@ -53,6 +56,7 @@ export function getModelProfile(modelId?: string): ModelProfile {
     isGemini,
     isClaude,
     isGpt,
+    isArgon,
     isNonGemini,
     quotaPoolKind,
     replaysReasoningHistory,
