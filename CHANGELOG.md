@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.26.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.25.0...v0.26.0) (2026-10-16)
+
+
+### Features
+
+* support agy 1.4.0 ([#82](https://github.com/iamxeph/pi-provider-antigravity/issues/82)) ([8b86893](https://github.com/iamxeph/pi-provider-antigravity/commit/8b868939f32450cebbecad7673cc1cbebfb2a02c))
+
+
+### Bug Fixes
+
+* align thinking replay with Pi 1.3.0 model switching ([#80](https://github.com/iamxeph/pi-provider-antigravity/issues/80)) ([9cbc92f](https://github.com/iamxeph/pi-provider-antigravity/commit/9cbc92f0dd3dacb4f9327f88ece379fd4f0cc924))
+
 ## [0.25.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.24.0...v0.25.0) (2026-10-16)
 
 
