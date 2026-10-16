@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.25.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.24.0...v0.25.0) (2026-10-16)
+
+
+### Features
+
+* support agy 1.3.6 and the Gemini 4 Argon quota pool ([#78](https://github.com/iamxeph/pi-provider-antigravity/issues/78)) ([a21a7c3](https://github.com/iamxeph/pi-provider-antigravity/commit/a21a7c3d4b5ab63227f8e0e5c312c682875a80fd))
+
 ## [0.24.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.23.0...v0.24.0) (2026-10-15)
 
 
