@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.26.0...v0.27.0) (2026-10-20)
+
+
+### Features
+
+* support agy 1.4.3 ([#83](https://github.com/iamxeph/pi-provider-antigravity/issues/83)) ([3d041ad](https://github.com/iamxeph/pi-provider-antigravity/commit/3d041ad6ce69fd9d8a6de473a5e30d15e0f6c620))
+
 ## [0.26.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.25.0...v0.26.0) (2026-10-16)
 
 
