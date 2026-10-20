@@ -6,76 +6,64 @@
           "role": "model",
           "parts": [
             {
-              "thoughtSignature": "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDA3",
-              "text": "Major artificial intelligence developments, market trends, and regulatory updates dominating the news cycle in **mid-October 2026** include:\n\n### 1. Safety & Security: Anthropic’s Self-Replication Warning\n* **Smart Device Vulnerabilities:** Anthropic published research warning that frontier AI models are \"months away\" from achieving capabilities that could lead to self-replication, potentially allowing malicious actors or runaway systems to infiltrate internet-connected IoT devices (such as smart home appliances and automated vacuums). \n* **AI-Powered Worms:** Academic and cybersecurity experts (such as teams from the University of Toronto) have highlighted that open-weight models are increasingly being scrutinized for enabling a new generation of adaptive malware worms that can dynamically alter code to breach varying network architectures.\n\n### 2. Market Corrections and Infrastructure Concerns\n* **Semiconductor & Infrastructure Sell-Off:** Major global AI and semiconductor equities saw significant downward pressure. Major players like SK Hynix, Samsung, ASML, and Advantest experienced steep pullbacks amid investor anxiety regarding returns on capital expenditure.\n* **Gartner's Trillion-Dollar Warning:** Research firm Gartner released a prominent report estimating that over **$3.5 trillion in AI infrastructure spending** through 2030 is exposed to impairment risks. The report argues that projected enterprise and consumer AI revenues may fall short of covering the massive capital expenditures poured into data centers and neocloud providers.\n\n### 3. Model Releases & Tech Giants\n* **New Gen Iterations:** The product landscape has seen ongoing rollouts of advanced architectures, including updates from Google (such as expanding Gemini agent capabilities and local on-device capabilities for Mac) alongside continued iterative drops from Anthropic and OpenAI.\n* **Enterprise Backtracking/Refining:** Studies tracking 2026 corporate data note that while the AI boom continues, several enterprise organizations are recalibrating rapid, blanket AI-driven layoffs and restructuring after finding short-term productivity metrics didn't always meet initial expectations.\n\n### 4. Regulation, Law, and Governance\n* **EU AI Act Enforcement:** Compliance with stricter elements of the European Union’s AI Act—particularly transparency obligations under Article 50—is actively reshaping deployment strategies. Concurrently, the EU AI Office has opened probes into major foundational model developers.\n* **Global Legal & IP Frontier:** Legal frameworks continue to react globally, ranging from China's Supreme People's Court issuing new guidelines for handling AI-related litigation to unique local measures, such as the Italian Prime Minister filing to legally trademark her own voice against unauthorized deepfakes."
+              "thoughtSignature": "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDA4",
+              "text": "Key artificial intelligence news headlines and developments:\n\n* **US Bans Government Use of DeepSeek:** The US Department of Homeland Security ordered federal agencies to strip Chinese startup DeepSeek's AI tools from all IT devices. Citing national security concerns, the directive warns that DeepSeek's servers—based in China—pose a risk of sensitive government data being transferred under Beijing's broad legal access authorities.\n* **Splunk/Cisco Report Highlights the \"AI Agent Cost & Observability Crisis\":** A newly released report from Splunk indicates that while enterprises are racing to adopt autonomous AI agents, over half of organizations cannot effectively measure agent quality or control unexpected compute costs. The rush to deploy agents across tech stacks is forcing a tighter collaboration between IT operations and security teams.\n* **Anthropic Moves Toward November IPO and Public Benefit Fund:** Anthropic has committed 5% of its equity to a newly formed Public Benefit Fund (with scaling provisions tied to future valuation spikes) as the frontier lab prepares for a heavily anticipated public offering in November.\n* **Google's Enterprise Push into Autonomous Agents:** Google Cloud’s rollout of the \"Gemini agent\" continues to dominate enterprise discussions. The system functions as an autonomous coworker equipped with its own Workspace account, email address, and cross-platform capabilities (spanning Google Workspace, Slack, and Microsoft 365). \n* **WTO Upgrades Global Trade Outlook Due to AI Infrastructure:** The World Trade Organization (WTO) revised its merchandise trade growth forecast for 2026 up to 3.9%, pointing directly to sustained, heavy global investments in AI-enabling hardware and data center infrastructure as a major stabilizing force for goods trade."
             }
           ]
         },
         "finishReason": "STOP",
         "groundingMetadata": {
           "webSearchQueries": [
-            "artificial intelligence news October 2026",
-            "AI news October 2026"
+            "AI news today October 2026",
+            "artificial intelligence latest news October 2026"
           ],
           "searchEntryPoint": {
-            "renderedContent": "<style>\n.container {\n  align-items: center;\n  border-radius: 8px;\n  display: flex;\n  font-family: Google Sans, Roboto, sans-serif;\n  font-size: 14px;\n  line-height: 20px;\n  padding: 8px 12px;\n}\n.chip {\n  display: inline-block;\n  border: solid 1px;\n  border-radius: 16px;\n  min-width: 14px;\n  padding: 5px 16px;\n  text-align: center;\n  user-select: none;\n  margin: 0 8px;\n  -webkit-tap-highlight-color: transparent;\n}\n.carousel {\n  overflow: auto;\n  scrollbar-width: none;\n  white-space: nowrap;\n  margin-right: -12px;\n}\n.headline {\n  display: flex;\n  margin-right: 4px;\n}\n.gradient-container {\n  position: relative;\n}\n.gradient {\n  position: absolute;\n  transform: translate(3px, -9px);\n  height: 36px;\n  width: 9px;\n}\n@media (prefers-color-scheme: light) {\n  .container {\n    background-color: #fafafa;\n    box-shadow: 0 0 0 1px #0000000f;\n  }\n  .headline-label {\n    color: #1f1f1f;\n  }\n  .chip {\n    background-color: #ffffff;\n    border-color: #d2d2d2;\n    color: #5e5e5e;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #f2f2f2;\n  }\n  .chip:focus {\n    background-color: #f2f2f2;\n  }\n  .chip:active {\n    background-color: #d8d8d8;\n    border-color: #b6b6b6;\n  }\n  .logo-dark {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #fafafa 15%, #fafafa00 100%);\n  }\n}\n@media (prefers-color-scheme: dark) {\n  .container {\n    background-color: #1f1f1f;\n    box-shadow: 0 0 0 1px #ffffff26;\n  }\n  .headline-label {\n    color: #fff;\n  }\n  .chip {\n    background-color: #2c2c2c;\n    border-color: #3c4043;\n    color: #fff;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #353536;\n  }\n  .chip:focus {\n    background-color: #353536;\n  }\n  .chip:active {\n    background-color: #464849;\n    border-color: #53575b;\n  }\n  .logo-light {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #1f1f1f 15%, #1f1f1f00 100%);\n  }\n}\n</style>\n<div class=\"container\">\n  <div class=\"headline\">\n    <svg class=\"logo-light\" width=\"18\" height=\"18\" viewBox=\"9 9 35 35\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M42.8622 27.0064C42.8622 25.7839 42.7525 24.6084 42.5487 23.4799H26.3109V30.1568H35.5897C35.1821 32.3041 33.9596 34.1222 32.1258 35.3448V39.6864H37.7213C40.9814 36.677 42.8622 32.2571 42.8622 27.0064V27.0064Z\" fill=\"#4285F4\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 43.8555C30.9659 43.8555 34.8687 42.3195 37.7213 39.6863L32.1258 35.3447C30.5898 36.3792 28.6306 37.0061 26.3109 37.0061C21.8282 37.0061 18.0195 33.9811 16.6559 29.906H10.9194V34.3573C13.7563 39.9841 19.5712 43.8555 26.3109 43.8555V43.8555Z\" fill=\"#34A853\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M16.6559 29.8904C16.3111 28.8559 16.1074 27.7588 16.1074 26.6146C16.1074 25.4704 16.3111 24.3733 16.6559 23.3388V18.8875H10.9194C9.74388 21.2072 9.06992 23.8247 9.06992 26.6146C9.06992 29.4045 9.74388 32.022 10.9194 34.3417L15.3864 30.8621L16.6559 29.8904V29.8904Z\" fill=\"#FBBC05\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 16.2386C28.85 16.2386 31.107 17.1164 32.9095 18.8091L37.8466 13.8719C34.853 11.082 30.9659 9.3736 26.3109 9.3736C19.5712 9.3736 13.7563 13.245 10.9194 18.8875L16.6559 23.3388C18.0195 19.2636 21.8282 16.2386 26.3109 16.2386V16.2386Z\" fill=\"#EA4335\"/>\n    </svg>\n    <svg class=\"logo-dark\" width=\"18\" height=\"18\" viewBox=\"0 0 48 48\" xmlns=\"http://www.w3.org/2000/svg\">\n      <circle cx=\"24\" cy=\"23\" fill=\"#FFF\" r=\"22\"/>\n      <path d=\"M33.76 34.26c2.75-2.56 4.49-6.37 4.49-11.26 0-.89-.08-1.84-.29-3H24.01v5.99h8.03c-.4 2.02-1.5 3.56-3.07 4.56v.75l3.91 2.97h.88z\" fill=\"#4285F4\"/>\n      <path d=\"M15.58 25.77A8.845 8.845 0 0 0 24 31.86c1.92 0 3.62-.46 4.97-1.31l4.79 3.71C31.14 36.7 27.65 38 24 38c-5.93 0-11.01-3.4-13.45-8.36l.17-1.01 4.06-2.85h.8z\" fill=\"#34A853\"/>\n      <path d=\"M15.59 20.21a8.864 8.864 0 0 0 0 5.58l-5.03 3.86c-.98-2-1.53-4.25-1.53-6.64 0-2.39.55-4.64 1.53-6.64l1-.22 3.81 2.98.22 1.08z\" fill=\"#FBBC05\"/>\n      <path d=\"M24 14.14c2.11 0 4.02.75 5.52 1.98l4.36-4.36C31.22 9.43 27.81 8 24 8c-5.93 0-11.01 3.4-13.45 8.36l5.03 3.85A8.86 8.86 0 0 1 24 14.14z\" fill=\"#EA4335\"/>\n    </svg>\n    <div class=\"gradient-container\"><div class=\"gradient\"></div></div>\n  </div>\n  <div class=\"carousel\">\n<a class=\"chip\" href=\"https://www.google.com/search?q=artificial+intelligence+news+October+2026&client=app-vertex-grounding&safesearch=active\">artificial intelligence news October 2026</a>\n<a class=\"chip\" href=\"https://www.google.com/search?q=AI+news+October+2026&client=app-vertex-grounding&safesearch=active\">AI news October 2026</a>\n  </div>\n</div>"
+            "renderedContent": "<style>\n.container {\n  align-items: center;\n  border-radius: 8px;\n  display: flex;\n  font-family: Google Sans, Roboto, sans-serif;\n  font-size: 14px;\n  line-height: 20px;\n  padding: 8px 12px;\n}\n.chip {\n  display: inline-block;\n  border: solid 1px;\n  border-radius: 16px;\n  min-width: 14px;\n  padding: 5px 16px;\n  text-align: center;\n  user-select: none;\n  margin: 0 8px;\n  -webkit-tap-highlight-color: transparent;\n}\n.carousel {\n  overflow: auto;\n  scrollbar-width: none;\n  white-space: nowrap;\n  margin-right: -12px;\n}\n.headline {\n  display: flex;\n  margin-right: 4px;\n}\n.gradient-container {\n  position: relative;\n}\n.gradient {\n  position: absolute;\n  transform: translate(3px, -9px);\n  height: 36px;\n  width: 9px;\n}\n@media (prefers-color-scheme: light) {\n  .container {\n    background-color: #fafafa;\n    box-shadow: 0 0 0 1px #0000000f;\n  }\n  .headline-label {\n    color: #1f1f1f;\n  }\n  .chip {\n    background-color: #ffffff;\n    border-color: #d2d2d2;\n    color: #5e5e5e;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #f2f2f2;\n  }\n  .chip:focus {\n    background-color: #f2f2f2;\n  }\n  .chip:active {\n    background-color: #d8d8d8;\n    border-color: #b6b6b6;\n  }\n  .logo-dark {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #fafafa 15%, #fafafa00 100%);\n  }\n}\n@media (prefers-color-scheme: dark) {\n  .container {\n    background-color: #1f1f1f;\n    box-shadow: 0 0 0 1px #ffffff26;\n  }\n  .headline-label {\n    color: #fff;\n  }\n  .chip {\n    background-color: #2c2c2c;\n    border-color: #3c4043;\n    color: #fff;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #353536;\n  }\n  .chip:focus {\n    background-color: #353536;\n  }\n  .chip:active {\n    background-color: #464849;\n    border-color: #53575b;\n  }\n  .logo-light {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #1f1f1f 15%, #1f1f1f00 100%);\n  }\n}\n</style>\n<div class=\"container\">\n  <div class=\"headline\">\n    <svg class=\"logo-light\" width=\"18\" height=\"18\" viewBox=\"9 9 35 35\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M42.8622 27.0064C42.8622 25.7839 42.7525 24.6084 42.5487 23.4799H26.3109V30.1568H35.5897C35.1821 32.3041 33.9596 34.1222 32.1258 35.3448V39.6864H37.7213C40.9814 36.677 42.8622 32.2571 42.8622 27.0064V27.0064Z\" fill=\"#4285F4\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 43.8555C30.9659 43.8555 34.8687 42.3195 37.7213 39.6863L32.1258 35.3447C30.5898 36.3792 28.6306 37.0061 26.3109 37.0061C21.8282 37.0061 18.0195 33.9811 16.6559 29.906H10.9194V34.3573C13.7563 39.9841 19.5712 43.8555 26.3109 43.8555V43.8555Z\" fill=\"#34A853\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M16.6559 29.8904C16.3111 28.8559 16.1074 27.7588 16.1074 26.6146C16.1074 25.4704 16.3111 24.3733 16.6559 23.3388V18.8875H10.9194C9.74388 21.2072 9.06992 23.8247 9.06992 26.6146C9.06992 29.4045 9.74388 32.022 10.9194 34.3417L15.3864 30.8621L16.6559 29.8904V29.8904Z\" fill=\"#FBBC05\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 16.2386C28.85 16.2386 31.107 17.1164 32.9095 18.8091L37.8466 13.8719C34.853 11.082 30.9659 9.3736 26.3109 9.3736C19.5712 9.3736 13.7563 13.245 10.9194 18.8875L16.6559 23.3388C18.0195 19.2636 21.8282 16.2386 26.3109 16.2386V16.2386Z\" fill=\"#EA4335\"/>\n    </svg>\n    <svg class=\"logo-dark\" width=\"18\" height=\"18\" viewBox=\"0 0 48 48\" xmlns=\"http://www.w3.org/2000/svg\">\n      <circle cx=\"24\" cy=\"23\" fill=\"#FFF\" r=\"22\"/>\n      <path d=\"M33.76 34.26c2.75-2.56 4.49-6.37 4.49-11.26 0-.89-.08-1.84-.29-3H24.01v5.99h8.03c-.4 2.02-1.5 3.56-3.07 4.56v.75l3.91 2.97h.88z\" fill=\"#4285F4\"/>\n      <path d=\"M15.58 25.77A8.845 8.845 0 0 0 24 31.86c1.92 0 3.62-.46 4.97-1.31l4.79 3.71C31.14 36.7 27.65 38 24 38c-5.93 0-11.01-3.4-13.45-8.36l.17-1.01 4.06-2.85h.8z\" fill=\"#34A853\"/>\n      <path d=\"M15.59 20.21a8.864 8.864 0 0 0 0 5.58l-5.03 3.86c-.98-2-1.53-4.25-1.53-6.64 0-2.39.55-4.64 1.53-6.64l1-.22 3.81 2.98.22 1.08z\" fill=\"#FBBC05\"/>\n      <path d=\"M24 14.14c2.11 0 4.02.75 5.52 1.98l4.36-4.36C31.22 9.43 27.81 8 24 8c-5.93 0-11.01 3.4-13.45 8.36l5.03 3.85A8.86 8.86 0 0 1 24 14.14z\" fill=\"#EA4335\"/>\n    </svg>\n    <div class=\"gradient-container\"><div class=\"gradient\"></div></div>\n  </div>\n  <div class=\"carousel\">\n<a class=\"chip\" href=\"https://www.google.com/search?q=AI+news+today+October+2026&client=app-vertex-grounding&safesearch=active\">AI news today October 2026</a>\n<a class=\"chip\" href=\"https://www.google.com/search?q=artificial+intelligence+latest+news+October+2026&client=app-vertex-grounding&safesearch=active\">artificial intelligence latest news October 2026</a>\n  </div>\n</div>"
           },
           "groundingChunks": [
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFeDgKFaiLtMiHLG99Wcc0u-Xqu2f46hPZ90B1uWP8vuZhPdR19jOEU6UeWLyE2lVWvIdmY1s08FDqn2slpe0ca1etbN74ZNrL0y3ZjeMDexaGXQS20bvvcf4iOWbMmFMt3g4TLx6CdUvbT",
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFZRSNFIwDHEeLAcuOWfivogxqi8EblESkpRvvhI4x_6nozx5l3eB6aut7_-j4hr0hSW0Zh2nlOG5sbITwkVOwLfhJCmWf1te5BrF9ReLOJlwIMwrbCXTRcg4ZQZOqxo9MMToBYM7LQUbMlS9XetRwoHcdFMeNU-cGHmCfV1ZWRZOLTBrkxWC1OlYGQ3PVrtAYx5GFpV_so0g==",
+                "title": "theguardian.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFZRSNFIwDHEeLAcuOWfivogxqi8EblESkpRvvhI4x_6nozx5l3eB6aut7_-j4hr0hSW0Zh2nlOG5sbITwkVOwLfhJCmWf1te5BrF9ReLOJlwIMwrbCXTRcg4ZQZOqxo9MMToBYM7LQUbMlS9XetRwoHcdFMeNU-cGHmCfV1ZWRZOLTBrkxWC1OlYGQ3PVrtAYx5GFpV_so0g==",
+                "title": "theguardian.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEla3IPf6R_-2-OyJh7PZJvyWJ4n-epZhZsz-4jFlB1UZJMceZl19-J6J30xY3XF0Gwli7m-khHqXeI_ElMQvILZRL0nRoJoYMnQ9tVE9vK1v0YxKG9zsyvGFIDZ_XjJLhbYOYQ0pFFvje3Ew4FWc26kvDjq9m0ZPXedTdlYfNqQJ4lx6e-hUG7PFPsrW65Si4kgVpRLbsgeVRAEb48EkWMIiUGyhznBbJJTdyiNZnkC_2ho0L89OXSTIXxxZkz4NOIRjbR",
+                "title": "cisco.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGzMeoUGWtvnWqGwJu7k3hiML3BeyC2w2xa52yYaEMfJBISMa2CzI7Xrp9LlF0ssH8ioa0vhCIFyZDwYOBeHMdMuyVzC2rL8SjlU0WnCXDHmIn8nlUbcsU_YRJfIQdGOto0MU7Zr4eIDhQ=",
                 "title": "aiweekly.co"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQF7AhSwOW96Qplut6Bx4BQ16AL8mT3nFD5mrn2CgqjWonc6jXT2sfxH_rcd9tvWR9JdLGu-y0RcLtXszo9-W37IwbglGVtOHCEKSGUlwsJFS_8ku9tVoFcHRY_F-pn8xr0TfNH6GPqowyFd5yNp8qBJ7IEzVo9y0irnVHR9JmWLECatkCKPnjhlrw==",
-                "title": "theguardian.com"
-              }
-            },
-            {
-              "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHx37RIer5gj2sA0gpEajDiCPu_VxPzYGvzTba9wjR4R6NabtGTmN-9QwD-T6AIxafDLOvnqbqTO-lmqFmSyOgINf7ZsjUpeEGmRXZS22Aapid1Uddw4FBecxQd3r0hyxY6JjQ3B78Jo8M8jz8uPR4MvS5ySdRzYgTa4YyaaptNwwq6eJCi0CUpClHdn5V95qvrFD2OLhOzikj2cfQgonieIcK3Lqv6Pi-nOYNBCxiaf6iLlcY=",
-                "title": "bnnbloomberg.ca"
-              }
-            },
-            {
-              "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEr52MEhKL2Bi6rm-X0nE62R_3I2bxsJu2HXEy3YiUnOqjTQVsKaYHgfu6KLa00ccsBY43zDDQ6EhyugfW7n3AkUYageST6e6e8oP1vm88Fn8lllLpOFyRTl2D5bRgmfFzc7uMCHTVzQm_Rk0PIRWXH47rrJm0N2kdfUnfUw5KtT41UaYz4lGe2Kceiku7aRvMA7-imqISqjN9Mn3UAhirn-E8DjDK3mOnD0DJSvWV82UN4rUqboYuMAyJXJ7TO0UsXAqqQDlPtiD4NCboUuuAavrb0ner2ffXoddB2u_n0Ljq72ZjZ_-9415HlY4IPgz1C8lJCZJep-k9SvX9HLZqYR_h7ajdCRe0NT5gEMVh5DA==",
-                "title": "gartner.com"
-              }
-            },
-            {
-              "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEKHYUF1icjGrArfTy7cZeXxreH5Hdjsp9n6ennASL0WiPR3Od2_vZjqa2kKBfiPOetgiBXG49t0fZrlbxPmDQjydWcF3BUKVXb76Am2UqTtAhk9NGreVMtp-22W8PhGe0CwUwexg==",
-                "title": "precisionpulse.co"
-              }
-            },
-            {
-              "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFX4jUcuvma64QImTmLcBbaxaSIIS6ynnJ4ZrHq8d8bN9ugN2LJbMdQtZoCmNOkvYc0xQMBuKGlpHulfH88pkt97lLkW4vxjdX2EXLlMFXfSxbCMn9x2DOA7tosLcT_VtABw4sORB14qgqlADO6kwmA",
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFddMIoNt78fQ0AoO7FQrx3K6wxdZmrnUCCwb7uEu8MNecdpSi3i7fJtVGjhXLzg6moGxELzSCQjn41Q0E5OexY6L7JCj0IJwcwbgZY9n41sVOjgZ7nQ3N8mV06K_5v8Y7V7Xhl4o8O-mU-vIsTa6E=",
                 "title": "hellogrowth.ai"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEfCEI2X6-sFc-9UDn8EKWs042NU8ufZGgsJH5-Bf3aVY11dq73X6YYsfNKRtEzRsPdrCFlGnRwovX6HWInFVxPMRqrgqOOKSQnCoSHGTAibXvbDLfBpYDUixNBSkoJYbcjiMG8uJDxYPj_KLgt3CQbVOSwKzI_DMTzipJndVtOvQPy00FNF9Y2uwxtcg==",
-                "title": "theguardian.com"
-              }
-            },
-            {
-              "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFWvgWGzeF-Mu0pnzoWwBJ2jie9OmA_o7p35UrJfHRG9fLEbMz3TpnN0_5ztGPSwtIIzGms9uWTltkkp4zEh77SuZUm4ztKM1TZiFaHKOsrgfTWzjohyrkXRxM5yxG8W7mO6as4cslxZ_ux96XJqvUjiyqf_0u5KNNDuUoguw==",
-                "title": "stephensonharwood.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQExdkZ0wrpjhrBYBgOTH5NdjXtwct9F7_Xim_9drc10-SVP2rld90fH2Trh7Ri_AUQOrdBudQixOyfKt6PA4MutETz1cWWknLQexszTGj_fhIi3OKkaEOR5JZNHdhI_GA_688sdAiRkuqlhyRehv00o4l8aeX4dNA==",
+                "title": "wto.org"
               }
             }
           ],
           "groundingSupports": [
             {
               "segment": {
-                "startIndex": 209,
-                "endIndex": 542,
-                "text": "**Smart Device Vulnerabilities:** Anthropic published research warning that frontier AI models are \"months away\" from achieving capabilities that could lead to self-replication, potentially allowing malicious actors or runaway systems to infiltrate internet-connected IoT devices (such as smart home appliances and automated vacuums)"
+                "startIndex": 64,
+                "endIndex": 232,
+                "text": "**US Bans Government Use of DeepSeek:** The US Department of Homeland Security ordered federal agencies to strip Chinese startup DeepSeek's AI tools from all IT devices"
               },
               "groundingChunkIndices": [
                 0,
@@ -84,9 +72,19 @@
             },
             {
               "segment": {
-                "startIndex": 547,
-                "endIndex": 854,
-                "text": "**AI-Powered Worms:** Academic and cybersecurity experts (such as teams from the University of Toronto) have highlighted that open-weight models are increasingly being scrutinized for enabling a new generation of adaptive malware worms that can dynamically alter code to breach varying network architectures"
+                "startIndex": 234,
+                "endIndex": 437,
+                "text": "Citing national security concerns, the directive warns that DeepSeek's servers—based in China—pose a risk of sensitive government data being transferred under Beijing's broad legal access authorities"
+              },
+              "groundingChunkIndices": [
+                1
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 441,
+                "endIndex": 734,
+                "text": "**Splunk/Cisco Report Highlights the \"AI Agent Cost & Observability Crisis\":** A newly released report from Splunk indicates that while enterprises are racing to adopt autonomous AI agents, over half of organizations cannot effectively measure agent quality or control unexpected compute costs"
               },
               "groundingChunkIndices": [
                 2
@@ -94,19 +92,19 @@
             },
             {
               "segment": {
-                "startIndex": 1036,
-                "endIndex": 1184,
-                "text": "Major players like SK Hynix, Samsung, ASML, and Advantest experienced steep pullbacks amid investor anxiety regarding returns on capital expenditure"
+                "startIndex": 736,
+                "endIndex": 856,
+                "text": "The rush to deploy agents across tech stacks is forcing a tighter collaboration between IT operations and security teams"
               },
               "groundingChunkIndices": [
-                0
+                2
               ]
             },
             {
               "segment": {
-                "startIndex": 1188,
-                "endIndex": 1389,
-                "text": "**Gartner's Trillion-Dollar Warning:** Research firm Gartner released a prominent report estimating that over **$3.5 trillion in AI infrastructure spending** through 2030 is exposed to impairment risks"
+                "startIndex": 860,
+                "endIndex": 1144,
+                "text": "**Anthropic Moves Toward November IPO and Public Benefit Fund:** Anthropic has committed 5% of its equity to a newly formed Public Benefit Fund (with scaling provisions tied to future valuation spikes) as the frontier lab prepares for a heavily anticipated public offering in November"
               },
               "groundingChunkIndices": [
                 3
@@ -114,63 +112,32 @@
             },
             {
               "segment": {
-                "startIndex": 1391,
-                "endIndex": 1567,
-                "text": "The report argues that projected enterprise and consumer AI revenues may fall short of covering the massive capital expenditures poured into data centers and neocloud providers"
+                "startIndex": 1148,
+                "endIndex": 1292,
+                "text": "**Google's Enterprise Push into Autonomous Agents:** Google Cloud’s rollout of the \"Gemini agent\" continues to dominate enterprise discussions"
               },
               "groundingChunkIndices": [
-                3
+                4
               ]
             },
             {
               "segment": {
-                "startIndex": 1608,
-                "endIndex": 1885,
-                "text": "**New Gen Iterations:** The product landscape has seen ongoing rollouts of advanced architectures, including updates from Google (such as expanding Gemini agent capabilities and local on-device capabilities for Mac) alongside continued iterative drops from Anthropic and OpenAI"
+                "startIndex": 1294,
+                "endIndex": 1482,
+                "text": "The system functions as an autonomous coworker equipped with its own Workspace account, email address, and cross-platform capabilities (spanning Google Workspace, Slack, and Microsoft 365)"
               },
               "groundingChunkIndices": [
-                4,
+                4
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 1487,
+                "endIndex": 1809,
+                "text": "**WTO Upgrades Global Trade Outlook Due to AI Infrastructure:** The World Trade Organization (WTO) revised its merchandise trade growth forecast for 2026 up to 3.9%, pointing directly to sustained, heavy global investments in AI-enabling hardware and data center infrastructure as a major stabilizing force for goods trade"
+              },
+              "groundingChunkIndices": [
                 5
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 1889,
-                "endIndex": 2190,
-                "text": "**Enterprise Backtracking/Refining:** Studies tracking 2026 corporate data note that while the AI boom continues, several enterprise organizations are recalibrating rapid, blanket AI-driven layoffs and restructuring after finding short-term productivity metrics didn't always meet initial expectations"
-              },
-              "groundingChunkIndices": [
-                6
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 2234,
-                "endIndex": 2430,
-                "text": "**EU AI Act Enforcement:** Compliance with stricter elements of the European Union’s AI Act—particularly transparency obligations under Article 50—is actively reshaping deployment strategies"
-              },
-              "groundingChunkIndices": [
-                7
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 2432,
-                "endIndex": 2521,
-                "text": "Concurrently, the EU AI Office has opened probes into major foundational model developers"
-              },
-              "groundingChunkIndices": [
-                0
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 2525,
-                "endIndex": 2837,
-                "text": "**Global Legal & IP Frontier:** Legal frameworks continue to react globally, ranging from China's Supreme People's Court issuing new guidelines for handling AI-related litigation to unique local measures, such as the Italian Prime Minister filing to legally trademark her own voice against unauthorized deepfakes"
-              },
-              "groundingChunkIndices": [
-                7
               ]
             }
           ]
@@ -178,9 +145,9 @@
       }
     ],
     "usageMetadata": {
-      "promptTokenCount": 73,
-      "candidatesTokenCount": 611,
-      "totalTokenCount": 684
+      "promptTokenCount": 67,
+      "candidatesTokenCount": 401,
+      "totalTokenCount": 468
     },
     "modelVersion": "gemini-3.5-flash-lite",
     "responseId": "mock-response-id-0004"
