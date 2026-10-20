@@ -1138,14 +1138,14 @@ test("Seam 1 (400 fix, agy 1.1.26 capture 2026-09-05): toolResult wire shape mat
 });
 
 test("Seam 1 (agy 1.1.26 capture 2026-09-06, turn6): failed tool uses output key", () => {
-  // Live-captured view_file failure: error text rides on response.output,
+  // Live-captured read_file failure (view_file before agy 1.4.3): error text rides on response.output,
   // never a sibling "error" key; role stays "model" with the call id kept.
   const contents = fixtureTurn6.body.request.contents;
   const frTurn = contents.find((c) => c.parts?.some((p) => p.functionResponse));
   assert.ok(frTurn, "turn6 must contain a functionResponse turn");
   assert.equal(frTurn.role, "model");
   const fr = frTurn.parts[0].functionResponse;
-  assert.equal(fr.name, "view_file");
+  assert.equal(fr.name, "read_file");
   assert.ok(fr.id, "agy keeps functionCall id on Gemini error results");
   assert.deepEqual(Object.keys(fr.response), ["output"]);
   assert.match(fr.response.output, /Encountered error in tool execution/);

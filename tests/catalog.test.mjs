@@ -604,7 +604,8 @@ test("Seam 3: resolveModelPlan disables thoughts for wire-marked non-thinking mo
   const catalog = createModelCatalog();
   catalog.record(modelsJson);
   const plain = catalog.generation().items.models.find(
-    (m) => m.thinkingBudget === undefined && !/-(low|medium|high)$/.test(m.id)
+    // thinkingLevel too: 1.4.3 dropped thinkingBudget from the level-carrying flash-lite entries
+    (m) => m.thinkingBudget === undefined && m.thinkingLevel === undefined && !/-(low|medium|high)$/.test(m.id)
   );
   assert.ok(plain, "the capture must contain a non-tiered model without thinking fields");
   const plan = catalog.resolvePlan(plain.id, undefined);
