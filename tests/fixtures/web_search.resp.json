@@ -7,94 +7,81 @@
           "parts": [
             {
               "thoughtSignature": "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDA4",
-              "text": "Key artificial intelligence news headlines and developments:\n\n* **US Bans Government Use of DeepSeek:** The US Department of Homeland Security ordered federal agencies to strip Chinese startup DeepSeek's AI tools from all IT devices. Citing national security concerns, the directive warns that DeepSeek's servers—based in China—pose a risk of sensitive government data being transferred under Beijing's broad legal access authorities.\n* **Splunk/Cisco Report Highlights the \"AI Agent Cost & Observability Crisis\":** A newly released report from Splunk indicates that while enterprises are racing to adopt autonomous AI agents, over half of organizations cannot effectively measure agent quality or control unexpected compute costs. The rush to deploy agents across tech stacks is forcing a tighter collaboration between IT operations and security teams.\n* **Anthropic Moves Toward November IPO and Public Benefit Fund:** Anthropic has committed 5% of its equity to a newly formed Public Benefit Fund (with scaling provisions tied to future valuation spikes) as the frontier lab prepares for a heavily anticipated public offering in November.\n* **Google's Enterprise Push into Autonomous Agents:** Google Cloud’s rollout of the \"Gemini agent\" continues to dominate enterprise discussions. The system functions as an autonomous coworker equipped with its own Workspace account, email address, and cross-platform capabilities (spanning Google Workspace, Slack, and Microsoft 365). \n* **WTO Upgrades Global Trade Outlook Due to AI Infrastructure:** The World Trade Organization (WTO) revised its merchandise trade growth forecast for 2026 up to 3.9%, pointing directly to sustained, heavy global investments in AI-enabling hardware and data center infrastructure as a major stabilizing force for goods trade."
+              "text": "Key artificial intelligence headlines and developments:\n\n* **UN Warns of AI \"Crowding Out\" Human Judgment in Warfare:** The head of the UN’s independent disarmament research institute (UNIDIR), Robin Geiss, issued a stark warning at UN Headquarters that AI is rapidly taking over battlefield operations—ranging from target identification to drone deployment and cyber-attacks. The UN cautioned that bypassing human decision-making in high-stakes scenarios (including the nuclear domain) crosses a dangerous \"moral red line\" and drastically increases the risk of unintended escalation.\n* **Ex-OpenAI Engineer Investigation:** Federal and legal developments continue surrounding an investigation into a former OpenAI engineer alleged to have planted a bug, with new court details revealing ties involving international travel arrangements to Saudi Arabia.\n* **Geopolitical & Hardware Restrictions:** Policy friction continues to mount globally regarding foreign AI tech. Reports highlight ongoing moves by governments to restrict certain foreign-developed models (such as DeepSeek) from official devices, alongside massive infrastructure pushes as Chinese firms and global tech entities heavily invest in massive GPU superclusters.\n* **Technical & Research Breakthroughs:** \n  * Stanford researchers introduced *Halcyon*, a family of early-fusion multimodal text-to-image autoregressive models trained from scratch without language pretraining, achieving high performance at a fraction of standard compute costs.\n  * Advancements in memory-native large language models (such as *MemT-1.0*) are making waves by drastically reducing KV cache storage requirements to handle massive context lengths more efficiently."
             }
           ]
         },
         "finishReason": "STOP",
         "groundingMetadata": {
           "webSearchQueries": [
-            "AI news today October 2026",
-            "artificial intelligence latest news October 2026"
+            "artificial intelligence news headlines today",
+            "AI artificial intelligence news today October 2026"
           ],
           "searchEntryPoint": {
-            "renderedContent": "<style>\n.container {\n  align-items: center;\n  border-radius: 8px;\n  display: flex;\n  font-family: Google Sans, Roboto, sans-serif;\n  font-size: 14px;\n  line-height: 20px;\n  padding: 8px 12px;\n}\n.chip {\n  display: inline-block;\n  border: solid 1px;\n  border-radius: 16px;\n  min-width: 14px;\n  padding: 5px 16px;\n  text-align: center;\n  user-select: none;\n  margin: 0 8px;\n  -webkit-tap-highlight-color: transparent;\n}\n.carousel {\n  overflow: auto;\n  scrollbar-width: none;\n  white-space: nowrap;\n  margin-right: -12px;\n}\n.headline {\n  display: flex;\n  margin-right: 4px;\n}\n.gradient-container {\n  position: relative;\n}\n.gradient {\n  position: absolute;\n  transform: translate(3px, -9px);\n  height: 36px;\n  width: 9px;\n}\n@media (prefers-color-scheme: light) {\n  .container {\n    background-color: #fafafa;\n    box-shadow: 0 0 0 1px #0000000f;\n  }\n  .headline-label {\n    color: #1f1f1f;\n  }\n  .chip {\n    background-color: #ffffff;\n    border-color: #d2d2d2;\n    color: #5e5e5e;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #f2f2f2;\n  }\n  .chip:focus {\n    background-color: #f2f2f2;\n  }\n  .chip:active {\n    background-color: #d8d8d8;\n    border-color: #b6b6b6;\n  }\n  .logo-dark {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #fafafa 15%, #fafafa00 100%);\n  }\n}\n@media (prefers-color-scheme: dark) {\n  .container {\n    background-color: #1f1f1f;\n    box-shadow: 0 0 0 1px #ffffff26;\n  }\n  .headline-label {\n    color: #fff;\n  }\n  .chip {\n    background-color: #2c2c2c;\n    border-color: #3c4043;\n    color: #fff;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #353536;\n  }\n  .chip:focus {\n    background-color: #353536;\n  }\n  .chip:active {\n    background-color: #464849;\n    border-color: #53575b;\n  }\n  .logo-light {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #1f1f1f 15%, #1f1f1f00 100%);\n  }\n}\n</style>\n<div class=\"container\">\n  <div class=\"headline\">\n    <svg class=\"logo-light\" width=\"18\" height=\"18\" viewBox=\"9 9 35 35\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M42.8622 27.0064C42.8622 25.7839 42.7525 24.6084 42.5487 23.4799H26.3109V30.1568H35.5897C35.1821 32.3041 33.9596 34.1222 32.1258 35.3448V39.6864H37.7213C40.9814 36.677 42.8622 32.2571 42.8622 27.0064V27.0064Z\" fill=\"#4285F4\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 43.8555C30.9659 43.8555 34.8687 42.3195 37.7213 39.6863L32.1258 35.3447C30.5898 36.3792 28.6306 37.0061 26.3109 37.0061C21.8282 37.0061 18.0195 33.9811 16.6559 29.906H10.9194V34.3573C13.7563 39.9841 19.5712 43.8555 26.3109 43.8555V43.8555Z\" fill=\"#34A853\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M16.6559 29.8904C16.3111 28.8559 16.1074 27.7588 16.1074 26.6146C16.1074 25.4704 16.3111 24.3733 16.6559 23.3388V18.8875H10.9194C9.74388 21.2072 9.06992 23.8247 9.06992 26.6146C9.06992 29.4045 9.74388 32.022 10.9194 34.3417L15.3864 30.8621L16.6559 29.8904V29.8904Z\" fill=\"#FBBC05\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 16.2386C28.85 16.2386 31.107 17.1164 32.9095 18.8091L37.8466 13.8719C34.853 11.082 30.9659 9.3736 26.3109 9.3736C19.5712 9.3736 13.7563 13.245 10.9194 18.8875L16.6559 23.3388C18.0195 19.2636 21.8282 16.2386 26.3109 16.2386V16.2386Z\" fill=\"#EA4335\"/>\n    </svg>\n    <svg class=\"logo-dark\" width=\"18\" height=\"18\" viewBox=\"0 0 48 48\" xmlns=\"http://www.w3.org/2000/svg\">\n      <circle cx=\"24\" cy=\"23\" fill=\"#FFF\" r=\"22\"/>\n      <path d=\"M33.76 34.26c2.75-2.56 4.49-6.37 4.49-11.26 0-.89-.08-1.84-.29-3H24.01v5.99h8.03c-.4 2.02-1.5 3.56-3.07 4.56v.75l3.91 2.97h.88z\" fill=\"#4285F4\"/>\n      <path d=\"M15.58 25.77A8.845 8.845 0 0 0 24 31.86c1.92 0 3.62-.46 4.97-1.31l4.79 3.71C31.14 36.7 27.65 38 24 38c-5.93 0-11.01-3.4-13.45-8.36l.17-1.01 4.06-2.85h.8z\" fill=\"#34A853\"/>\n      <path d=\"M15.59 20.21a8.864 8.864 0 0 0 0 5.58l-5.03 3.86c-.98-2-1.53-4.25-1.53-6.64 0-2.39.55-4.64 1.53-6.64l1-.22 3.81 2.98.22 1.08z\" fill=\"#FBBC05\"/>\n      <path d=\"M24 14.14c2.11 0 4.02.75 5.52 1.98l4.36-4.36C31.22 9.43 27.81 8 24 8c-5.93 0-11.01 3.4-13.45 8.36l5.03 3.85A8.86 8.86 0 0 1 24 14.14z\" fill=\"#EA4335\"/>\n    </svg>\n    <div class=\"gradient-container\"><div class=\"gradient\"></div></div>\n  </div>\n  <div class=\"carousel\">\n<a class=\"chip\" href=\"https://www.google.com/search?q=AI+news+today+October+2026&client=app-vertex-grounding&safesearch=active\">AI news today October 2026</a>\n<a class=\"chip\" href=\"https://www.google.com/search?q=artificial+intelligence+latest+news+October+2026&client=app-vertex-grounding&safesearch=active\">artificial intelligence latest news October 2026</a>\n  </div>\n</div>"
+            "renderedContent": "<style>\n.container {\n  align-items: center;\n  border-radius: 8px;\n  display: flex;\n  font-family: Google Sans, Roboto, sans-serif;\n  font-size: 14px;\n  line-height: 20px;\n  padding: 8px 12px;\n}\n.chip {\n  display: inline-block;\n  border: solid 1px;\n  border-radius: 16px;\n  min-width: 14px;\n  padding: 5px 16px;\n  text-align: center;\n  user-select: none;\n  margin: 0 8px;\n  -webkit-tap-highlight-color: transparent;\n}\n.carousel {\n  overflow: auto;\n  scrollbar-width: none;\n  white-space: nowrap;\n  margin-right: -12px;\n}\n.headline {\n  display: flex;\n  margin-right: 4px;\n}\n.gradient-container {\n  position: relative;\n}\n.gradient {\n  position: absolute;\n  transform: translate(3px, -9px);\n  height: 36px;\n  width: 9px;\n}\n@media (prefers-color-scheme: light) {\n  .container {\n    background-color: #fafafa;\n    box-shadow: 0 0 0 1px #0000000f;\n  }\n  .headline-label {\n    color: #1f1f1f;\n  }\n  .chip {\n    background-color: #ffffff;\n    border-color: #d2d2d2;\n    color: #5e5e5e;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #f2f2f2;\n  }\n  .chip:focus {\n    background-color: #f2f2f2;\n  }\n  .chip:active {\n    background-color: #d8d8d8;\n    border-color: #b6b6b6;\n  }\n  .logo-dark {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #fafafa 15%, #fafafa00 100%);\n  }\n}\n@media (prefers-color-scheme: dark) {\n  .container {\n    background-color: #1f1f1f;\n    box-shadow: 0 0 0 1px #ffffff26;\n  }\n  .headline-label {\n    color: #fff;\n  }\n  .chip {\n    background-color: #2c2c2c;\n    border-color: #3c4043;\n    color: #fff;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #353536;\n  }\n  .chip:focus {\n    background-color: #353536;\n  }\n  .chip:active {\n    background-color: #464849;\n    border-color: #53575b;\n  }\n  .logo-light {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #1f1f1f 15%, #1f1f1f00 100%);\n  }\n}\n</style>\n<div class=\"container\">\n  <div class=\"headline\">\n    <svg class=\"logo-light\" width=\"18\" height=\"18\" viewBox=\"9 9 35 35\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M42.8622 27.0064C42.8622 25.7839 42.7525 24.6084 42.5487 23.4799H26.3109V30.1568H35.5897C35.1821 32.3041 33.9596 34.1222 32.1258 35.3448V39.6864H37.7213C40.9814 36.677 42.8622 32.2571 42.8622 27.0064V27.0064Z\" fill=\"#4285F4\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 43.8555C30.9659 43.8555 34.8687 42.3195 37.7213 39.6863L32.1258 35.3447C30.5898 36.3792 28.6306 37.0061 26.3109 37.0061C21.8282 37.0061 18.0195 33.9811 16.6559 29.906H10.9194V34.3573C13.7563 39.9841 19.5712 43.8555 26.3109 43.8555V43.8555Z\" fill=\"#34A853\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M16.6559 29.8904C16.3111 28.8559 16.1074 27.7588 16.1074 26.6146C16.1074 25.4704 16.3111 24.3733 16.6559 23.3388V18.8875H10.9194C9.74388 21.2072 9.06992 23.8247 9.06992 26.6146C9.06992 29.4045 9.74388 32.022 10.9194 34.3417L15.3864 30.8621L16.6559 29.8904V29.8904Z\" fill=\"#FBBC05\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 16.2386C28.85 16.2386 31.107 17.1164 32.9095 18.8091L37.8466 13.8719C34.853 11.082 30.9659 9.3736 26.3109 9.3736C19.5712 9.3736 13.7563 13.245 10.9194 18.8875L16.6559 23.3388C18.0195 19.2636 21.8282 16.2386 26.3109 16.2386V16.2386Z\" fill=\"#EA4335\"/>\n    </svg>\n    <svg class=\"logo-dark\" width=\"18\" height=\"18\" viewBox=\"0 0 48 48\" xmlns=\"http://www.w3.org/2000/svg\">\n      <circle cx=\"24\" cy=\"23\" fill=\"#FFF\" r=\"22\"/>\n      <path d=\"M33.76 34.26c2.75-2.56 4.49-6.37 4.49-11.26 0-.89-.08-1.84-.29-3H24.01v5.99h8.03c-.4 2.02-1.5 3.56-3.07 4.56v.75l3.91 2.97h.88z\" fill=\"#4285F4\"/>\n      <path d=\"M15.58 25.77A8.845 8.845 0 0 0 24 31.86c1.92 0 3.62-.46 4.97-1.31l4.79 3.71C31.14 36.7 27.65 38 24 38c-5.93 0-11.01-3.4-13.45-8.36l.17-1.01 4.06-2.85h.8z\" fill=\"#34A853\"/>\n      <path d=\"M15.59 20.21a8.864 8.864 0 0 0 0 5.58l-5.03 3.86c-.98-2-1.53-4.25-1.53-6.64 0-2.39.55-4.64 1.53-6.64l1-.22 3.81 2.98.22 1.08z\" fill=\"#FBBC05\"/>\n      <path d=\"M24 14.14c2.11 0 4.02.75 5.52 1.98l4.36-4.36C31.22 9.43 27.81 8 24 8c-5.93 0-11.01 3.4-13.45 8.36l5.03 3.85A8.86 8.86 0 0 1 24 14.14z\" fill=\"#EA4335\"/>\n    </svg>\n    <div class=\"gradient-container\"><div class=\"gradient\"></div></div>\n  </div>\n  <div class=\"carousel\">\n<a class=\"chip\" href=\"https://www.google.com/search?q=artificial+intelligence+news+headlines+today&client=app-vertex-grounding&safesearch=active\">artificial intelligence news headlines today</a>\n<a class=\"chip\" href=\"https://www.google.com/search?q=AI+artificial+intelligence+news+today+October+2026&client=app-vertex-grounding&safesearch=active\">AI artificial intelligence news today October 2026</a>\n  </div>\n</div>"
           },
           "groundingChunks": [
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFZRSNFIwDHEeLAcuOWfivogxqi8EblESkpRvvhI4x_6nozx5l3eB6aut7_-j4hr0hSW0Zh2nlOG5sbITwkVOwLfhJCmWf1te5BrF9ReLOJlwIMwrbCXTRcg4ZQZOqxo9MMToBYM7LQUbMlS9XetRwoHcdFMeNU-cGHmCfV1ZWRZOLTBrkxWC1OlYGQ3PVrtAYx5GFpV_so0g==",
-                "title": "theguardian.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHf5TW1cA0mLdq7amdQ_0E2O9B9lYpOVf_z-9tKkp6ZErvip998l2bNMu3qzbFhIKZa77HNGfWToboBQOGleA9OeGWop4sILVdvUunVcx3KqcO9nWD7Aaen4zEbztYSROa5Yw==",
+                "title": "un.org"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFZRSNFIwDHEeLAcuOWfivogxqi8EblESkpRvvhI4x_6nozx5l3eB6aut7_-j4hr0hSW0Zh2nlOG5sbITwkVOwLfhJCmWf1te5BrF9ReLOJlwIMwrbCXTRcg4ZQZOqxo9MMToBYM7LQUbMlS9XetRwoHcdFMeNU-cGHmCfV1ZWRZOLTBrkxWC1OlYGQ3PVrtAYx5GFpV_so0g==",
-                "title": "theguardian.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHQ1Wpd8JEEwjgUZoSkNSEQGGazC2TBISEtaT8QzL9VEl8ItQ030OBINLdqBcXuwxZk6SRpyGJ-lJM9c_NERmE-ssiCLOv43UjsFzBfDXz16iPvREXaVxlvoeLaL8XxoJZSXSxIbkwLFmooSGvUjtW4MA==",
+                "title": "cbsnews.com"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEla3IPf6R_-2-OyJh7PZJvyWJ4n-epZhZsz-4jFlB1UZJMceZl19-J6J30xY3XF0Gwli7m-khHqXeI_ElMQvILZRL0nRoJoYMnQ9tVE9vK1v0YxKG9zsyvGFIDZ_XjJLhbYOYQ0pFFvje3Ew4FWc26kvDjq9m0ZPXedTdlYfNqQJ4lx6e-hUG7PFPsrW65Si4kgVpRLbsgeVRAEb48EkWMIiUGyhznBbJJTdyiNZnkC_2ho0L89OXSTIXxxZkz4NOIRjbR",
-                "title": "cisco.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEQH9UwqabpjJLlO6fb_wCw8acjuLCXlLLGKgOGnYnO7kYEQZVuo4mEVsMahhI0wxRcE3ZoY6hjx06PQ2i0ierP022vqp4giA-WxWhuVj_yXjZK-pF6k5c0Q042k_F8e5Gx",
+                "title": "youtube.com"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGzMeoUGWtvnWqGwJu7k3hiML3BeyC2w2xa52yYaEMfJBISMa2CzI7Xrp9LlF0ssH8ioa0vhCIFyZDwYOBeHMdMuyVzC2rL8SjlU0WnCXDHmIn8nlUbcsU_YRJfIQdGOto0MU7Zr4eIDhQ=",
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHwW0CugdRdAvIahNwYIQ6Gqk8QFxII0_tk--VBO0wKzr4xIK5ay19ewL4Pe8QJjUs_rvkZwgE5kD7-JJ1XeU4Wdduh7J0QMzryp3hB1Eqb3UXqvOjLNr2LRf62ZzipiBelKk1B9vuLuif0",
                 "title": "aiweekly.co"
-              }
-            },
-            {
-              "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFddMIoNt78fQ0AoO7FQrx3K6wxdZmrnUCCwb7uEu8MNecdpSi3i7fJtVGjhXLzg6moGxELzSCQjn41Q0E5OexY6L7JCj0IJwcwbgZY9n41sVOjgZ7nQ3N8mV06K_5v8Y7V7Xhl4o8O-mU-vIsTa6E=",
-                "title": "hellogrowth.ai"
-              }
-            },
-            {
-              "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQExdkZ0wrpjhrBYBgOTH5NdjXtwct9F7_Xim_9drc10-SVP2rld90fH2Trh7Ri_AUQOrdBudQixOyfKt6PA4MutETz1cWWknLQexszTGj_fhIi3OKkaEOR5JZNHdhI_GA_688sdAiRkuqlhyRehv00o4l8aeX4dNA==",
-                "title": "wto.org"
               }
             }
           ],
           "groundingSupports": [
             {
               "segment": {
-                "startIndex": 64,
-                "endIndex": 232,
-                "text": "**US Bans Government Use of DeepSeek:** The US Department of Homeland Security ordered federal agencies to strip Chinese startup DeepSeek's AI tools from all IT devices"
+                "startIndex": 59,
+                "endIndex": 379,
+                "text": "**UN Warns of AI \"Crowding Out\" Human Judgment in Warfare:** The head of the UN’s independent disarmament research institute (UNIDIR), Robin Geiss, issued a stark warning at UN Headquarters that AI is rapidly taking over battlefield operations—ranging from target identification to drone deployment and cyber-attacks"
               },
               "groundingChunkIndices": [
-                0,
-                1
+                0
               ]
             },
             {
               "segment": {
-                "startIndex": 234,
-                "endIndex": 437,
-                "text": "Citing national security concerns, the directive warns that DeepSeek's servers—based in China—pose a risk of sensitive government data being transferred under Beijing's broad legal access authorities"
+                "startIndex": 381,
+                "endIndex": 587,
+                "text": "The UN cautioned that bypassing human decision-making in high-stakes scenarios (including the nuclear domain) crosses a dangerous \"moral red line\" and drastically increases the risk of unintended escalation"
               },
               "groundingChunkIndices": [
-                1
+                0
               ]
             },
             {
               "segment": {
-                "startIndex": 441,
-                "endIndex": 734,
-                "text": "**Splunk/Cisco Report Highlights the \"AI Agent Cost & Observability Crisis\":** A newly released report from Splunk indicates that while enterprises are racing to adopt autonomous AI agents, over half of organizations cannot effectively measure agent quality or control unexpected compute costs"
-              },
-              "groundingChunkIndices": [
-                2
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 736,
+                "startIndex": 591,
                 "endIndex": 856,
-                "text": "The rush to deploy agents across tech stacks is forcing a tighter collaboration between IT operations and security teams"
+                "text": "**Ex-OpenAI Engineer Investigation:** Federal and legal developments continue surrounding an investigation into a former OpenAI engineer alleged to have planted a bug, with new court details revealing ties involving international travel arrangements to Saudi Arabia"
+              },
+              "groundingChunkIndices": [
+                1
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 973,
+                "endIndex": 1105,
+                "text": "Reports highlight ongoing moves by governments to restrict certain foreign-developed models (such as DeepSeek) from official devices"
               },
               "groundingChunkIndices": [
                 2
@@ -102,9 +89,19 @@
             },
             {
               "segment": {
-                "startIndex": 860,
-                "endIndex": 1144,
-                "text": "**Anthropic Moves Toward November IPO and Public Benefit Fund:** Anthropic has committed 5% of its equity to a newly formed Public Benefit Fund (with scaling provisions tied to future valuation spikes) as the frontier lab prepares for a heavily anticipated public offering in November"
+                "startIndex": 973,
+                "endIndex": 1232,
+                "text": "Reports highlight ongoing moves by governments to restrict certain foreign-developed models (such as DeepSeek) from official devices, alongside massive infrastructure pushes as Chinese firms and global tech entities heavily invest in massive GPU superclusters"
+              },
+              "groundingChunkIndices": [
+                2
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 1281,
+                "endIndex": 1513,
+                "text": "Stanford researchers introduced *Halcyon*, a family of early-fusion multimodal text-to-image autoregressive models trained from scratch without language pretraining, achieving high performance at a fraction of standard compute costs"
               },
               "groundingChunkIndices": [
                 3
@@ -112,32 +109,12 @@
             },
             {
               "segment": {
-                "startIndex": 1148,
-                "endIndex": 1292,
-                "text": "**Google's Enterprise Push into Autonomous Agents:** Google Cloud’s rollout of the \"Gemini agent\" continues to dominate enterprise discussions"
+                "startIndex": 1519,
+                "endIndex": 1713,
+                "text": "Advancements in memory-native large language models (such as *MemT-1.0*) are making waves by drastically reducing KV cache storage requirements to handle massive context lengths more efficiently"
               },
               "groundingChunkIndices": [
-                4
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 1294,
-                "endIndex": 1482,
-                "text": "The system functions as an autonomous coworker equipped with its own Workspace account, email address, and cross-platform capabilities (spanning Google Workspace, Slack, and Microsoft 365)"
-              },
-              "groundingChunkIndices": [
-                4
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 1487,
-                "endIndex": 1809,
-                "text": "**WTO Upgrades Global Trade Outlook Due to AI Infrastructure:** The World Trade Organization (WTO) revised its merchandise trade growth forecast for 2026 up to 3.9%, pointing directly to sustained, heavy global investments in AI-enabling hardware and data center infrastructure as a major stabilizing force for goods trade"
-              },
-              "groundingChunkIndices": [
-                5
+                3
               ]
             }
           ]
@@ -145,9 +122,9 @@
       }
     ],
     "usageMetadata": {
-      "promptTokenCount": 67,
-      "candidatesTokenCount": 401,
-      "totalTokenCount": 468
+      "promptTokenCount": 69,
+      "candidatesTokenCount": 353,
+      "totalTokenCount": 422
     },
     "modelVersion": "gemini-3.5-flash-lite",
     "responseId": "mock-response-id-0004"
