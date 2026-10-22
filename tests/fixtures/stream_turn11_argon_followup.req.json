@@ -3,7 +3,7 @@
   "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse",
   "headers": {
     "Host": "daily-cloudcode-pa.googleapis.com",
-    "User-Agent": "antigravity/cli/1.4.4 (aidev_client; os_type=linux; arch=amd64; cl=1003595037; auth_method=consumer)",
+    "User-Agent": "antigravity/cli/1.4.5 (aidev_client; os_type=linux; arch=amd64; cl=1004422050; auth_method=consumer)",
     "Transfer-Encoding": "chunked",
     "Authorization": "Bearer <REDACTED_ACCESS_TOKEN>",
     "Content-Type": "application/json",
@@ -26,11 +26,11 @@
           "role": "model",
           "parts": [
             {
-              "text": "Distance is 120 km and time is 1.5 hours. The average speed formula will be applied: Speed equals Distance divided by Time. Calculating, 120 km / 1.5 hours.\n\n\n",
+              "text": "Average speed is calculated by dividing the total distance traveled by the time taken; therefore, calculating the speed requires dividing 120 km by 1.5 hours.  This division yields an average speed of 80 km/h.\n\n\n",
               "thought": true
             },
             {
-              "text": "Dividing the total distance of 120 km by the travel time of 1.5 hours gives the train an average speed of 80 km/h.",
+              "text": "By taking the total distance of 120 km and dividing it by the travel time of 1.5 hours using the formula $\\text{speed} = \\text{distance} \\div \\text{time}$, we find that the train's average speed is 80 km/h.",
               "thoughtSignature": "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDA2"
             }
           ]
@@ -47,7 +47,7 @@
           "role": "user",
           "parts": [
             {
-              "text": "The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.\n\n<SYSTEM_MESSAGE>\n[Message] timestamp=2026-10-21T09:02:51Z sender=system priority=MESSAGE_PRIORITY_LOW content=[Notice] All your subagents and background tasks have been stopped due to server restart. If you want a subagent to continue working, it needs to be revived by sending it a new message. If resuming work, please check on status and restart as needed.\n</SYSTEM_MESSAGE>"
+              "text": "The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.\n\n<SYSTEM_MESSAGE>\n[Message] timestamp=2026-10-22T10:57:58Z sender=system priority=MESSAGE_PRIORITY_LOW content=[Notice] All your subagents and background tasks have been stopped due to server restart. If you want a subagent to continue working, it needs to be revived by sending it a new message. If resuming work, please check on status and restart as needed.\n</SYSTEM_MESSAGE>"
             }
           ]
         }
@@ -192,7 +192,7 @@
           "functionDeclarations": [
             {
               "name": "schedule",
-              "description": "Schedule a one-shot timer (DurationSeconds) or a recurring cron job (CronExpression) that notifies you via Prompt. This tool call runs as a background task and returns immediately; end your turn (call no more tools) to wait for notifications. A timer with a TimerCondition is cancelled early by a matching message, which is itself your wakeup. Set IsDaemon only for a cron that should keep firing after the current task is done. Use the manage_task tool to cancel active schedules, and never use a shell sleep command as a timer.",
+              "description": "Schedule a one-shot timer (DurationSeconds) or a recurring cron job (CronExpression) that notifies you via Prompt. This tool call runs as a background task and returns immediately; end your turn (call no more tools) to wait for notifications. A timer with a TimerCondition is cancelled early by a matching message, which is itself your wakeup. Set IsDaemon only for a cron that should keep firing after the current task is done. Set ExactTiming only when a cron must fire at the exact wall-clock time without jitter. Use the manage_task tool to cancel active schedules, and never use a shell sleep command as a timer.",
               "parameters": {
                 "type": "OBJECT",
                 "properties": {
@@ -203,6 +203,10 @@
                   "DurationSeconds": {
                     "type": "INTEGER",
                     "description": "Seconds to wait for a one-shot timer. Mutually exclusive with CronExpression."
+                  },
+                  "ExactTiming": {
+                    "type": "BOOLEAN",
+                    "description": "Cron only. Set true only when the user explicitly requires the schedule to fire at the exact wall-clock time without jitter. Leave false (the default) for polling, monitoring, or periodic tasks so triggers are jittered to avoid load spikes."
                   },
                   "IsDaemon": {
                     "type": "BOOLEAN",

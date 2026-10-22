@@ -3,7 +3,7 @@
   "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse",
   "headers": {
     "Host": "daily-cloudcode-pa.googleapis.com",
-    "User-Agent": "antigravity/cli/1.4.4 (aidev_client; os_type=linux; arch=amd64; cl=1003595037; auth_method=consumer)",
+    "User-Agent": "antigravity/cli/1.4.5 (aidev_client; os_type=linux; arch=amd64; cl=1004422050; auth_method=consumer)",
     "Transfer-Encoding": "chunked",
     "Authorization": "Bearer <REDACTED_ACCESS_TOKEN>",
     "Content-Type": "application/json",
@@ -27,7 +27,7 @@
           "parts": [
             {
               "functionCall": {
-                "id": "call_1009810",
+                "id": "call_181804",
                 "name": "read_file",
                 "args": {
                   "Path": "/tmp/work/notes.txt"
@@ -42,10 +42,10 @@
           "parts": [
             {
               "functionResponse": {
-                "id": "call_1009810",
+                "id": "call_181804",
                 "name": "read_file",
                 "response": {
-                  "output": "Created At: 2026-10-21T09:00:41Z\nCompleted At: 2026-10-21T09:00:41Z\nEncountered error in tool execution: file does not exist"
+                  "output": "Created At: 2026-10-22T10:55:35Z\nCompleted At: 2026-10-22T10:55:35Z\nEncountered error in tool execution: file does not exist"
                 }
               }
             }
@@ -56,7 +56,7 @@
           "parts": [
             {
               "functionCall": {
-                "id": "call_895123",
+                "id": "call_181870",
                 "name": "write_file",
                 "args": {
                   "Content": "The deploy moved to Thursday.\n",
@@ -72,10 +72,10 @@
           "parts": [
             {
               "functionResponse": {
-                "id": "call_895123",
+                "id": "call_181870",
                 "name": "write_file",
                 "response": {
-                  "output": "Created At: 2026-10-21T09:00:46Z\nCompleted At: 2026-10-21T09:00:46Z\nCreated file."
+                  "output": "Created At: 2026-10-22T10:55:38Z\nCompleted At: 2026-10-22T10:55:38Z\nCreated file."
                 }
               }
             }
@@ -84,6 +84,10 @@
         {
           "role": "model",
           "parts": [
+            {
+              "text": "[notes.txt](file:///tmp/work/notes.txt) has been saved.\n\n\n",
+              "thought": true
+            },
             {
               "text": "Hello Antigravity Turn. Please process the request.",
               "thoughtSignature": "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDAz"
@@ -102,7 +106,7 @@
           "role": "user",
           "parts": [
             {
-              "text": "The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.\n\n<SYSTEM_MESSAGE>\n[Message] timestamp=2026-10-21T09:00:55Z sender=system priority=MESSAGE_PRIORITY_LOW content=[Notice] All your subagents and background tasks have been stopped due to server restart. If you want a subagent to continue working, it needs to be revived by sending it a new message. If resuming work, please check on status and restart as needed.\n</SYSTEM_MESSAGE>"
+              "text": "The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.\n\n<SYSTEM_MESSAGE>\n[Message] timestamp=2026-10-22T10:55:48Z sender=system priority=MESSAGE_PRIORITY_LOW content=[Notice] All your subagents and background tasks have been stopped due to server restart. If you want a subagent to continue working, it needs to be revived by sending it a new message. If resuming work, please check on status and restart as needed.\n</SYSTEM_MESSAGE>"
             }
           ]
         }
@@ -247,7 +251,7 @@
           "functionDeclarations": [
             {
               "name": "schedule",
-              "description": "Schedule a one-shot timer (DurationSeconds) or a recurring cron job (CronExpression) that notifies you via Prompt. This tool call runs as a background task and returns immediately; end your turn (call no more tools) to wait for notifications. A timer with a TimerCondition is cancelled early by a matching message, which is itself your wakeup. Set IsDaemon only for a cron that should keep firing after the current task is done. Use the manage_task tool to cancel active schedules, and never use a shell sleep command as a timer.",
+              "description": "Schedule a one-shot timer (DurationSeconds) or a recurring cron job (CronExpression) that notifies you via Prompt. This tool call runs as a background task and returns immediately; end your turn (call no more tools) to wait for notifications. A timer with a TimerCondition is cancelled early by a matching message, which is itself your wakeup. Set IsDaemon only for a cron that should keep firing after the current task is done. Set ExactTiming only when a cron must fire at the exact wall-clock time without jitter. Use the manage_task tool to cancel active schedules, and never use a shell sleep command as a timer.",
               "parameters": {
                 "type": "OBJECT",
                 "properties": {
@@ -258,6 +262,10 @@
                   "DurationSeconds": {
                     "type": "INTEGER",
                     "description": "Seconds to wait for a one-shot timer. Mutually exclusive with CronExpression."
+                  },
+                  "ExactTiming": {
+                    "type": "BOOLEAN",
+                    "description": "Cron only. Set true only when the user explicitly requires the schedule to fire at the exact wall-clock time without jitter. Leave false (the default) for polling, monitoring, or periodic tasks so triggers are jittered to avoid load spikes."
                   },
                   "IsDaemon": {
                     "type": "BOOLEAN",
