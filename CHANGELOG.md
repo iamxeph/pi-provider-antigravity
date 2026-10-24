@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.29.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.28.0...v0.29.0) (2026-10-24)
+
+
+### Features
+
+* **wire:** adopt agy 1.4.7 fingerprint ([#89](https://github.com/iamxeph/pi-provider-antigravity/issues/89)) ([86fae43](https://github.com/iamxeph/pi-provider-antigravity/commit/86fae43e5e3e62ffb6185b9761be1b45e306c6d1))
+
 ## [0.28.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.27.0...v0.28.0) (2026-10-23)
 
 
