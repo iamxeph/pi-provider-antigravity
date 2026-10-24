@@ -6,70 +6,70 @@
           "role": "model",
           "parts": [
             {
-              "thoughtSignature": "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDA3",
-              "text": "Key artificial intelligence news and developments include:\n\n* **Microsoft AI Unveils \"MAI-DxO\":** Microsoft AI published research in *Science* introducing the **Microsoft AI Diagnostic Orchestrator (MAI-DxO)** alongside the Sequential Diagnosis Benchmark (SDBench). According to their evaluations, the AI diagnostic system outperformed human physicians significantly on complex medical cases while reducing diagnostic costs and unnecessary testing.\n* **Anthropic Launches Claude Duet & Opus 5.5 Agent:** Anthropic opened a waitlist for **Claude Duet** to US Pro and Max subscribers. The feature runs an unannounced **Opus 5.5** model behind the scenes as a proactive agent that briefs users in the morning, works autonomously between messages, and prompts for approval only when a major decision is needed. \n* **Global Cybersecurity Vulnerability Discovered by AI:** A massive zero-day PHP code flaw affecting a significant percentage of websites worldwide made headlines after being brought to light. The discovery and subsequent scramble to patch the infrastructure highlighted the dual-edged sword of advanced AI systems interacting with core global web architecture.\n* **Enterprise Shifts Toward Open-Weight Models:** Industry discussions—emphasized by figures like IBM's leadership—point to a growing corporate trend favoring cost-effective, adaptable open-weight models over hyper-expensive frontier models for enterprise scaling. \n* **Continued Rollout of Next-Gen Models:** Major ecosystems continue adjusting to the wave of recent autumn model drops, including OpenAI's broad rollout of **GPT-6** and its associated \"Intelligent UI\" features for weekly ChatGPT users."
+              "thoughtSignature": "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDA4",
+              "text": "Major developments in artificial intelligence feature a mix of breakthroughs in medical AI, cybersecurity concerns, and new agentic workflows:\n\n* **Microsoft Unveils Advanced Medical Diagnostic System:** Microsoft AI published research in *Science* introducing **MAI-DxO** (Microsoft AI Diagnostic Orchestrator) alongside the Sequential Diagnosis Benchmark (SDBench). Evaluated on complex medical cases, the system demonstrated high diagnostic reasoning capabilities, marking a significant step toward medical superintelligence applications.\n* **AI and Cybersecurity Vulnerabilities:** Security researchers and major tech firms issued global alerts after frontier AI models (including instances involving OpenAI models) assisted in identifying and investigating critical, long-standing security vulnerabilities in the **PHP programming language**. While highlighting AI's power in vulnerability research and patching, it also heightened industry focus on automated cyber threats.\n* **Expansion of Autonomous AI Agents:** Major labs are pushing deeper into background-running, autonomous agents. Anthropic recently opened access to its **Claude Duet** agent features for US Pro and Max subscribers, signaling broader enterprise and consumer integration of agents capable of handling multi-step tasks with minimal human intervention. \n* **Infrastructure and Chip Pressures:** The neocloud and hardware layers continue to see high financial pressure and rapid scaling. Companies are aggressively securing infrastructure amidst shifting borrowing costs and massive capital investments dedicated to training and running next-gen frontier models."
             }
           ]
         },
         "finishReason": "STOP",
         "groundingMetadata": {
           "webSearchQueries": [
-            "artificial intelligence news today",
-            "AI news headlines October 2026"
+            "AI news headlines October 2026",
+            "artificial intelligence AI news today"
           ],
           "searchEntryPoint": {
-            "renderedContent": "<style>\n.container {\n  align-items: center;\n  border-radius: 8px;\n  display: flex;\n  font-family: Google Sans, Roboto, sans-serif;\n  font-size: 14px;\n  line-height: 20px;\n  padding: 8px 12px;\n}\n.chip {\n  display: inline-block;\n  border: solid 1px;\n  border-radius: 16px;\n  min-width: 14px;\n  padding: 5px 16px;\n  text-align: center;\n  user-select: none;\n  margin: 0 8px;\n  -webkit-tap-highlight-color: transparent;\n}\n.carousel {\n  overflow: auto;\n  scrollbar-width: none;\n  white-space: nowrap;\n  margin-right: -12px;\n}\n.headline {\n  display: flex;\n  margin-right: 4px;\n}\n.gradient-container {\n  position: relative;\n}\n.gradient {\n  position: absolute;\n  transform: translate(3px, -9px);\n  height: 36px;\n  width: 9px;\n}\n@media (prefers-color-scheme: light) {\n  .container {\n    background-color: #fafafa;\n    box-shadow: 0 0 0 1px #0000000f;\n  }\n  .headline-label {\n    color: #1f1f1f;\n  }\n  .chip {\n    background-color: #ffffff;\n    border-color: #d2d2d2;\n    color: #5e5e5e;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #f2f2f2;\n  }\n  .chip:focus {\n    background-color: #f2f2f2;\n  }\n  .chip:active {\n    background-color: #d8d8d8;\n    border-color: #b6b6b6;\n  }\n  .logo-dark {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #fafafa 15%, #fafafa00 100%);\n  }\n}\n@media (prefers-color-scheme: dark) {\n  .container {\n    background-color: #1f1f1f;\n    box-shadow: 0 0 0 1px #ffffff26;\n  }\n  .headline-label {\n    color: #fff;\n  }\n  .chip {\n    background-color: #2c2c2c;\n    border-color: #3c4043;\n    color: #fff;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #353536;\n  }\n  .chip:focus {\n    background-color: #353536;\n  }\n  .chip:active {\n    background-color: #464849;\n    border-color: #53575b;\n  }\n  .logo-light {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #1f1f1f 15%, #1f1f1f00 100%);\n  }\n}\n</style>\n<div class=\"container\">\n  <div class=\"headline\">\n    <svg class=\"logo-light\" width=\"18\" height=\"18\" viewBox=\"9 9 35 35\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M42.8622 27.0064C42.8622 25.7839 42.7525 24.6084 42.5487 23.4799H26.3109V30.1568H35.5897C35.1821 32.3041 33.9596 34.1222 32.1258 35.3448V39.6864H37.7213C40.9814 36.677 42.8622 32.2571 42.8622 27.0064V27.0064Z\" fill=\"#4285F4\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 43.8555C30.9659 43.8555 34.8687 42.3195 37.7213 39.6863L32.1258 35.3447C30.5898 36.3792 28.6306 37.0061 26.3109 37.0061C21.8282 37.0061 18.0195 33.9811 16.6559 29.906H10.9194V34.3573C13.7563 39.9841 19.5712 43.8555 26.3109 43.8555V43.8555Z\" fill=\"#34A853\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M16.6559 29.8904C16.3111 28.8559 16.1074 27.7588 16.1074 26.6146C16.1074 25.4704 16.3111 24.3733 16.6559 23.3388V18.8875H10.9194C9.74388 21.2072 9.06992 23.8247 9.06992 26.6146C9.06992 29.4045 9.74388 32.022 10.9194 34.3417L15.3864 30.8621L16.6559 29.8904V29.8904Z\" fill=\"#FBBC05\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 16.2386C28.85 16.2386 31.107 17.1164 32.9095 18.8091L37.8466 13.8719C34.853 11.082 30.9659 9.3736 26.3109 9.3736C19.5712 9.3736 13.7563 13.245 10.9194 18.8875L16.6559 23.3388C18.0195 19.2636 21.8282 16.2386 26.3109 16.2386V16.2386Z\" fill=\"#EA4335\"/>\n    </svg>\n    <svg class=\"logo-dark\" width=\"18\" height=\"18\" viewBox=\"0 0 48 48\" xmlns=\"http://www.w3.org/2000/svg\">\n      <circle cx=\"24\" cy=\"23\" fill=\"#FFF\" r=\"22\"/>\n      <path d=\"M33.76 34.26c2.75-2.56 4.49-6.37 4.49-11.26 0-.89-.08-1.84-.29-3H24.01v5.99h8.03c-.4 2.02-1.5 3.56-3.07 4.56v.75l3.91 2.97h.88z\" fill=\"#4285F4\"/>\n      <path d=\"M15.58 25.77A8.845 8.845 0 0 0 24 31.86c1.92 0 3.62-.46 4.97-1.31l4.79 3.71C31.14 36.7 27.65 38 24 38c-5.93 0-11.01-3.4-13.45-8.36l.17-1.01 4.06-2.85h.8z\" fill=\"#34A853\"/>\n      <path d=\"M15.59 20.21a8.864 8.864 0 0 0 0 5.58l-5.03 3.86c-.98-2-1.53-4.25-1.53-6.64 0-2.39.55-4.64 1.53-6.64l1-.22 3.81 2.98.22 1.08z\" fill=\"#FBBC05\"/>\n      <path d=\"M24 14.14c2.11 0 4.02.75 5.52 1.98l4.36-4.36C31.22 9.43 27.81 8 24 8c-5.93 0-11.01 3.4-13.45 8.36l5.03 3.85A8.86 8.86 0 0 1 24 14.14z\" fill=\"#EA4335\"/>\n    </svg>\n    <div class=\"gradient-container\"><div class=\"gradient\"></div></div>\n  </div>\n  <div class=\"carousel\">\n<a class=\"chip\" href=\"https://www.google.com/search?q=artificial+intelligence+news+today&client=app-vertex-grounding&safesearch=active\">artificial intelligence news today</a>\n<a class=\"chip\" href=\"https://www.google.com/search?q=AI+news+headlines+October+2026&client=app-vertex-grounding&safesearch=active\">AI news headlines October 2026</a>\n  </div>\n</div>"
+            "renderedContent": "<style>\n.container {\n  align-items: center;\n  border-radius: 8px;\n  display: flex;\n  font-family: Google Sans, Roboto, sans-serif;\n  font-size: 14px;\n  line-height: 20px;\n  padding: 8px 12px;\n}\n.chip {\n  display: inline-block;\n  border: solid 1px;\n  border-radius: 16px;\n  min-width: 14px;\n  padding: 5px 16px;\n  text-align: center;\n  user-select: none;\n  margin: 0 8px;\n  -webkit-tap-highlight-color: transparent;\n}\n.carousel {\n  overflow: auto;\n  scrollbar-width: none;\n  white-space: nowrap;\n  margin-right: -12px;\n}\n.headline {\n  display: flex;\n  margin-right: 4px;\n}\n.gradient-container {\n  position: relative;\n}\n.gradient {\n  position: absolute;\n  transform: translate(3px, -9px);\n  height: 36px;\n  width: 9px;\n}\n@media (prefers-color-scheme: light) {\n  .container {\n    background-color: #fafafa;\n    box-shadow: 0 0 0 1px #0000000f;\n  }\n  .headline-label {\n    color: #1f1f1f;\n  }\n  .chip {\n    background-color: #ffffff;\n    border-color: #d2d2d2;\n    color: #5e5e5e;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #f2f2f2;\n  }\n  .chip:focus {\n    background-color: #f2f2f2;\n  }\n  .chip:active {\n    background-color: #d8d8d8;\n    border-color: #b6b6b6;\n  }\n  .logo-dark {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #fafafa 15%, #fafafa00 100%);\n  }\n}\n@media (prefers-color-scheme: dark) {\n  .container {\n    background-color: #1f1f1f;\n    box-shadow: 0 0 0 1px #ffffff26;\n  }\n  .headline-label {\n    color: #fff;\n  }\n  .chip {\n    background-color: #2c2c2c;\n    border-color: #3c4043;\n    color: #fff;\n    text-decoration: none;\n  }\n  .chip:hover {\n    background-color: #353536;\n  }\n  .chip:focus {\n    background-color: #353536;\n  }\n  .chip:active {\n    background-color: #464849;\n    border-color: #53575b;\n  }\n  .logo-light {\n    display: none;\n  }\n  .gradient {\n    background: linear-gradient(90deg, #1f1f1f 15%, #1f1f1f00 100%);\n  }\n}\n</style>\n<div class=\"container\">\n  <div class=\"headline\">\n    <svg class=\"logo-light\" width=\"18\" height=\"18\" viewBox=\"9 9 35 35\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M42.8622 27.0064C42.8622 25.7839 42.7525 24.6084 42.5487 23.4799H26.3109V30.1568H35.5897C35.1821 32.3041 33.9596 34.1222 32.1258 35.3448V39.6864H37.7213C40.9814 36.677 42.8622 32.2571 42.8622 27.0064V27.0064Z\" fill=\"#4285F4\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 43.8555C30.9659 43.8555 34.8687 42.3195 37.7213 39.6863L32.1258 35.3447C30.5898 36.3792 28.6306 37.0061 26.3109 37.0061C21.8282 37.0061 18.0195 33.9811 16.6559 29.906H10.9194V34.3573C13.7563 39.9841 19.5712 43.8555 26.3109 43.8555V43.8555Z\" fill=\"#34A853\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M16.6559 29.8904C16.3111 28.8559 16.1074 27.7588 16.1074 26.6146C16.1074 25.4704 16.3111 24.3733 16.6559 23.3388V18.8875H10.9194C9.74388 21.2072 9.06992 23.8247 9.06992 26.6146C9.06992 29.4045 9.74388 32.022 10.9194 34.3417L15.3864 30.8621L16.6559 29.8904V29.8904Z\" fill=\"#FBBC05\"/>\n      <path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M26.3109 16.2386C28.85 16.2386 31.107 17.1164 32.9095 18.8091L37.8466 13.8719C34.853 11.082 30.9659 9.3736 26.3109 9.3736C19.5712 9.3736 13.7563 13.245 10.9194 18.8875L16.6559 23.3388C18.0195 19.2636 21.8282 16.2386 26.3109 16.2386V16.2386Z\" fill=\"#EA4335\"/>\n    </svg>\n    <svg class=\"logo-dark\" width=\"18\" height=\"18\" viewBox=\"0 0 48 48\" xmlns=\"http://www.w3.org/2000/svg\">\n      <circle cx=\"24\" cy=\"23\" fill=\"#FFF\" r=\"22\"/>\n      <path d=\"M33.76 34.26c2.75-2.56 4.49-6.37 4.49-11.26 0-.89-.08-1.84-.29-3H24.01v5.99h8.03c-.4 2.02-1.5 3.56-3.07 4.56v.75l3.91 2.97h.88z\" fill=\"#4285F4\"/>\n      <path d=\"M15.58 25.77A8.845 8.845 0 0 0 24 31.86c1.92 0 3.62-.46 4.97-1.31l4.79 3.71C31.14 36.7 27.65 38 24 38c-5.93 0-11.01-3.4-13.45-8.36l.17-1.01 4.06-2.85h.8z\" fill=\"#34A853\"/>\n      <path d=\"M15.59 20.21a8.864 8.864 0 0 0 0 5.58l-5.03 3.86c-.98-2-1.53-4.25-1.53-6.64 0-2.39.55-4.64 1.53-6.64l1-.22 3.81 2.98.22 1.08z\" fill=\"#FBBC05\"/>\n      <path d=\"M24 14.14c2.11 0 4.02.75 5.52 1.98l4.36-4.36C31.22 9.43 27.81 8 24 8c-5.93 0-11.01 3.4-13.45 8.36l5.03 3.85A8.86 8.86 0 0 1 24 14.14z\" fill=\"#EA4335\"/>\n    </svg>\n    <div class=\"gradient-container\"><div class=\"gradient\"></div></div>\n  </div>\n  <div class=\"carousel\">\n<a class=\"chip\" href=\"https://www.google.com/search?q=AI+news+headlines+October+2026&client=app-vertex-grounding&safesearch=active\">AI news headlines October 2026</a>\n<a class=\"chip\" href=\"https://www.google.com/search?q=artificial+intelligence+AI+news+today&client=app-vertex-grounding&safesearch=active\">artificial intelligence AI news today</a>\n  </div>\n</div>"
           },
           "groundingChunks": [
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFaxZr4hqCZTYzqVKkaxU2w3oqiGQGBCCucY27akcXQWrDJ76p9kxGireGyyKKYkuev36LqFbi9kCpeE6OJaVw7Judjifb3x7XLxVlg7Wof4XhJ5QUZYsFyZFYIPdaZd5-ifGAX8lU4De5QETGuQowGlvM=",
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGmMvbG7wAoCD9uv9hQQEJ0cJpmRwxiDAFd-UCLyIqC28mF4fLlYMxELg36ckf0hMNxCTQ1mB88eQDg1bvjuM7JdynD9dl5CPb0LgF3Pxby4JJ7Nym1DvV2GwHi-LsQROJjrxuVzDZE49GPpE5pgXKpjFdQ",
                 "title": "microsoft.ai"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHPRIhg7ACS4NkMm6pRXKihsQDdQj_KZK4NeNylWj6ryF14LDp3KY-MkM_4SbYuPWXvynaSIxxL8ZJtoDOiSRtVbY7AB12nXLX-LQE4afCvkt15sI62lbb1TndmL7Zsv29olcR0MYzYKFQ=",
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFh8q_spk4uUB105_fpBMkQtouHbfLz0kwo4sklePCoz1LFh750ZrfoX7yvgdK0d60FLecs3od6LtPRdLVMnwuWUdS77-JM_-ku4at4De9v-JOE-g7hZ5EsfPD9clKGmz9XyyXfbHrCsb2V5yk9Dm5iPvnIzbGOKzlBB_0-KVL_Oq41sqfDXB6m",
+                "title": "medium.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHdXLXEZS6Wz7TAptoXKzlFU77ZeDr1NzmrBMMCYYJtXMA5cIw9LOPgh5vMvJiOXzidZ6of9NrV_FqPd77s5nnW4rCyYbYmS6AvcsIkqzRiGZh-2giVwf1DL3LcGjfq2OCPtfYbT9fp4YU9TtbBF11rKQCEfrZS9q1CrxKY0AhgmlbGf0NoTFhXKcw4PKKiSc4=",
+                "title": "aiedgeinsights.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHXvR-gjn4d_ghdwUbNrNGLmj9-Yhk7XW1xvxGO7I9OnceLLz2mZRopKVXGXdgKZsQUdrcpZqJxut7Nw_1z-ExiY-SD_5P7hbi3nMZZc5X7wtDs0Uw31NxBFGPI9euQhLKVC_x9kngZCSHlR9GxEf2ecw==",
+                "title": "cbsnews.com"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFLBBFGrmPvGF0ThJeuZURedQFuikNzM0fbLN_Qw_VbkKsEhSHCKgV3vvH6IMhBXnGgizjxCTNcfdQfPWxFbqS2nRXw2L73JOfhRK7XDv5gfl-5niU1-EudxxiOmWuh1PeQAhop18dnD7fp",
                 "title": "aiweekly.co"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQESzNEZ7ldXkbR-LDKdjXY5zh_FbGl11Hi8mFa1Ae7CfShjWe63r2E7qohXJ100kisGxNCRqyGRNPLMeaht55juqBdPsMtfJhqPfzbZiceMDU7aiug64KPz2Y8PXQPW77c3lTRn8hTdco9vzMpEbrOBteWTPQ==",
-                "title": "theguardian.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFlrNVoEubMRMTFw6JE5xfRRtt1XEo7YePA9DEhn_H7pmTfpQKOsFR5Buh9C-KjIT9kMRMN6LjNpHCIHByf0K5MtxwePeBl14RzKdp9pUrkfj4ADOa4CwwqxmFEjaBi_46K",
+                "title": "youtube.com"
               }
             },
             {
               "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFPFh8sRxpgvDiRTO8LXXhoPfwa2UXukvwaKD7ska_xyTE9tRpTgFmCujacoGdW2Nn-FLQaxuWwYv3L4CWwNrE7QugDC3XaUDIcVbAcTcf22WaLGpa40HFvMwuyghbJsV4ouxxO7jmu3TxhSWZlf-udISn7aewtPIA=",
-                "title": "cnn.com"
-              }
-            },
-            {
-              "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEVyDNaDsQMZVf9DF9snk1mYvHX1cU9sOiJLK8h1d-mgTe5q5pYIbp2Kk36vM0JEGrRFCPHleMo0O6nxzTb0ghXgf8HXuUpETGg2i6aVpmlsVqvgyRWVuwGJQ==",
-                "title": "reddit.com"
-              }
-            },
-            {
-              "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQE9FqD4Uhb-HTjZvMv0A_zTAF8hJKqsGyk-LVpU3Gtuwcr-VslJq5gtIHnUWMt6Ag9mSpOHG8gkdSIYvYgJc65e0gDzFC7Y57vY-0wXfacURZ0G_3aBCbCWlnxGQVrFFYfD-dik5vSyqA==",
-                "title": "hellogrowth.ai"
-              }
-            },
-            {
-              "web": {
-                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGINuzgOFHa64EsAnsOgDov4_1kRR5A4xmy1sQKOvD4splnHYEX6wpTCmMy05LVbtcKaj4h1f0JjZmGYIsdbdSKG_oO5yKtFF1H_YGhbRPdlUeo1f1c907ciU5TyqAbRuPe",
-                "title": "openai.com"
+                "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFDPWkoTwCENgss3MHrRQ32ZjRnQ7_6DFIe3WCCmQUKBm2BEhA3xuEetF0UOOTzZrIWcDDibnM13uvr8ZxZwWPAyu_PiBAIK9LhFDgkD_Rlmi_Woon-pJKdrwSv2B4Oa_M48d8bucp7zQ40",
+                "title": "sopenu.com"
               }
             }
           ],
           "groundingSupports": [
             {
               "segment": {
-                "startIndex": 62,
-                "endIndex": 264,
-                "text": "**Microsoft AI Unveils \"MAI-DxO\":** Microsoft AI published research in *Science* introducing the **Microsoft AI Diagnostic Orchestrator (MAI-DxO)** alongside the Sequential Diagnosis Benchmark (SDBench)"
+                "startIndex": 146,
+                "endIndex": 366,
+                "text": "**Microsoft Unveils Advanced Medical Diagnostic System:** Microsoft AI published research in *Science* introducing **MAI-DxO** (Microsoft AI Diagnostic Orchestrator) alongside the Sequential Diagnosis Benchmark (SDBench)"
               },
               "groundingChunkIndices": [
                 0
@@ -77,9 +77,9 @@
             },
             {
               "segment": {
-                "startIndex": 266,
-                "endIndex": 447,
-                "text": "According to their evaluations, the AI diagnostic system outperformed human physicians significantly on complex medical cases while reducing diagnostic costs and unnecessary testing"
+                "startIndex": 368,
+                "endIndex": 540,
+                "text": "Evaluated on complex medical cases, the system demonstrated high diagnostic reasoning capabilities, marking a significant step toward medical superintelligence applications"
               },
               "groundingChunkIndices": [
                 0
@@ -87,40 +87,31 @@
             },
             {
               "segment": {
-                "startIndex": 451,
-                "endIndex": 581,
-                "text": "**Anthropic Launches Claude Duet & Opus 5.5 Agent:** Anthropic opened a waitlist for **Claude Duet** to US Pro and Max subscribers"
+                "startIndex": 544,
+                "endIndex": 846,
+                "text": "**AI and Cybersecurity Vulnerabilities:** Security researchers and major tech firms issued global alerts after frontier AI models (including instances involving OpenAI models) assisted in identifying and investigating critical, long-standing security vulnerabilities in the **PHP programming language**"
               },
               "groundingChunkIndices": [
+                1,
+                2
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 848,
+                "endIndex": 978,
+                "text": "While highlighting AI's power in vulnerability research and patching, it also heightened industry focus on automated cyber threats"
+              },
+              "groundingChunkIndices": [
+                3,
                 1
               ]
             },
             {
               "segment": {
-                "startIndex": 583,
-                "endIndex": 805,
-                "text": "The feature runs an unannounced **Opus 5.5** model behind the scenes as a proactive agent that briefs users in the morning, works autonomously between messages, and prompts for approval only when a major decision is needed"
-              },
-              "groundingChunkIndices": [
-                1
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 810,
-                "endIndex": 1000,
-                "text": "**Global Cybersecurity Vulnerability Discovered by AI:** A massive zero-day PHP code flaw affecting a significant percentage of websites worldwide made headlines after being brought to light"
-              },
-              "groundingChunkIndices": [
-                2,
-                3
-              ]
-            },
-            {
-              "segment": {
-                "startIndex": 1173,
-                "endIndex": 1439,
-                "text": "**Enterprise Shifts Toward Open-Weight Models:** Industry discussions—emphasized by figures like IBM's leadership—point to a growing corporate trend favoring cost-effective, adaptable open-weight models over hyper-expensive frontier models for enterprise scaling"
+                "startIndex": 1095,
+                "endIndex": 1330,
+                "text": "Anthropic recently opened access to its **Claude Duet** agent features for US Pro and Max subscribers, signaling broader enterprise and consumer integration of agents capable of handling multi-step tasks with minimal human intervention"
               },
               "groundingChunkIndices": [
                 4
@@ -128,9 +119,19 @@
             },
             {
               "segment": {
-                "startIndex": 1444,
-                "endIndex": 1679,
-                "text": "**Continued Rollout of Next-Gen Models:** Major ecosystems continue adjusting to the wave of recent autumn model drops, including OpenAI's broad rollout of **GPT-6** and its associated \"Intelligent UI\" features for weekly ChatGPT users"
+                "startIndex": 1335,
+                "endIndex": 1464,
+                "text": "**Infrastructure and Chip Pressures:** The neocloud and hardware layers continue to see high financial pressure and rapid scaling"
+              },
+              "groundingChunkIndices": [
+                5
+              ]
+            },
+            {
+              "segment": {
+                "startIndex": 1466,
+                "endIndex": 1639,
+                "text": "Companies are aggressively securing infrastructure amidst shifting borrowing costs and massive capital investments dedicated to training and running next-gen frontier models"
               },
               "groundingChunkIndices": [
                 5,
@@ -142,9 +143,9 @@
       }
     ],
     "usageMetadata": {
-      "promptTokenCount": 68,
-      "candidatesTokenCount": 386,
-      "totalTokenCount": 454
+      "promptTokenCount": 69,
+      "candidatesTokenCount": 343,
+      "totalTokenCount": 412
     },
     "modelVersion": "gemini-3.5-flash-lite",
     "responseId": "mock-response-id-0004"
