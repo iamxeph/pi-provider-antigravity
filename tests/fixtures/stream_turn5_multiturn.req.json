@@ -3,7 +3,7 @@
   "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse",
   "headers": {
     "Host": "daily-cloudcode-pa.googleapis.com",
-    "User-Agent": "antigravity/cli/1.4.7 (aidev_client; os_type=linux; arch=amd64; cl=1006008713; auth_method=consumer)",
+    "User-Agent": "antigravity/cli/1.4.8 (aidev_client; os_type=linux; arch=amd64; cl=1007749967; auth_method=consumer)",
     "Transfer-Encoding": "chunked",
     "Authorization": "Bearer <REDACTED_ACCESS_TOKEN>",
     "Content-Type": "application/json",
@@ -27,10 +27,12 @@
           "parts": [
             {
               "functionCall": {
-                "id": "call_543269",
-                "name": "read_file",
+                "id": "call_3346830",
+                "name": "run_command",
                 "args": {
-                  "Path": "/tmp/work/notes.txt"
+                  "CommandLine": "ls -la /tmp/work",
+                  "WaitMsBeforeAsync": 5000,
+                  "toolSummary": "List directory contents"
                 }
               },
               "thoughtSignature": "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDAx"
@@ -42,10 +44,10 @@
           "parts": [
             {
               "functionResponse": {
-                "id": "call_543269",
-                "name": "read_file",
+                "id": "call_3346830",
+                "name": "run_command",
                 "response": {
-                  "output": "Created At: 2026-10-24T08:15:27Z\nCompleted At: 2026-10-24T08:15:27Z\nEncountered error in tool execution: file does not exist"
+                  "output": "Created At: 2026-10-27T17:03:46Z\nCompleted At: 2026-10-27T17:03:46Z\nCommand exited with code 0.\n\nCommand output:\ntotal 8\r\ndrwxr-xr-x 2 <REDACTED_USER> users 4096 Oct 27 17:01 .\r\ndrwxr-xr-x 3 <REDACTED_USER> users 4096 Oct 27 17:01 ..\r\n"
                 }
               }
             }
@@ -56,11 +58,10 @@
           "parts": [
             {
               "functionCall": {
-                "id": "call_514160",
+                "id": "call_736183",
                 "name": "write_file",
                 "args": {
-                  "Content": "The deploy moved to Thursday.\n",
-                  "Overwrite": true,
+                  "Content": "The deploy has been moved to Thursday.\n",
                   "Path": "/tmp/work/notes.txt"
                 }
               },
@@ -73,10 +74,10 @@
           "parts": [
             {
               "functionResponse": {
-                "id": "call_514160",
+                "id": "call_736183",
                 "name": "write_file",
                 "response": {
-                  "output": "Created At: 2026-10-24T08:15:30Z\nCompleted At: 2026-10-24T08:15:30Z\nCreated file."
+                  "output": "Created At: 2026-10-27T17:03:51Z\nCompleted At: 2026-10-27T17:03:51Z\nCreated file."
                 }
               }
             }
@@ -103,7 +104,7 @@
           "role": "user",
           "parts": [
             {
-              "text": "The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.\n\n<SYSTEM_MESSAGE>\n[Message] timestamp=2026-10-24T08:15:42Z sender=system priority=MESSAGE_PRIORITY_LOW content=[Notice] All your subagents and background tasks have been stopped due to server restart. If you want a subagent to continue working, it needs to be revived by sending it a new message. If resuming work, please check on status and restart as needed.\n</SYSTEM_MESSAGE>"
+              "text": "The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.\n\n<SYSTEM_MESSAGE>\n[Message] timestamp=2026-10-27T17:04:00Z sender=system priority=MESSAGE_PRIORITY_LOW content=[Notice] All your subagents and background tasks have been stopped due to server restart. If you want a subagent to continue working, it needs to be revived by sending it a new message. If resuming work, please check on status and restart as needed.\n</SYSTEM_MESSAGE>"
             }
           ]
         },
@@ -111,11 +112,11 @@
           "role": "model",
           "parts": [
             {
-              "text": "Average speed is calculated by dividing the total distance traveled by the time taken, therefore, 120 km divided by 1.5 hours will yield the average speed. I must perform the division to get the final answer in km/h, ensuring the answer is exactly one sentence as requested. The average speed of the train is 80 km/h.\n\n\n",
+              "text": "Average speed calculation requires dividing distance by time. The given distance is 120 km and the time is 1.5 hours, thus the average speed calculation yields 80 km/h. Therefore, the train's average speed is 80 km/h.\n\n\n",
               "thought": true
             },
             {
-              "text": "By dividing the distance of 120 km by the time of 1.5 hours (120 / 1.5), the train's average speed is 80 km/h.",
+              "text": "The average speed of the train is 80 km/h, calculated by dividing 120 km by 1.5 hours.",
               "thoughtSignature": "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDA0"
             }
           ]
@@ -132,7 +133,7 @@
           "role": "user",
           "parts": [
             {
-              "text": "The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.\n\n<SYSTEM_MESSAGE>\n[Message] timestamp=2026-10-24T08:15:54Z sender=system priority=MESSAGE_PRIORITY_LOW content=[Notice] All your subagents and background tasks have been stopped due to server restart. If you want a subagent to continue working, it needs to be revived by sending it a new message. If resuming work, please check on status and restart as needed.\n</SYSTEM_MESSAGE>"
+              "text": "The following is a <SYSTEM_MESSAGE> not actually sent by the user. It is provided by the system as important information to pay attention to.\n\n<SYSTEM_MESSAGE>\n[Message] timestamp=2026-10-27T17:04:12Z sender=system priority=MESSAGE_PRIORITY_LOW content=[Notice] All your subagents and background tasks have been stopped due to server restart. If you want a subagent to continue working, it needs to be revived by sending it a new message. If resuming work, please check on status and restart as needed.\n</SYSTEM_MESSAGE>"
             }
           ]
         }
@@ -636,7 +637,7 @@
         "maxOutputTokens": 65536,
         "thinkingConfig": {
           "includeThoughts": true,
-          "thinkingBudget": -1
+          "thinkingLevel": "HIGH"
         }
       },
       "sessionId": "-3750763034362895579"

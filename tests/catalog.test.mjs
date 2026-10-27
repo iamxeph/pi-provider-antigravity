@@ -28,17 +28,19 @@ test("Seam 3: parseAvailableModels extracts models and model_enum", () => {
   assert.equal(flash38.modelEnum, "MODEL_PLACEHOLDER_M318");
   assert.equal(flash38.supportsThinking, true);
 
-  // thinkingBudget rides the wire per Runtime Model ID
-  // (the newest capture's models.resp.json) — parse must keep it.
-  assert.equal(flash38.thinkingBudget, -1);
+  // The thinking rank rides the wire per Runtime Model ID (the newest capture's
+  // models.resp.json) — parse must keep it. agy 1.4.8 moved Flash from an integer
+  // thinkingBudget (-1/4000/1000) to thinkingLevel 3/2/1.
+  assert.equal(flash38.thinkingLevel, 3);
+  assert.equal(flash38.thinkingBudget, undefined);
 
   const flash38med = items.models.find((m) => m.id === "gemini-3.8-flash-medium");
   assert.ok(flash38med);
-  assert.equal(flash38med.thinkingBudget, 4000);
+  assert.equal(flash38med.thinkingLevel, 2);
 
   const flash38low = items.models.find((m) => m.id === "gemini-3.8-flash-low");
   assert.ok(flash38low);
-  assert.equal(flash38low.thinkingBudget, 1000);
+  assert.equal(flash38low.thinkingLevel, 1);
 
   const claudeSonnet = items.models.find((m) => m.id === "claude-sonnet-5-5-high");
   assert.ok(claudeSonnet);
@@ -572,21 +574,18 @@ test("Seam 3: resolveModelPlan resolves thinking from snapshot wire values", () 
   catalog.record(modelsJson);
 
   const cases = [
-    ["gemini-3.8-flash", "high", "gemini-3.8-flash-high"],
-    ["gemini-3.8-flash", "medium", "gemini-3.8-flash-medium"],
-    ["gemini-3.8-flash", "low", "gemini-3.8-flash-low"],
-    ["gemini-2.5-pro", undefined, "gemini-2.5-pro"],
-    ["gpt-oss-120b", undefined, "gpt-oss-120b-medium"],
+    ["gemini-3.8-flash", "high", "gemini-3.8-flash-high", { thinkingLevel: "HIGH" }],
+    ["gemini-3.8-flash", "medium", "gemini-3.8-flash-medium", { thinkingLevel: "MEDIUM" }],
+    ["gemini-3.8-flash", "low", "gemini-3.8-flash-low", { thinkingLevel: "LOW" }],
+    ["gemini-2.5-pro", undefined, "gemini-2.5-pro", { thinkingBudget: 1024 }],
+    ["gpt-oss-120b", undefined, "gpt-oss-120b-medium", { thinkingBudget: 8192 }],
   ];
-  for (const [publicId, effort, runtimeId] of cases) {
+  for (const [publicId, effort, runtimeId, thinking] of cases) {
     const wire = modelsJson.models[runtimeId];
     const plan = catalog.resolvePlan(publicId, effort);
     assert.equal(plan.runtimeModelId, runtimeId);
     assert.equal(plan.modelEnum, wire.model);
-    assert.deepEqual(plan.thinkingConfig, {
-      includeThoughts: true,
-      thinkingBudget: wire.thinkingBudget,
-    });
+    assert.deepEqual(plan.thinkingConfig, { includeThoughts: true, ...thinking });
   }
 
   // Claude 5.5: the catalog carries no budget for those tiers, so the
@@ -851,7 +850,7 @@ test("Catalog refresh: fresh fetch builds dynamic models and publishes", async (
     assert.equal(typeof persist.checkedAt, "number");
     assert.deepEqual(persist[PRIVATE_SNAPSHOT_KEY], catalog.toPersisted());
     assert.deepEqual(persist[PRIVATE_SNAPSHOT_KEY].modelEnums, expected.modelEnums);
-    assert.equal(persist[PRIVATE_SNAPSHOT_KEY].thinking["gemini-3.8-flash-medium"].budget, 4000);
+    assert.equal(persist[PRIVATE_SNAPSHOT_KEY].thinking["gemini-3.8-flash-medium"].level, 2);
   } finally {
     globalThis.fetch = realFetch;
   }

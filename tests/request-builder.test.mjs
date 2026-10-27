@@ -75,7 +75,7 @@ test("Seam 1: buildAntigravityRequestBody creates strict envelope and PR #39 lab
   // Thinking config check
   assert.deepEqual(body.request.generationConfig.thinkingConfig, {
     includeThoughts: true,
-    thinkingBudget: -1,
+    thinkingLevel: "HIGH",
   });
 });
 
@@ -394,19 +394,14 @@ test("Seam 1: integer thinkingBudget matches PR #39 / #36 matrix across models",
   // Values now come from the catalog snapshot (wire thinkingBudget per Runtime
   // Model ID); the expectations below pin that matrix against the capture.
   const budget = (id, effort) => fixtureCatalog.resolvePlan(id, effort).thinkingConfig;
-  // Flash high -> -1
-  assert.deepEqual(budget("gemini-3.8-flash-high"), { includeThoughts: true, thinkingBudget: -1 });
-  // Flash medium -> 4000
-  assert.deepEqual(budget("gemini-3.8-flash", "medium"), { includeThoughts: true, thinkingBudget: 4000 });
-  // Flash low -> 1000
-  assert.deepEqual(budget("gemini-3.8-flash", "low"), { includeThoughts: true, thinkingBudget: 1000 });
-  // Live-captured 2026-10-13 (agy 1.3.3, --model gemini-3.8-flash --effort low|medium|high):
-  // variant runtime ID + integer budget, never -tiered / thinkingLevel.
-  assert.deepEqual(budget("gemini-3.8-flash-low"), { includeThoughts: true, thinkingBudget: 1000 });
-  assert.deepEqual(budget("gemini-3.8-flash-medium"), { includeThoughts: true, thinkingBudget: 4000 });
-  assert.deepEqual(budget("gemini-3.8-flash-high"), { includeThoughts: true, thinkingBudget: -1 });
-  // A -1 catalog budget rides the wire verbatim (agy 1.3.3 turn1: 3.8-flash-high → -1).
-  // 2.5 Pro keeps a small numeric budget.
+  // Live-captured agy 1.4.8 (--model gemini-3.8-flash --effort low|medium|high): variant
+  // runtime ID + catalog thinkingLevel 1/2/3 named on the wire, never -tiered. Through
+  // 1.4.7 the same tiers carried an integer budget (-1/4000/1000) instead.
+  assert.deepEqual(budget("gemini-3.8-flash-high"), { includeThoughts: true, thinkingLevel: "HIGH" });
+  assert.deepEqual(budget("gemini-3.8-flash", "medium"), { includeThoughts: true, thinkingLevel: "MEDIUM" });
+  assert.deepEqual(budget("gemini-3.8-flash", "low"), { includeThoughts: true, thinkingLevel: "LOW" });
+  assert.deepEqual(budget("gemini-3.8-flash-low"), { includeThoughts: true, thinkingLevel: "LOW" });
+  // A catalog budget rides the wire verbatim: 2.5 Pro keeps a small numeric budget.
   assert.deepEqual(budget("gemini-2.5-pro"), { includeThoughts: true, thinkingBudget: 1024 });
   // agy 1.3.5 catalogued gemini-3.1-flash-lite with BOTH thinkingBudget -1 and
   // thinkingLevel 1, and the named effort wins: the 1.3.5 checkpoint call proves it on
@@ -680,7 +675,7 @@ test("Seam 1: resolveModelPlan maps Public Model IDs to Runtime Model IDs", () =
 test("Seam 1: resolveModelPlan bundles enum, thinking budget, and non-Gemini flag", () => {
   const flash = fixtureCatalog.resolvePlan("gemini-3.8-flash", "high");
   assert.equal(flash.modelEnum, "MODEL_PLACEHOLDER_M318");
-  assert.deepEqual(flash.thinkingConfig, { includeThoughts: true, thinkingBudget: -1 });
+  assert.deepEqual(flash.thinkingConfig, { includeThoughts: true, thinkingLevel: "HIGH" });
   assert.equal(flash.isNonGemini, false);
   assert.equal(flash.isClaude, false);
 
@@ -1077,8 +1072,8 @@ test("Seam 1 (400 fix, agy 1.1.26 capture 2026-09-05): toolResult wire shape mat
   const fr = toolTurn.parts[0].functionResponse;
   assert.deepEqual(fr.response, { output: '[{"foo":1},{"bar":2}]' });
 
-  // Captured call_308831: failed view_file still uses the "output" key
-  // ({ output: "...Encountered error in tool execution: ..." }), never "error".
+  // agy 1.4.8 stream_turn6_toolerror: a failed read_file rides the "error" key
+  // ({ error: "...Encountered error in tool execution: ..." }); through 1.4.7 it used "output".
   const errContext = {
     messages: [
       { role: "user", content: "read missing" },
@@ -1101,7 +1096,7 @@ test("Seam 1 (400 fix, agy 1.1.26 capture 2026-09-05): toolResult wire shape mat
     context: errContext,
   });
   assert.deepEqual(errBody.request.contents[2].parts[0].functionResponse.response, {
-    output: "exit 1: file not found",
+    error: "exit 1: file not found",
   });
 
   // Captured call_387703: images nest INSIDE functionResponse.parts as
@@ -1137,9 +1132,9 @@ test("Seam 1 (400 fix, agy 1.1.26 capture 2026-09-05): toolResult wire shape mat
   ]);
 });
 
-test("Seam 1 (agy 1.1.26 capture 2026-09-06, turn6): failed tool uses output key", () => {
-  // Live-captured read_file failure (view_file before agy 1.4.3): error text rides on response.output,
-  // never a sibling "error" key; role stays "model" with the call id kept.
+test("Seam 1 (agy 1.4.8 capture, turn6): failed tool uses error key", () => {
+  // Live-captured read_file failure: from agy 1.4.8 the error text rides on response.error
+  // (response.output through 1.4.7); role stays "model" with the call id kept.
   const contents = fixtureTurn6.body.request.contents;
   const frTurn = contents.find((c) => c.parts?.some((p) => p.functionResponse));
   assert.ok(frTurn, "turn6 must contain a functionResponse turn");
@@ -1147,8 +1142,8 @@ test("Seam 1 (agy 1.1.26 capture 2026-09-06, turn6): failed tool uses output key
   const fr = frTurn.parts[0].functionResponse;
   assert.equal(fr.name, "read_file");
   assert.ok(fr.id, "agy keeps functionCall id on Gemini error results");
-  assert.deepEqual(Object.keys(fr.response), ["output"]);
-  assert.match(fr.response.output, /Encountered error in tool execution/);
+  assert.deepEqual(Object.keys(fr.response), ["error"]);
+  assert.match(fr.response.error, /Encountered error in tool execution/);
 });
 
 test("Seam 1: Thought Signature validation accepts base64 and strips invalid/foreign reasoning envelopes", () => {
@@ -2125,7 +2120,7 @@ test("Seam 1 (Pi 0.86 Parity): prompt cache warming builds 1-token output budget
   assert.equal(body.request.generationConfig.maxOutputTokens, 1);
   assert.deepEqual(body.request.generationConfig.thinkingConfig, {
     includeThoughts: true,
-    thinkingBudget: -1,
+    thinkingLevel: "HIGH",
   });
   assert.ok(body.requestId);
   assert.ok(body.request.sessionId);
