@@ -3,7 +3,7 @@
   "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse",
   "headers": {
     "Host": "daily-cloudcode-pa.googleapis.com",
-    "User-Agent": "antigravity/cli/1.4.7 (aidev_client; os_type=linux; arch=amd64; cl=1006008713; auth_method=consumer)",
+    "User-Agent": "antigravity/cli/1.4.8 (aidev_client; os_type=linux; arch=amd64; cl=1007749967; auth_method=consumer)",
     "Transfer-Encoding": "chunked",
     "Authorization": "Bearer <REDACTED_ACCESS_TOKEN>",
     "Content-Type": "application/json",
@@ -521,7 +521,7 @@
         "maxOutputTokens": 65536,
         "thinkingConfig": {
           "includeThoughts": true,
-          "thinkingBudget": -1
+          "thinkingLevel": "HIGH"
         }
       },
       "sessionId": "-3750763034362895579"

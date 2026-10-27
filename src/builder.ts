@@ -470,9 +470,9 @@ function translateTurnTrace(
       }
 
       // Strict wire parity:
-      // - response is always { output: string }, never a top-level list.
-      // - error tool results also use the "output" key.
-      const responseObj = { output: toolText };
+      // - response is always a one-key object, never a top-level list.
+      // - agy 1.4.8 moved failed results from "output" to "error"; success stays on "output".
+      const responseObj = msg.isError ? { error: toolText } : { output: toolText };
 
       const functionResponse: any = {
         name: toolName || "tool",

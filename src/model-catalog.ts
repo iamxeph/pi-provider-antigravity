@@ -319,8 +319,8 @@ function resolveThinkingConfig(
   // checkpoint call is the evidence: gemini-3.5-flash-lite is catalogued with
   // thinkingBudget -1 AND thinkingLevel 1, and agy puts thinkingLevel LOW on the wire —
   // never thinkingBudget -1. Entries carrying only one field resolve the same either way
-  // (gemini-3.8-flash-high: budget -1 alone -> thinkingBudget -1; claude-sonnet-5-5-*:
-  // level alone -> thinkingLevel).
+  // (gpt-oss-120b-medium: budget 8192 alone -> thinkingBudget 8192; claude-sonnet-5-5-* and,
+  // from agy 1.4.8, gemini-3.8-flash-*: level alone -> thinkingLevel).
   const named = entry?.level != null ? CATALOG_LEVEL_NAMES[entry.level] : undefined;
   if (named) {
     return { includeThoughts: true, thinkingLevel: named };
