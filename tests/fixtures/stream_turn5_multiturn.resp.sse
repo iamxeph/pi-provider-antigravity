@@ -1,4 +1,0 @@
-data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"text": "done"}]}}],"usageMetadata": {"promptTokenCount": 7443,"candidatesTokenCount": 1,"totalTokenCount": 7471,"thoughtsTokenCount": 27},"modelVersion": "gemini-3.8-flash-n","responseId": "mock-response-id-0003"},"traceId": "0000000000000003","metadata": {}}
-
-data: {"response": {"candidates": [{"content": {"role": "model","parts": [{"thoughtSignature": "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDA2","text": ""}]},"finishReason": "STOP"}],"usageMetadata": {"promptTokenCount": 7934,"candidatesTokenCount": 1,"totalTokenCount": 7962,"thoughtsTokenCount": 27},"modelVersion": "gemini-3.8-flash-n","responseId": "mock-response-id-0003"},"traceId": "0000000000000003","metadata": {}}
-

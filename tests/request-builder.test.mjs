@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import { newestCapture } from "./fixtures.mjs";
+import { MODELS_RESPONSE } from "./samples.mjs";
 import {
   buildAntigravityRequestBody as rawBuildAntigravityRequestBody,
   SKIP_THOUGHT_SIGNATURE_VALIDATOR,
@@ -16,27 +15,11 @@ const buildAntigravityRequestBody = (params) => {
   });
 };
 
-const modelsJson = JSON.parse(fs.readFileSync(newestCapture("models.resp.json"), "utf-8"));
+const modelsJson = structuredClone(MODELS_RESPONSE);
 const fixtureCatalog = createModelCatalog();
 fixtureCatalog.record(modelsJson);
 const staticPlan = (runtimeModelId) =>
   fixtureCatalog.resolvePlan(runtimeModelId);
-
-const fixtureTurn1 = JSON.parse(
-  fs.readFileSync(newestCapture("stream_turn1_initial.req.json"), "utf-8")
-);
-const fixtureTurn2 = JSON.parse(
-  fs.readFileSync(newestCapture("stream_turn2_toolresult.req.json"), "utf-8")
-);
-const fixtureTurn4 = JSON.parse(
-  fs.readFileSync(newestCapture("stream_turn4_thinking.req.json"), "utf-8")
-);
-const fixtureTurn5 = JSON.parse(
-  fs.readFileSync(newestCapture("stream_turn5_multiturn.req.json"), "utf-8")
-);
-const fixtureTurn6 = JSON.parse(
-  fs.readFileSync(newestCapture("stream_turn6_toolerror.req.json"), "utf-8")
-);
 
 test("Seam 1: buildAntigravityRequestBody creates strict envelope and PR #39 labels", () => {
   const context = {
@@ -143,7 +126,7 @@ test("Seam 1: 1.2.16 cascade labels and requestId lead with the cascade UUID", (
 });
 
 test("Seam 1: multi-turn tool call increments request_id sequence and preserves thoughtSignature", () => {
-  const sampleSignature = fixtureTurn2.body.request.contents[1].parts[0].thoughtSignature;
+  const sampleSignature = "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDAy";
 
   const context = {
     messages: [
@@ -919,44 +902,6 @@ test("Seam 1: multi-turn conversation maintains fixed trajectoryId/sessionId and
   assert.equal(bodyDifferent.request.sessionId, "-3750763034362895579");
 });
 
-test("Seam 1 (Strict Wire Parity): All multi-turn capture fixtures (Turns 1, 2, 4, 5) share invariant session identities and proportional step indices", () => {
-  // The capture rotates with every agy release, so the numbers are read off each fixture
-  // and the laws between them are asserted: one session, growing step counts, and the
-  // three counters agreeing with the payload they describe.
-  const turns = [
-    { name: "Turn 1", fixture: fixtureTurn1 },
-    { name: "Turn 2", fixture: fixtureTurn2 },
-    { name: "Turn 4", fixture: fixtureTurn4 },
-    { name: "Turn 5", fixture: fixtureTurn5 },
-  ];
-
-  const baseTrajId = fixtureTurn1.body.request.labels.trajectory_id;
-  const baseSessionId = fixtureTurn1.body.request.sessionId;
-  let previousCount = 0;
-
-  for (const t of turns) {
-    const body = t.fixture.body;
-    const contents = body.request.contents;
-    // 1. Session ID & Trajectory ID never mutate across turns
-    assert.equal(body.request.labels.trajectory_id, baseTrajId, `${t.name} trajectory_id drifted`);
-    assert.equal(body.request.sessionId, baseSessionId, `${t.name} sessionId drifted`);
-    assert.equal(body.project, "aicode-consumers");
-    assert.equal(body.userAgent, "antigravity");
-    assert.equal(body.requestType, "agent");
-
-    // 2. Step index, requestId step and the model-turn label all follow the payload
-    const stepCount = contents.length;
-    assert.ok(stepCount > previousCount, `${t.name} must grow the session`);
-    previousCount = stepCount;
-    assert.equal(body.request.labels.last_step_index, String(stepCount - 1), `${t.name} last_step_index mismatch`);
-    assert.match(body.requestId, new RegExp(`/${baseTrajId}/${stepCount}$`), `${t.name} requestId count mismatch`);
-    const modelTurns = contents.filter(
-      (c) => c.role === "model" && !(c.parts ?? []).some((p) => p.functionResponse),
-    ).length;
-    assert.equal(body.request.labels.request_id, `${baseTrajId}-${modelTurns}`, `${t.name} request_id sequence mismatch`);
-  }
-});
-
 test("Seam 1 (Strict Wire Parity): buildAntigravityRequestBody reproduces Turn 4 and Turn 5 wire envelope from capture data", () => {
   // Replay Turn 4 contents into builder
   const mockMessagesTurn4 = [];
@@ -1130,20 +1075,6 @@ test("Seam 1 (400 fix, agy 1.1.26 capture 2026-09-05): toolResult wire shape mat
   assert.deepEqual(imgTurn.parts[0].functionResponse.parts, [
     { inlineData: { mimeType: "image/png", data: "iVBORw0=" } },
   ]);
-});
-
-test("Seam 1 (agy 1.4.8 capture, turn6): failed tool uses error key", () => {
-  // Live-captured read_file failure: from agy 1.4.8 the error text rides on response.error
-  // (response.output through 1.4.7); role stays "model" with the call id kept.
-  const contents = fixtureTurn6.body.request.contents;
-  const frTurn = contents.find((c) => c.parts?.some((p) => p.functionResponse));
-  assert.ok(frTurn, "turn6 must contain a functionResponse turn");
-  assert.equal(frTurn.role, "model");
-  const fr = frTurn.parts[0].functionResponse;
-  assert.equal(fr.name, "read_file");
-  assert.ok(fr.id, "agy keeps functionCall id on Gemini error results");
-  assert.deepEqual(Object.keys(fr.response), ["error"]);
-  assert.match(fr.response.error, /Encountered error in tool execution/);
 });
 
 test("Seam 1: Thought Signature validation accepts base64 and strips invalid/foreign reasoning envelopes", () => {
@@ -1726,47 +1657,17 @@ test("Seam 1: buildAntigravityRequestBody skips aborted and errored assistant me
   assert.equal(body.request.contents[1].parts[0].text, "Query 2 (retried)");
 });
 
-test("Seam 1 (#15): thinking replay matches the agy CLI part-split byte-for-byte", (t) => {
+test("Seam 1 (#15): thinking replay matches the agy CLI part-split byte-for-byte", () => {
   // agy replays a thinking turn as [{thought, text}, {text, thoughtSignature}]: the
-  // signature never rides the thought part. Which captured turn carries that split is
-  // sampling-dependent (it moves between continuations from capture to capture), so read
-  // the first Gemini-family model turn the fixtures froze with one — the assertion below
-  // is still byte-for-byte against agy's real bytes, and this test never names a slot.
-  const geminiReqs = [
-    "stream_turn1_initial.req.json",
-    "stream_turn2_toolresult.req.json",
-    "stream_turn4_thinking.req.json",
-    "stream_turn5_multiturn.req.json",
-    "stream_turn6_toolerror.req.json",
-    "stream_turn11_argon_followup.req.json",
-  ];
-  let fixtureTurn;
-  let runtimeModel;
-  for (const file of geminiReqs) {
-    const candidate = newestCapture(file);
-    // The candidate list spans slots a capture may omit (the argon slots only exist from
-    // 1.3.6 on), and whether any candidate carries the split is sampling-dependent, so a
-    // missing file is a candidate that cannot match, not a failure.
-    if (!fs.existsSync(candidate)) continue;
-    const body = JSON.parse(fs.readFileSync(candidate, "utf-8")).body;
-    const turn = body.request.contents.find(
-      (c) =>
-        c.role === "model" &&
-        c.parts?.length === 2 &&
-        c.parts[0].thought === true &&
-        !("thoughtSignature" in c.parts[0]) &&
-        typeof c.parts[1].text === "string" &&
-        typeof c.parts[1].thoughtSignature === "string",
-    );
-    if (turn) {
-      fixtureTurn = turn;
-      runtimeModel = body.model;
-      break;
-    }
-  }
-  if (!fixtureTurn) {
-    return t.skip("no captured Gemini turn replays a thinking part in this fixture set (sampling-dependent)");
-  }
+  // signature never rides the thought part. Shape of an agy 1.4.11 Gemini follow-up.
+  const runtimeModel = "gemini-4-argon-high";
+  const fixtureTurn = {
+    role: "model",
+    parts: [
+      { text: "Average speed is total distance divided by total time.", thought: true },
+      { text: "The train's average speed is 80 km/h.", thoughtSignature: "TU9DS19USE9VR0hUX1NJR05BVFVSRV9GT1JfVEVTVF8wMDA1" },
+    ],
+  };
 
   // Stored history as this provider's own stream adapter leaves it: the thinking
   // block carries the closing signature in its canonical thinkingSignature,
@@ -1872,13 +1773,10 @@ test("Seam 1 (#14): Claude 5.5 text-only replay matches the agy CLI byte-for-byt
   // 1.2.16 verdict: the Claude 5.5 family answers with text-only turns — no thought
   // part, no signature — so its follow-up request replays the visible text alone. The
   // part-split the 4-6 capture showed has nothing to replay on this generation.
-  const turn9 = JSON.parse(
-    fs.readFileSync(newestCapture("stream_turn9_claude_followup.req.json"), "utf-8")
-  );
-  const fixtureTurn = turn9.body.request.contents[1];
-  assert.equal(fixtureTurn.parts.length, 1);
-  assert.equal("thought" in fixtureTurn.parts[0], false);
-  assert.equal("thoughtSignature" in fixtureTurn.parts[0], false);
+  const fixtureTurn = {
+    role: "model",
+    parts: [{ text: "Average speed is distance divided by time, so the train's average speed is **80 km/h**." }],
+  };
 
   // Stored history as this provider's own stream adapter leaves a 5.5 turn: one text
   // block, nothing else.

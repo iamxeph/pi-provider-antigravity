@@ -1,46 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import { newestCapture } from "./fixtures.mjs";
 import {
-  SCOPES,
-  CLIENT_ID,
-  AUTH_URL,
-  REDIRECT_URI,
   extractCodeFromInput,
   resolveCredentials,
   requireCredentials,
 } from "../src/auth.ts";
 import initExtension from "../src/index.ts";
-
-
-const loginFixture = JSON.parse(fs.readFileSync(newestCapture("auth_login_params.json"), "utf-8"));
-const refreshFixture = JSON.parse(fs.readFileSync(newestCapture("auth_token_refresh.req.json"), "utf-8"));
-
-test("Seam Auth: OAuth client ID matches agy CLI wire traffic", () => {
-  assert.equal(CLIENT_ID, loginFixture.params.client_id);
-});
-
-test("Seam Auth: OAuth endpoint and redirect URI match agy CLI wire traffic exactly", () => {
-  assert.equal(AUTH_URL, loginFixture.endpoint);
-  assert.equal(REDIRECT_URI, loginFixture.params.redirect_uri);
-});
-
-test("Seam Auth: OAuth scopes match agy CLI wire traffic exactly", () => {
-  const fixtureScopes = loginFixture.params.scope.split(" ").sort();
-  const ourScopes = [...SCOPES].sort();
-
-  assert.deepEqual(ourScopes, fixtureScopes);
-});
-
-test("Seam Auth: token refresh payload parameters match wire fixture", () => {
-  const parsedBody = new URLSearchParams(refreshFixture.body);
-
-  assert.equal(parsedBody.get("client_id"), CLIENT_ID);
-  assert.equal(parsedBody.get("grant_type"), "refresh_token");
-  assert.ok(parsedBody.get("client_secret"));
-  assert.ok(parsedBody.get("refresh_token"));
-});
 
 test("Seam Auth: extractCodeFromInput accepts a plain authorization code", () => {
   assert.equal(

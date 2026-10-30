@@ -1,7 +1,5 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import {
   registerWebSearchTool,
   executeWebSearchCommand,
@@ -245,54 +243,6 @@ test("Web Search Grounding: /antigravity websearch executes via command interfac
       ui: { notify: (msg: string) => subOutputs.push(msg) },
     } as any);
     assert.ok(subOutputs.some((o) => o.includes("Today is sunny in Seoul.")));
-  } finally {
-    globalThis.fetch = origFetch;
-  }
-});
-
-test("Web Search Grounding: wire fixtures match captured search request/response", async () => {
-  const reqFixturePath = path.resolve(import.meta.dirname, "fixtures/web_search.req.json");
-  const respFixturePath = path.resolve(import.meta.dirname, "fixtures/web_search.resp.json");
-
-  assert.ok(fs.existsSync(reqFixturePath), "web_search.req.json fixture must exist");
-  assert.ok(fs.existsSync(respFixturePath), "web_search.resp.json fixture must exist");
-
-  const reqFixture = JSON.parse(fs.readFileSync(reqFixturePath, "utf-8"));
-  assert.equal(reqFixture.method, "POST");
-  assert.ok(reqFixture.url.includes("v1internal:generateContent"));
-  assert.equal(reqFixture.body.requestType, "web_search");
-  assert.equal(reqFixture.body.model, SEARCH_MODEL);
-  assert.equal(reqFixture.body.request.systemInstruction.parts[0].text, SEARCH_SYSTEM_INSTRUCTION);
-  assert.deepEqual(reqFixture.body.request.tools[0].googleSearch, {
-    enhancedContent: { imageSearch: { maxResultCount: 5 } },
-  });
-
-  const respFixture = JSON.parse(fs.readFileSync(respFixturePath, "utf-8"));
-
-  const origFetch = globalThis.fetch;
-  globalThis.fetch = (async () => {
-    return new Response(JSON.stringify(respFixture), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  }) as typeof fetch;
-
-  try {
-    const tool = getRegisteredTool();
-    const authCtx = {
-      apiKey: JSON.stringify({ token: "test-token", projectId: "test-project" }),
-    };
-
-    const res = await tool.execute(
-      "call_fixture",
-      { query: "AI news September 2026" },
-      undefined,
-      undefined,
-      authCtx,
-    );
-
-    assert.ok(res.details?.sources?.length > 0, "sources must be formatted from chunks");
-    assert.ok(res.content[0].text.includes("Sources:"));
   } finally {
     globalThis.fetch = origFetch;
   }

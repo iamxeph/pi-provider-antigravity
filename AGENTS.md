@@ -14,9 +14,9 @@ Always inspect Pi's official type definitions, documentation, and reference exam
 
 ## 2. Antigravity Protocol Compatibility (Behavioral & Wire Ground Truth)
 - **Strict Protocol Parity**: All provider behaviors—authentication flows, request headers, payload envelopes, session/trajectory labels, model identifier mapping, and quota inspection—must strictly conform to the Antigravity backend API protocol. Never introduce speculative API shapes or deviate from standard protocol behavior.
-- **Fixtures as Ground Truth**: Wire fixtures in `tests/fixtures/` represent test ground truth for unit and regression tests. Header casing, payload structures, sequence counters, and query parameters must conform to these fixtures.
-- **Pin Fixtures in Tests**: Changes to request builders, streaming logic, or auth serialization need regression tests against fixtures in `tests/fixtures/`.
-- **Multi-Turn Verification**: When behavior is ambiguous, verify conversation turns, tool success, tool failure, follow-up reasoning, and thought-signature replay against the test fixtures in `tests/fixtures/`.
+- **Synthetic Samples, No Captured Traffic**: Tests run on hand-written data: shared response shapes in `tests/samples.mjs`, everything else inline in the test. Never commit captured backend traffic (system prompts, tool declarations, catalog experiments, request IDs): wire parity against the official CLI is checked outside this repo.
+- **Pin Behavior in Tests**: Changes to request builders, streaming logic, or auth serialization need regression tests that pin the wire shape they produce.
+- **Multi-Turn Verification**: When behavior is ambiguous, verify conversation turns, tool success, tool failure, follow-up reasoning, and thought-signature replay.
   - **Part coverage**: verification must cover all three replayable part types — `text`, `thinking`, and `functionCall` with its `functionResponse`.
   - **Cross-provider replay**: when foreign-authored tool turns are replayed, follow the sentinel procedure established in `src/builder.ts`.
 
