@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import { newestCapture } from "./fixtures.mjs";
+import { MODELS_RESPONSE } from "./samples.mjs";
 import {
   getModelProfile,
 } from "../src/model-identity.ts";
@@ -12,7 +11,7 @@ import {
 import { buildAntigravityRequestBody } from "../src/builder.ts";
 import { clampThinkingLevel, getSupportedThinkingLevels, normalizeContext } from "@earendil-works/pi-ai";
 
-const modelsJson = JSON.parse(fs.readFileSync(newestCapture("models.resp.json"), "utf-8"));
+const modelsJson = structuredClone(MODELS_RESPONSE);
 const TEST_CREDENTIAL = { type: "oauth", access: JSON.stringify({ token: "test-token", projectId: "test-project" }) };
 
 test("Seam 3: parseAvailableModels extracts models and model_enum", () => {

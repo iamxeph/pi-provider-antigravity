@@ -1,14 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import { newestCapture } from "./fixtures.mjs";
+import { MODELS_RESPONSE, SSE_SHORT_ANSWER } from "./samples.mjs";
 import { streamAntigravity, normalizeOverflowError } from "../src/stream.ts";
 import { buildAntigravityRequestBody } from "../src/builder.ts";
 import { createModelCatalog } from "../src/model-catalog.ts";
 import { normalizeContext } from "@earendil-works/pi-ai";
 import { isContextOverflow, isRecoverableLength, isRetryableAssistantError } from "@earendil-works/pi-ai/compat";
 
-const sseTurn5 = fs.readFileSync(newestCapture("stream_turn5_multiturn.resp.sse"), "utf-8");
+const sseTurn5 = SSE_SHORT_ANSWER;
 // A lone-signature turn: visible text plus a signature carrier, nothing else. Whether a
 // captured turn has that shape is sampling-dependent (1.2.2 froze it on turn4, 1.2.3 on
 // turn5), so this edge case owns its input inline instead of asking the capture for it —
@@ -26,7 +25,7 @@ const usageOf = (sse) => JSON.parse([...sse.matchAll(/"usageMetadata": (\{[^}]*\
 const loneSig = sseLoneSig.match(/"thoughtSignature":\s*"([^"]+)"/)[1];
 const loneText = textOf(sseLoneSig);
 
-const RAW_MODELS_JSON = JSON.parse(fs.readFileSync(newestCapture("models.resp.json"), "utf-8"));
+const RAW_MODELS_JSON = structuredClone(MODELS_RESPONSE);
 // streamAntigravity resolves against the store the extension wires up: record
 // one generation into a local store, as a completed refresh would, so these
 // adapter tests exercise parsing — not catalog misses.

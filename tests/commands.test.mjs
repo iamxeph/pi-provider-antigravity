@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { newestCapture } from "./fixtures.mjs";
+import { MODELS_RESPONSE, QUOTA_RESPONSE } from "./samples.mjs";
 import os from "node:os";
 import path from "node:path";
 import { createAntigravityCommands } from "../src/commands.ts";
@@ -9,13 +9,13 @@ import { createModelCatalog } from "../src/model-catalog.ts";
 import initExtension from "../src/index.ts";
 import { QuotaStatusCoordinator, fileQuotaStatusStore } from "../src/quota-status.ts";
 
-const quotaJson = JSON.parse(fs.readFileSync(newestCapture("quota.resp.json"), "utf-8"));
-// Fixture-derived: the capture rotates every agy release, the command plumbing does not.
+const quotaJson = structuredClone(QUOTA_RESPONSE);
+// Sample-derived, so the assertions pin the command plumbing, not the sample's numbers.
 const gemini5hBucket = quotaJson.groups
   .find((g) => g.displayName === "Gemini Models")
   .buckets.find((b) => b.bucketId === "gemini-5h");
 const gemini5h = String(Math.round(gemini5hBucket.remainingFraction * 100));
-const modelsJson = JSON.parse(fs.readFileSync(newestCapture("models.resp.json"), "utf-8"));
+const modelsJson = structuredClone(MODELS_RESPONSE);
 
 function stubFetchRouter() {
   return async (url) => {

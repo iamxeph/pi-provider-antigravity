@@ -1,11 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import { newestCapture } from "./fixtures.mjs";
+import { SSE_SHORT_ANSWER, SSE_TOOL_CALL } from "./samples.mjs";
 import { parseAntigravitySseResponse } from "../src/stream.ts";
 
-const sseTurn1 = fs.readFileSync(newestCapture("stream_turn1_initial.resp.sse"), "utf-8");
-const sseTurn5 = fs.readFileSync(newestCapture("stream_turn5_multiturn.resp.sse"), "utf-8");
+const sseTurn1 = SSE_TOOL_CALL;
+const sseTurn5 = SSE_SHORT_ANSWER;
 
 test("Seam 2: feeding in split chunks equals one-shot feed", () => {
   for (const raw of [sseTurn1, sseTurn5]) {

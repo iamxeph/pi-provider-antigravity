@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { newestCapture } from "./fixtures.mjs";
+import { QUOTA_RESPONSE } from "./samples.mjs";
 import {
   createQuotaStatus,
   FOOTER_MODES,
@@ -17,10 +17,10 @@ import {
   isAntigravityModel,
 } from "../src/quota-status.ts";
 
-const quotaJson = JSON.parse(fs.readFileSync(newestCapture("quota.resp.json"), "utf-8"));
+const quotaJson = structuredClone(QUOTA_RESPONSE);
 
-// The capture rotates with every agy release: derive its percentages instead of
-// hardcoding them, so these tests pin the formatting/routing logic, not one capture.
+// Derive the sample's percentages instead of hardcoding them, so these tests pin the
+// formatting/routing logic, not the sample's numbers.
 const fixturePct = (group, bucketId) => {
   const buckets = quotaJson.groups.find((g) => g.displayName === group).buckets;
   return Math.round(buckets.find((b) => b.bucketId === bucketId).remainingFraction * 100);

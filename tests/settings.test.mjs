@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { newestCapture } from "./fixtures.mjs";
+import { QUOTA_RESPONSE } from "./samples.mjs";
 import os from "node:os";
 import path from "node:path";
 import {
@@ -32,11 +32,10 @@ function stubFetchRouter(payload) {
   };
 }
 
-const quotaJson = JSON.parse(fs.readFileSync(newestCapture("quota.resp.json"), "utf-8"));
-// Preview and threshold tests need a deterministic low window: the live capture holds
-// whatever the account happened to have that day (99% here, which renders plain — no
-// threshold color to assert). Clone the capture's shape and pin the numbers the sample
-// logic is about.
+const quotaJson = structuredClone(QUOTA_RESPONSE);
+// Preview and threshold tests need a deterministic low window: the sample's fractions
+// render plain (no threshold color to assert). Clone its shape and pin the numbers the
+// sample logic is about.
 const lowQuotaJson = structuredClone(quotaJson);
 const setBucket = (group, bucketId, fraction) => {
   lowQuotaJson.groups
