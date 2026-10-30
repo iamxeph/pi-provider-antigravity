@@ -3,7 +3,7 @@
   "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse",
   "headers": {
     "Host": "daily-cloudcode-pa.googleapis.com",
-    "User-Agent": "antigravity/cli/1.4.10 (aidev_client; os_type=linux; arch=amd64; cl=1009308193; auth_method=consumer)",
+    "User-Agent": "antigravity/cli/1.4.11 (aidev_client; os_type=linux; arch=amd64; cl=1010154931; auth_method=consumer)",
     "Transfer-Encoding": "chunked",
     "Authorization": "Bearer <REDACTED_ACCESS_TOKEN>",
     "Content-Type": "application/json",
@@ -27,7 +27,7 @@
           "parts": [
             {
               "functionCall": {
-                "id": "call_182147",
+                "id": "call_641787",
                 "name": "read_file",
                 "args": {
                   "Path": "/tmp/agy-no-such-file-xyz.txt"
@@ -42,10 +42,10 @@
           "parts": [
             {
               "functionResponse": {
-                "id": "call_182147",
+                "id": "call_641787",
                 "name": "read_file",
                 "response": {
-                  "error": "Created At: 2026-10-29T04:42:14Z\nCompleted At: 2026-10-29T04:42:14Z\nEncountered error in tool execution: file does not exist"
+                  "error": "Created At: 2026-10-30T10:38:45Z\nCompleted At: 2026-10-30T10:38:45Z\nEncountered error in tool execution: file does not exist"
                 }
               }
             }
