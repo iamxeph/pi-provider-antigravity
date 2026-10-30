@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.30.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.29.0...v0.30.0) (2026-10-30)
+
+
+### Features
+
+* **wire:** support agy 1.4.10 ([#95](https://github.com/iamxeph/pi-provider-antigravity/issues/95)) ([b333b9b](https://github.com/iamxeph/pi-provider-antigravity/commit/b333b9b61c0d8e8eea9ae6dac15e8b792d9789f5))
+* **wire:** support agy 1.4.11 ([#96](https://github.com/iamxeph/pi-provider-antigravity/issues/96)) ([f1bcbd7](https://github.com/iamxeph/pi-provider-antigravity/commit/f1bcbd7ce68252b93946727a4ec842940ae7f62a))
+* **wire:** support agy 1.4.9 ([#93](https://github.com/iamxeph/pi-provider-antigravity/issues/93)) ([04ba791](https://github.com/iamxeph/pi-provider-antigravity/commit/04ba7918b943f70e21661d1285a27a31286a16e0))
+
 ## [0.29.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.28.0...v0.29.0) (2026-10-27)
 
 
