@@ -137,7 +137,7 @@ export interface SettingsFieldDef {
   renderPreview?: (value: string, ctx: ExtensionCommandContext, theme?: Theme) => string | undefined;
   /** Optional async hook invoked after a value is saved. */
   onChange?: (ctx: ExtensionCommandContext, value: string) => Promise<void>;
-  /** Optional async prepare hook called before opening the settings dialog. */
+  /** Optional async prepare hook; the dialog opens without waiting and repaints the preview when it settles. */
   prepare?: (ctx: ExtensionCommandContext) => Promise<void>;
 }
 
@@ -257,12 +257,11 @@ async function openSettingsDialog(
   fields: readonly SettingsFieldDef[],
   file: string,
 ): Promise<void> {
-  for (const field of fields) {
-    if (field.prepare) await field.prepare(ctx);
-  }
   await ctx.ui.custom<void>(async (tui, theme, _kb, done) => {
     const config = loadProviderConfig(file);
     const items = buildSettingsItems(config, fields);
+    // Prepare hooks (the quota fetch) run behind the open dialog instead of delaying it.
+    const prepared = fields.map((field) => field.prepare?.(ctx));
     const paintPreview = (field: SettingsFieldDef, value: string) => {
       const item = items.find((i) => i.id === field.key);
       if (!item) return;
@@ -304,6 +303,16 @@ async function openSettingsDialog(
       },
       () => done(),
     );
+    fields.forEach((field, i) => {
+      void prepared[i]
+        ?.catch(() => {})
+        .then(() => {
+          const item = items.find((it) => it.id === field.key);
+          if (item) paintPreview(field, item.currentValue);
+          list.invalidate();
+          tui.requestRender();
+        });
+    });
     const border = {
       render: (width: number) => [theme.fg("border", "─".repeat(Math.max(1, width)))],
     };

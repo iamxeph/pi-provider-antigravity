@@ -1,4 +1,5 @@
 import type { Theme } from "@earendil-works/pi-coding-agent";
+import { resolveCredentials } from "./auth.ts";
 import type { ProviderFileConfig, SettingsFieldDef } from "./config.ts";
 // Type-only: quota-status.ts imports this module at runtime, so a value import back would cycle.
 import type { QuotaStatus } from "./quota-status.ts";
@@ -34,7 +35,12 @@ export function resolveQuotaFooter(config?: ProviderFileConfig): QuotaFooterMode
   return normalizeQuotaFooter(config?.settings?.quotaFooter) ?? "off";
 }
 
+const QUOTA_PREVIEW_LOADING = "loading…";
+const QUOTA_PREVIEW_LOGGED_OUT = "log in to preview (/login antigravity)";
+
 export function createQuotaFooterField(quotaStatus?: QuotaStatus): SettingsFieldDef {
+  // Stands in for the quota sample while prepare() runs, and after it when logged out.
+  let pending: string | undefined;
   return {
     key: "quotaFooter",
     label: "Quota footer",
@@ -46,12 +52,19 @@ export function createQuotaFooterField(quotaStatus?: QuotaStatus): SettingsField
       ? (mode, ctx, theme) => {
           if (mode === "off") return "hidden";
           const activeTheme = theme || (ctx.ui as { theme?: Theme })?.theme;
-          return quotaStatus.previewFooter(ctx.model?.id, mode, activeTheme);
+          return quotaStatus.previewFooter(ctx.model?.id, mode, activeTheme) ?? pending;
         }
       : undefined,
     prepare: quotaStatus
       ? async (ctx) => {
-          await quotaStatus.ensurePreview(ctx);
+          let loggedIn = true;
+          pending = QUOTA_PREVIEW_LOADING;
+          try {
+            loggedIn = (await resolveCredentials(ctx)) !== null;
+            if (loggedIn) await quotaStatus.ensurePreview(ctx);
+          } finally {
+            pending = loggedIn ? undefined : QUOTA_PREVIEW_LOGGED_OUT;
+          }
         }
       : undefined,
     onChange: quotaStatus

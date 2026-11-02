@@ -287,6 +287,7 @@ test("Settings preview samples quota while another provider's model is selected"
       factories.length = 0;
       await createAntigravityCommands({ quotaStatus: new QuotaStatusCoordinator(fileQuotaStatusStore(file)), catalog: createModelCatalog() }).handle("settings", ctx);
       const list = await factories[0]({ requestRender() {} }, { fg: (c, s) => `<${c}>${s}</>`, bold: (s) => `*${s}*` }, {}, () => {});
+      await flush();
       assert.equal(counter.calls, 1); // opening the dialog fetches despite the foreign model
       assert.match(list.render(80).join("\n"), /hidden/); // off-mode preview
 
@@ -300,6 +301,69 @@ test("Settings preview samples quota while another provider's model is selected"
       else process.env.PI_CODING_AGENT_DIR = prev;
     }
   } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("TUI dialog opens before the quota fetch lands, then repaints the sample", async () => {
+  const realFetch = globalThis.fetch;
+  let release;
+  globalThis.fetch = (url) => {
+    assert.match(String(url), /retrieveUserQuotaSummary/);
+    return new Promise((resolve) => {
+      release = () => resolve({ ok: true, json: async () => lowQuotaJson });
+    });
+  };
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agy-agent-"));
+  const prev = process.env.PI_CODING_AGENT_DIR;
+  process.env.PI_CODING_AGENT_DIR = dir;
+  try {
+    const file = path.join(dir, "pi-provider-antigravity.json");
+    fs.writeFileSync(file, JSON.stringify({ settings: { quotaFooter: "smart" } }));
+    factories.length = 0;
+    await createAntigravityCommands({ quotaStatus: new QuotaStatusCoordinator(fileQuotaStatusStore(file)), catalog: createModelCatalog() }).handle("settings", makeCtx([]));
+    let renders = 0;
+    const comp = await factories[0]({ requestRender() { renders++; } }, { fg: (c, s) => s, bold: (s) => s }, {}, () => {});
+    await flush();
+    assert.match(comp.render(200).join("\n"), /Show remaining quota in Pi's status footer: loading…/);
+    assert.ok(release, "fetch started behind the open dialog");
+
+    release();
+    await flush();
+    await flush();
+    assert.match(comp.render(200).join("\n"), /5h 22%/);
+    assert.doesNotMatch(comp.render(200).join("\n"), /loading…/);
+    assert.ok(renders > 0);
+  } finally {
+    if (prev === undefined) delete process.env.PI_CODING_AGENT_DIR;
+    else process.env.PI_CODING_AGENT_DIR = prev;
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("TUI dialog shows a login hint instead of the quota sample when logged out", async () => {
+  const realFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls++;
+    throw new Error("no fetch while logged out");
+  };
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agy-agent-"));
+  const prev = process.env.PI_CODING_AGENT_DIR;
+  process.env.PI_CODING_AGENT_DIR = dir;
+  try {
+    const file = path.join(dir, "pi-provider-antigravity.json");
+    fs.writeFileSync(file, JSON.stringify({ settings: { quotaFooter: "smart" } }));
+    factories.length = 0;
+    await createAntigravityCommands({ quotaStatus: new QuotaStatusCoordinator(fileQuotaStatusStore(file)), catalog: createModelCatalog() }).handle("settings", makeCtx([], { authed: false }));
+    const comp = await factories[0]({ requestRender() {} }, { fg: (c, s) => s, bold: (s) => s }, {}, () => {});
+    await flush();
+    await flush();
+    assert.match(comp.render(200).join("\n"), /: log in to preview \(\/login antigravity\)/);
+    assert.equal(calls, 0);
+  } finally {
+    if (prev === undefined) delete process.env.PI_CODING_AGENT_DIR;
+    else process.env.PI_CODING_AGENT_DIR = prev;
     globalThis.fetch = realFetch;
   }
 });
