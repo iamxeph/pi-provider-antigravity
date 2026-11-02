@@ -299,6 +299,7 @@ test("Subcommand: settings opens the cycling dialog in TUI mode", async () => {
       assert.ok(factory);
       let closed = 0;
       const comp = await factory({ requestRender() {} }, { fg: (c, s) => s, bold: (s) => s }, {}, () => { closed++; });
+      await new Promise((resolve) => setImmediate(resolve)); // let the background preview fetch land on the stub, not the real network
       assert.match(comp.render(80).join("\n"), /Quota footer/);
       comp.handleInput("\x1b");
       assert.equal(closed, 1);
