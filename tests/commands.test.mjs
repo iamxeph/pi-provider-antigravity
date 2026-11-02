@@ -5,7 +5,7 @@ import { MODELS_RESPONSE, QUOTA_RESPONSE } from "./samples.mjs";
 import os from "node:os";
 import path from "node:path";
 import { createAntigravityCommands } from "../src/commands.ts";
-import { resolveUnsignedToolCalls } from "../src/config.ts";
+import { resolveUnsignedToolCalls } from "../src/settings.ts";
 import { createModelCatalog } from "../src/model-catalog.ts";
 import initExtension from "../src/index.ts";
 import { QuotaStatusCoordinator, fileQuotaStatusStore } from "../src/quota-status.ts";

@@ -9,7 +9,7 @@ import {
 } from "@earendil-works/pi-ai";
 // Load-bearing: re-exported for private/ tests without requiring private/node_modules
 export { normalizeContext };
-import type { UnsignedToolCallsMode } from "./config.ts";
+import type { UnsignedToolCallsMode } from "./settings.ts";
 import type { ModelPlan } from "./model-catalog.ts";
 import { getModelProfile } from "./model-identity.ts";
 import { PROVIDER_ID } from "./protocol.ts";

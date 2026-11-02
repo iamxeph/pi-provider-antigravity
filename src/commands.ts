@@ -1,7 +1,8 @@
 import type { ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { resolveCredentials, NOT_LOGGED_IN, type AntigravityCredentials } from "./auth.ts";
 import { PROVIDER_ID } from "./protocol.ts";
-import { openSettings, UNSIGNED_TOOL_CALLS_FIELD } from "./config.ts";
+import { openSettings } from "./config.ts";
+import { createQuotaFooterField, createUnsignedToolCallsField } from "./settings.ts";
 import { createQuotaStatus, type QuotaStatus } from "./quota-status.ts";
 import type { ModelCatalog } from "./model-catalog.ts";
 import { executeWebSearchCommand } from "./search.ts";
@@ -72,7 +73,7 @@ const SUBCOMMANDS: readonly SubcommandDef[] = Object.freeze([
     aliases: Object.freeze(["setting"]),
     run: async ({ ctx, quotaStatus }) => {
       const qs = quotaStatus ?? createQuotaStatus();
-      await openSettings(ctx, [qs.createSettingsField(), UNSIGNED_TOOL_CALLS_FIELD]);
+      await openSettings(ctx, [createQuotaFooterField(qs), createUnsignedToolCallsField()]);
     },
   },
   {

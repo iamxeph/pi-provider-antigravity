@@ -7,15 +7,18 @@ import { QUOTA_RESPONSE } from "./samples.mjs";
 import {
   createQuotaStatus,
   FOOTER_MODES,
-  FOOTER_MODE_NOTES,
-  FOOTER_MODE_OPTIONS,
-  normalizeFooterMode,
-  resolveFooterMode,
   QUOTA_STATUS_KEY,
   QuotaStatusCoordinator,
   fileQuotaStatusStore,
   isAntigravityModel,
 } from "../src/quota-status.ts";
+import {
+  createQuotaFooterField,
+  normalizeQuotaFooter,
+  QUOTA_FOOTER_NOTES,
+  QUOTA_FOOTER_OPTIONS,
+  resolveQuotaFooter,
+} from "../src/settings.ts";
 
 const quotaJson = structuredClone(QUOTA_RESPONSE);
 
@@ -220,7 +223,7 @@ test("Footer: claude model shows 3p pool bottleneck", () => {
 test("Footer modes table: every mode defines consistent render behavior", () => {
   const coord = createQuotaStatus(memStore("smart").store);
   coord.ingest(quotaJson);
-  assert.deepEqual(FOOTER_MODE_OPTIONS, ["off", "smart", "all"]);
+  assert.deepEqual(QUOTA_FOOTER_OPTIONS, ["off", "smart", "all"]);
 
   // off mode
   assert.deepEqual(coord.renderFooter("gemini-3-flash", "off"), {});
@@ -790,21 +793,21 @@ test("README documents the footer status key verbatim", () => {
 });
 
 test("Footer mode: settings.quotaFooter or off", () => {
-  assert.equal(resolveFooterMode(undefined), "off");
-  assert.equal(resolveFooterMode({}), "off");
-  assert.equal(resolveFooterMode({ settings: { quotaFooter: " ALL " } }), "all");
-  assert.equal(resolveFooterMode({ settings: { quotaFooter: "smart" } }), "smart");
-  assert.equal(resolveFooterMode({ settings: { quotaFooter: "everything" } }), "off");
-  assert.equal(resolveFooterMode({ settings: {} }), "off");
-  assert.equal(normalizeFooterMode(42), undefined);
+  assert.equal(resolveQuotaFooter(undefined), "off");
+  assert.equal(resolveQuotaFooter({}), "off");
+  assert.equal(resolveQuotaFooter({ settings: { quotaFooter: " ALL " } }), "all");
+  assert.equal(resolveQuotaFooter({ settings: { quotaFooter: "smart" } }), "smart");
+  assert.equal(resolveQuotaFooter({ settings: { quotaFooter: "everything" } }), "off");
+  assert.equal(resolveQuotaFooter({ settings: {} }), "off");
+  assert.equal(normalizeQuotaFooter(42), undefined);
 });
 
-test("Footer mode table: createSettingsField derives options from FOOTER_MODES and notes from FOOTER_MODE_NOTES", () => {
+test("Footer mode table: createQuotaFooterField derives options from FOOTER_MODES and notes from QUOTA_FOOTER_NOTES", () => {
   const coord = new QuotaStatusCoordinator(memStore("smart").store);
-  const quotaField = coord.createSettingsField();
+  const quotaField = createQuotaFooterField(coord);
   assert.ok(quotaField);
   assert.deepEqual(quotaField.options, Object.keys(FOOTER_MODES));
-  assert.deepEqual(quotaField.optionNotes, FOOTER_MODE_NOTES);
+  assert.deepEqual(quotaField.optionNotes, QUOTA_FOOTER_NOTES);
 });
 
 test("fileQuotaStatusStore: state merges without clobbering", () => {
@@ -857,13 +860,13 @@ test("Preview renders the footer sample per mode", async () => {
     fs.writeFileSync(file, JSON.stringify({ settings: { quotaFooter: "smart" } }));
     const coord = createQuotaStatus({ configFile: file });
     await coord.ensurePreview(makeCtx([]));
-    const field = coord.createSettingsField();
+    const field = createQuotaFooterField(coord);
     assert.match(field.renderPreview("smart", makeCtx([])), /5h 22%/);
     assert.match(field.renderPreview("all", makeCtx([])), /Wk 87%/);
     assert.match(field.renderPreview("smart", { ...makeCtx([]), model: { id: "claude-sonnet-4-6", provider: "antigravity" } }), /5h 84%/);
     assert.equal(field.renderPreview("off", makeCtx([])), "hidden");
     const fresh = createQuotaStatus({ configFile: file });
-    assert.equal(fresh.createSettingsField().renderPreview("smart", makeCtx([])), undefined);
+    assert.equal(createQuotaFooterField(fresh).renderPreview("smart", makeCtx([])), undefined);
   } finally {
     globalThis.fetch = realFetch;
   }

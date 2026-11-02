@@ -16,8 +16,8 @@ import { buildAntigravityRequestBody } from "./builder.ts";
 import {
   defaultConfigFile,
   loadProviderConfig,
-  resolveUnsignedToolCalls,
 } from "./config.ts";
+import { resolveUnsignedToolCalls } from "./settings.ts";
 import {
   type AntigravityClient,
   defaultAntigravityClient,
