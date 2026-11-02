@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.31.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.30.0...v0.31.0) (2026-11-02)
+
+
+### Features
+
+* **builder:** add opt-in unsignedToolCalls setting for tool calls that lost their thoughtSignature ([#99](https://github.com/iamxeph/pi-provider-antigravity/issues/99)) ([3f25f29](https://github.com/iamxeph/pi-provider-antigravity/commit/3f25f2905566972852955d0c953b1ed7cd3982c8))
+* **settings:** open the settings dialog before the quota fetch; hint login when logged out ([#102](https://github.com/iamxeph/pi-provider-antigravity/issues/102)) ([4ce112f](https://github.com/iamxeph/pi-provider-antigravity/commit/4ce112f6f15b7efa83bff80d64c1ff939dbb17ba))
+
 ## [0.30.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.29.0...v0.30.0) (2026-10-30)
 
 
