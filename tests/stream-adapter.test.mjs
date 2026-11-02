@@ -83,6 +83,7 @@ test("Seam 2: stream adapter translates feeder events to Pi message", async () =
       usageOf(sseTurn5).thoughtsTokenCount ?? 0,
       "thinking tokens surface as reasoning (fixture count)",
     );
+    assert.equal(message.responseModel, "gemini-3.8-flash-n", "the served modelVersion surfaces as responseModel");
   } finally {
     globalThis.fetch = realFetch;
   }
@@ -180,6 +181,7 @@ test("Seam 2 (0.86 Parity): streamAntigravity extracts systemPrompt and tools fr
     ).result();
 
     assert.equal(message.responseId, "inline-lone-sig");
+    assert.equal(message.responseModel, undefined, "a modelVersion equal to the requested id is not repeated");
     assert.ok(capturedRequestBody, "Request body must be sent");
     assert.equal(
       capturedRequestBody.request.systemInstruction.parts[0].text,
