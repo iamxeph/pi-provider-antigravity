@@ -17,8 +17,8 @@ export interface ProviderFileConfig {
 
 // Single opt-in file next to Pi's settings.json (NOT settings.json itself —
 // Pi manages that file and may drop unknown keys). Pi resolves its dir via
-// PI_CODING_AGENT_DIR else ~/.pi/agent:
-//   { "settings": { "quotaFooter": "smart" } }   // off (default) | smart | all
+// PI_CODING_AGENT_DIR else ~/.pi/agent. Each "settings" key is defined in
+// settings.ts, which lists the keys with an example.
 // A "states" section holds runtime data namespaced per subsystem
 // (e.g. states.quota); unknown keys and sections pass through untouched. Read per call: tiny file, and edits apply
 // on the next refresh without a restart.
@@ -270,7 +270,8 @@ async function openSettingsDialog(
       const sample = field.renderPreview?.(value, ctx, theme);
       const head = sample && base ? `${base}: ${sample}` : (sample ?? base);
       const note = field.optionNotes?.[value];
-      item.description = note ? `${head}\n${note}` : head;
+      // Blank line + value prefix: the note explains the chosen value, not the setting.
+      item.description = note ? `${head}\n\n${value}: ${note}` : head;
     };
     for (const field of fields) {
       const current = fieldDisplayValue(config, field);

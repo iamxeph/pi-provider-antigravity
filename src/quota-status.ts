@@ -11,38 +11,14 @@ import {
   loadProviderConfig,
   loadSubsystemState,
   saveSubsystemState,
-  type ProviderFileConfig,
-  type SettingsFieldDef,
 } from "./config.ts";
+import { normalizeQuotaFooter, QUOTA_FOOTER_NOTES, resolveQuotaFooter, type QuotaFooterMode } from "./settings.ts";
 
 /**
  * Quota Status module (deep, ports & adapters): Quota Pool wire parsing, urgent-window
  * math, ratio self-calibration, throttle, cache, and status footer slot painting.
  * Persists calibration state through the Provider Config Seam (states.quota).
  */
-
-export type QuotaFooterMode = "off" | "smart" | "all";
-
-export const FOOTER_MODE_NOTES: Readonly<Record<string, string>> = Object.freeze({
-  smart:
-    "Picks whichever window runs out first (5h or weekly), weighting the weekly pool by a ratio learned from your usage",
-  all: "Lists every window of the pool backing the current model (5h or weekly)",
-});
-
-export const FOOTER_MODE_OPTIONS: readonly QuotaFooterMode[] = Object.freeze([
-  "off",
-  "smart",
-  "all",
-]);
-
-export function normalizeFooterMode(value: unknown): QuotaFooterMode | undefined {
-  const v = typeof value === "string" ? value.trim().toLowerCase() : "";
-  return FOOTER_MODE_OPTIONS.includes(v as QuotaFooterMode) ? (v as QuotaFooterMode) : undefined;
-}
-
-export function resolveFooterMode(config?: ProviderFileConfig): QuotaFooterMode {
-  return normalizeFooterMode(config?.settings?.quotaFooter) ?? "off";
-}
 
 export interface QuotaBucket {
   bucketId: string;
@@ -356,20 +332,6 @@ function colorizeQuotaFooterBoth(
     .join(sep);
 }
 
-function previewQuotaFooterText(
-  coord: QuotaStatusCoordinator | undefined,
-  modelId: string | undefined,
-  mode: string,
-  style?: QuotaColorStyle,
-): string | undefined {
-  if (!coord) return undefined;
-  const normalized = normalizeFooterMode(mode);
-  if (!normalized || normalized === "off") return undefined;
-  const { colored } = coord.renderFooter(modelId, normalized, style);
-  if (!colored) return undefined;
-  return ANSI_FG_RESET + colored;
-}
-
 // Namespaced by repo so no other extension (e.g. a personal-config "quota"
 // slot) can overwrite this footer slot, and vice versa.
 export const QUOTA_STATUS_KEY = "pi-provider-antigravity-footer-usage";
@@ -403,42 +365,9 @@ export interface QuotaStatusStore {
 // tiny file, and edits apply on the next refresh without a restart.
 export function fileQuotaStatusStore(file = defaultConfigFile()): QuotaStatusStore {
   return {
-    loadMode: () => resolveFooterMode(loadProviderConfig(file)),
+    loadMode: () => resolveQuotaFooter(loadProviderConfig(file)),
     loadQuotaState: () => loadSubsystemState<QuotaState>("quota", file),
     saveQuotaState: (state) => saveSubsystemState("quota", state, file),
-  };
-}
-
-function createQuotaFooterField(
-  quotaStatus?: QuotaStatusCoordinator,
-): SettingsFieldDef {
-  return {
-    key: "quotaFooter",
-    label: "Quota footer",
-    description: "Show remaining quota in Pi's status footer",
-    options: FOOTER_MODE_OPTIONS,
-    defaultValue: "off",
-    optionNotes: FOOTER_MODE_NOTES,
-    renderPreview: quotaStatus
-      ? (mode, ctx, theme) => {
-          if (mode === "off") return "hidden";
-          const activeTheme = theme || (ctx.ui as { theme?: Theme })?.theme;
-          return previewQuotaFooterText(quotaStatus, ctx.model?.id, mode, activeTheme);
-        }
-      : undefined,
-    prepare: quotaStatus
-      ? async (ctx) => {
-          await quotaStatus.ensurePreview(ctx);
-        }
-      : undefined,
-    onChange: quotaStatus
-      ? async (ctx, _value) => {
-          if (quotaStatus.mode() !== "off") {
-            await quotaStatus.refresh(ctx, { ignoreMode: true });
-          }
-          quotaStatus.paint(ctx);
-        }
-      : undefined,
   };
 }
 
@@ -502,7 +431,7 @@ export const FOOTER_MODES: Record<QuotaFooterMode, FooterModeDef> = Object.freez
   },
   smart: {
     key: "smart",
-    note: FOOTER_MODE_NOTES.smart,
+    note: QUOTA_FOOTER_NOTES.smart,
     render: (summary, modelId, ratio = DEFAULT_WEEKLY_TO_5H_RATIO, style, nowFn = Date.now) => {
       if (!summary) return {};
       const plain = buildQuotaFooter(summary, modelId, ratio, nowFn);
@@ -511,7 +440,7 @@ export const FOOTER_MODES: Record<QuotaFooterMode, FooterModeDef> = Object.freez
   },
   all: {
     key: "all",
-    note: FOOTER_MODE_NOTES.all,
+    note: QUOTA_FOOTER_NOTES.all,
     render: (summary, modelId, _ratio, style, nowFn = Date.now) => {
       if (!summary) return {};
       const plain = buildQuotaFooterBoth(summary, modelId, nowFn);
@@ -557,11 +486,12 @@ export interface QuotaStatus {
    */
   inspectUsage(ctx: QuotaStatusCtx & { signal?: AbortSignal }): Promise<string>;
 
-  /**
-   * Creates the settings field definition for configuring quota footer mode
-   * in /antigravity settings.
-   */
-  createSettingsField(): SettingsFieldDef;
+  // What the Quota footer settings field (settings.ts) drives.
+  mode(): QuotaFooterMode;
+  refresh(ctx: QuotaStatusCtx, opts?: RefreshOptions): Promise<QuotaSummary | undefined>;
+  paint(ctx: QuotaStatusCtx): void;
+  ensurePreview(ctx: QuotaStatusCtx): Promise<QuotaSummary | undefined>;
+  previewFooter(modelId: string | undefined, mode: string, style?: QuotaColorStyle): string | undefined;
 }
 
 // In-memory throttle around the quota fetch: at most one network call per
@@ -692,8 +622,13 @@ export class QuotaStatusCoordinator implements QuotaStatus {
     return formatQuotaSummary(summary, this.nowFn);
   }
 
-  createSettingsField(): SettingsFieldDef {
-    return createQuotaFooterField(this);
+  // Settings preview text for a mode: undefined when off or nothing is cached.
+  previewFooter(modelId: string | undefined, mode: string, style?: QuotaColorStyle): string | undefined {
+    const normalized = normalizeQuotaFooter(mode);
+    if (!normalized || normalized === "off") return undefined;
+    const { colored } = this.renderFooter(modelId, normalized, style);
+    if (!colored) return undefined;
+    return ANSI_FG_RESET + colored;
   }
 
   // One fetch for preview purposes even when the footer slot is off or the

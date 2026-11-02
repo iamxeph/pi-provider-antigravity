@@ -160,6 +160,7 @@ Configuration is stored in `pi-provider-antigravity.json` alongside Pi's `settin
 | Key | Values | Default | Description |
 |---|---|---|---|
 | `quotaFooter` | `off`, `smart`, `all` | `off` | Show remaining quota in Pi's status footer. See [Quota footer](#quota-footer). |
+| `unsignedToolCalls` | `fail`, `skip` | `fail` | What to do when a Gemini tool call in the history has lost its `thoughtSignature`, usually because another extension rewrote the conversation. `fail` lets the request fail with `400 Function call is missing a thought_signature`, so the cause stays visible. `skip` sends Google's `skip_thought_signature_validator` for that call instead; the request goes through, but Google documents it as [a last resort that degrades model performance](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/thinking/thought-signatures). |
 
 ## Disclaimer
 

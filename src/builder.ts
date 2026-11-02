@@ -9,6 +9,7 @@ import {
 } from "@earendil-works/pi-ai";
 // Load-bearing: re-exported for private/ tests without requiring private/node_modules
 export { normalizeContext };
+import type { UnsignedToolCallsMode } from "./settings.ts";
 import type { ModelPlan } from "./model-catalog.ts";
 import { getModelProfile } from "./model-identity.ts";
 import { PROVIDER_ID } from "./protocol.ts";
@@ -21,6 +22,8 @@ export interface BuildRequestBodyParams {
   trajectoryId?: string;
   maxOutputTokens?: number;
   toolChoice?: string;
+  /** Opt-in "skip": sentinel on same-model unsigned Gemini calls too (see UnsignedToolCallsMode). */
+  unsignedToolCalls?: UnsignedToolCallsMode;
 }
 
 const BASE64_SIGNATURE_PATTERN = /^[A-Za-z0-9+/_-]+={0,2}$/;
@@ -50,11 +53,12 @@ const BASE64_SIGNATURE_PATTERN = /^[A-Za-z0-9+/_-]+={0,2}$/;
  * functionCall to Gemini with exactly this value). The plain string is accepted too
  * (probe B), but it is not agy's byte sequence.
  *
- * Applied to foreign calls only. A signature we *should* have had —
+ * Applied to foreign calls only by default. A signature we *should* have had —
  * same provider and family, yet missing or unreadable (pipeline regression, damaged
- * session) — keeps failing loudly with the 400 above instead of being papered over,
- * so a lost signature stays visible as a bug rather than silently degrading the
- * model's reasoning for that call.
+ * session, another extension rebuilding the history) — keeps failing loudly with the
+ * 400 above instead of being papered over, so a lost signature stays visible as a bug
+ * rather than silently degrading the model's reasoning for that call. Users who
+ * accept that trade opt in with the "unsignedToolCalls": "skip" setting.
  */
 export const SKIP_THOUGHT_SIGNATURE_VALIDATOR = "c2tpcF90aG91Z2h0X3NpZ25hdHVyZV92YWxpZGF0b3I="; // base64("skip_thought_signature_validator")
 
@@ -273,7 +277,8 @@ function convertTools(
  */
 function translateTurnTrace(
   conversation: Array<any>,
-  runtimeModelId: string
+  runtimeModelId: string,
+  skipUnsigned = false
 ): Array<any> {
   const contents: Array<any> = [];
   const messages = conversation || [];
@@ -408,7 +413,7 @@ function translateTurnTrace(
             if (sig) {
               part.thoughtSignature = sig;
               pendingThinkingSig = undefined;
-            } else if (isGeminiRequest && !isSameProviderAndModel) {
+            } else if (isGeminiRequest && (!isSameProviderAndModel || skipUnsigned)) {
               part.thoughtSignature = SKIP_THOUGHT_SIGNATURE_VALIDATOR;
             }
             parts.push(part);
@@ -539,7 +544,7 @@ export function buildAntigravityRequestBody(params: BuildRequestBodyParams): Rec
     params.trajectoryId && typeof params.trajectoryId === "string" && params.trajectoryId.trim().length > 0
       ? params.trajectoryId.trim()
       : resolveSessionTrajectory(sessionId);
-  const contents = translateTurnTrace(conversation, runtimeModelId);
+  const contents = translateTurnTrace(conversation, runtimeModelId, params.unsignedToolCalls === "skip");
 
   // Request ID sequence increments by completed assistant turns **as carried by
   // this request**: derive it from the payload, so a turn the translation drops

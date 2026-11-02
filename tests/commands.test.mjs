@@ -5,6 +5,7 @@ import { MODELS_RESPONSE, QUOTA_RESPONSE } from "./samples.mjs";
 import os from "node:os";
 import path from "node:path";
 import { createAntigravityCommands } from "../src/commands.ts";
+import { resolveUnsignedToolCalls } from "../src/settings.ts";
 import { createModelCatalog } from "../src/model-catalog.ts";
 import initExtension from "../src/index.ts";
 import { QuotaStatusCoordinator, fileQuotaStatusStore } from "../src/quota-status.ts";
@@ -223,13 +224,16 @@ test("Subcommand: settings picks mode in a dialog and applies it", async () => {
       const seen = [];
       const selectImpl = async (title, options) => {
         seen.push([title, options]);
-        return "smart";
+        return title === "Antigravity settings" ? options[0] : "smart";
       };
       const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(file));
       const outputs = [];
       const cmds = commands(coord, store());
       await cmds.handle("settings", makeCtx(outputs, { selectImpl }));
-      assert.deepEqual(seen, [["Quota footer (current: off)", ["off", "smart", "all"]]]);
+      assert.deepEqual(seen, [
+        ["Antigravity settings", ["Quota footer (current: off)", "Unsigned tool calls (current: fail)"]],
+        ["Quota footer (current: off)", ["off", "smart", "all"]],
+      ]);
       const all = outputs.join("\n");
       assert.match(all, /Quota footer set to smart\./);
       assert.match(all, new RegExp(`\\[pi-provider-antigravity-footer-usage\\].*5h ${gemini5h}`));
@@ -317,7 +321,8 @@ test("Subcommand: setting is an alias of settings", async () => {
     const cmds = commands(undefined, store());
     await cmds.handle("setting", makeCtx(outputs, { selectImpl }));
     assert.equal(seen.length, 1);
-    assert.match(seen[0][0], /Quota footer/);
+    assert.equal(seen[0][0], "Antigravity settings");
+    assert.match(seen[0][1][0], /Quota footer/);
   });
 });
 
@@ -424,16 +429,20 @@ test("Subcommand: settings picks the value via select fallback", async () => {
       const calls = [];
       const selectImpl = async (title, options) => {
         calls.push([title, options]);
-        return "smart";
+        return title === "Antigravity settings" ? options[1] : "skip";
       };
       const outputs = [];
       const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(file));
       const cmds = commands(coord, store());
       await cmds.handle("settings", makeCtx(outputs, { selectImpl }));
-      assert.deepEqual(calls, [["Quota footer (current: off)", ["off", "smart", "all"]]]);
+      assert.deepEqual(calls, [
+        ["Antigravity settings", ["Quota footer (current: off)", "Unsigned tool calls (current: fail)"]],
+        ["Unsigned tool calls (current: fail)", ["fail", "skip"]],
+      ]);
       const saved = JSON.parse(fs.readFileSync(file, "utf-8"));
-      assert.equal(saved.settings.quotaFooter, "smart");
-      assert.match(outputs.join("\n"), /Quota footer set to smart\./);
+      assert.equal(saved.settings.unsignedToolCalls, "skip");
+      assert.equal(resolveUnsignedToolCalls(saved), "skip");
+      assert.match(outputs.join("\n"), /Unsigned tool calls set to skip\./);
     });
   } finally {
     globalThis.fetch = realFetch;

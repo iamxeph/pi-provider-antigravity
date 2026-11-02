@@ -15,13 +15,17 @@ import {
 } from "../src/config.ts";
 import {
   FOOTER_MODES,
-  FOOTER_MODE_NOTES,
-  FOOTER_MODE_OPTIONS,
-  normalizeFooterMode,
-  resolveFooterMode,
   QuotaStatusCoordinator,
   fileQuotaStatusStore,
 } from "../src/quota-status.ts";
+import {
+  createQuotaFooterField,
+  createUnsignedToolCallsField,
+  normalizeQuotaFooter,
+  QUOTA_FOOTER_NOTES,
+  QUOTA_FOOTER_OPTIONS,
+  resolveQuotaFooter,
+} from "../src/settings.ts";
 import { createAntigravityCommands } from "../src/commands.ts";
 import { createModelCatalog } from "../src/model-catalog.ts";
 
@@ -77,7 +81,7 @@ test("File config: default path mirrors Pi, garbage is unconfigured", () => {
   assert.equal(loadProviderConfig(file), undefined); // missing
   fs.writeFileSync(file, JSON.stringify({ settings: { quotaFooter: "all" }, other: 1 }));
   assert.deepEqual(loadProviderConfig(file), { settings: { quotaFooter: "all" }, other: 1 });
-  assert.equal(resolveFooterMode(loadProviderConfig(file)), "all");
+  assert.equal(resolveQuotaFooter(loadProviderConfig(file)), "all");
   fs.writeFileSync(file, "{oops");
   assert.equal(loadProviderConfig(file), undefined);
   fs.writeFileSync(file, "[1,2]");
@@ -107,7 +111,7 @@ test("saveSettingValue: garbage file is never clobbered and reports failure", ()
   fs.writeFileSync(file, handEdited);
 
   const coord = new QuotaStatusCoordinator(fileQuotaStatusStore(file));
-  const quotaField = coord.createSettingsField();
+  const quotaField = createQuotaFooterField(coord);
   assert.equal(saveSettingValue(quotaField, "off", file), false);
   assert.equal(fs.readFileSync(file, "utf-8"), handEdited); // untouched
 });
@@ -119,7 +123,7 @@ test("File config: settings and quota state survive each other's writes", () => 
   const file = path.join(dir, "pi-provider-antigravity.json");
   const store = fileQuotaStatusStore(file);
   const coord = new QuotaStatusCoordinator(store);
-  const quotaField = coord.createSettingsField();
+  const quotaField = createQuotaFooterField(coord);
   const quotaState = { weeklyTo5hRatio: 4, previousObservation: {}, updatedAt: 1 };
 
   assert.equal(saveSettingValue(quotaField, "all", file), true); // creates the file
@@ -172,7 +176,7 @@ test("TUI dialog reports a refused write instead of faking success", async () =>
 
 test("Settings items carry current values and options", () => {
   const coord = new QuotaStatusCoordinator(fileQuotaStatusStore());
-  const quotaField = coord.createSettingsField();
+  const quotaField = createQuotaFooterField(coord);
   const items = buildSettingsItems({ settings: { quotaFooter: "all" } }, [quotaField]);
   assert.deepEqual(items, [
     { id: "quotaFooter", label: "Quota footer", description: "Show remaining quota in Pi's status footer", currentValue: "all", values: ["off", "smart", "all"] },
@@ -303,7 +307,7 @@ test("Settings preview samples quota while another provider's model is selected"
 test("Settings rows follow the field definitions", async () => {
   const probe = { key: "probe", label: "Probe", options: ["a", "b"], defaultValue: "a" };
   const coord = new QuotaStatusCoordinator(fileQuotaStatusStore());
-  const quotaField = coord.createSettingsField();
+  const quotaField = createQuotaFooterField(coord);
   const items = buildSettingsItems({ settings: { quotaFooter: "all" } }, [quotaField, probe]);
   const text = items.map((i) => `${i.label}: ${i.currentValue}`).join("\n");
   assert.match(text, /Quota footer: all/);
@@ -343,4 +347,44 @@ test("TUI dialog frames the list with border lines like /settings", async () => 
   } finally {
     globalThis.fetch = realFetch;
   }
+});
+
+test("TUI dialog sets the value note apart from the setting description", async () => {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = stubFetchRouter(lowQuotaJson);
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agy-agent-"));
+  const prev = process.env.PI_CODING_AGENT_DIR;
+  process.env.PI_CODING_AGENT_DIR = dir;
+  try {
+    const file = path.join(dir, "pi-provider-antigravity.json");
+    factories.length = 0;
+    await createAntigravityCommands({ quotaStatus: new QuotaStatusCoordinator(fileQuotaStatusStore(file)), catalog: createModelCatalog() }).handle("settings", makeCtx([]));
+    const comp = await factories[0]({ requestRender() {} }, { fg: (c, s) => s, bold: (s) => s }, {}, () => {});
+    comp.handleInput("\x1b[B"); // down to Unsigned tool calls
+    const described = (lines) => {
+      const at = lines.findIndex((l) => l.includes("What to do when a Gemini tool call"));
+      return lines.slice(at, at + 3).map((l) => l.trim());
+    };
+    assert.deepEqual(described(comp.render(100)), [
+      "What to do when a Gemini tool call has lost its thoughtSignature.",
+      "",
+      "fail: The request fails with 400, so the lost signature stays visible.",
+    ]);
+
+    comp.handleInput("\r"); // fail → skip
+    await flush();
+    await flush();
+    assert.equal(JSON.parse(fs.readFileSync(file, "utf-8")).settings.unsignedToolCalls, "skip");
+    assert.match(described(comp.render(100))[2], /^skip: Sends skip_thought_signature_validator/);
+  } finally {
+    if (prev === undefined) delete process.env.PI_CODING_AGENT_DIR;
+    else process.env.PI_CODING_AGENT_DIR = prev;
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Settings factories keep each field's key, options and default", () => {
+  const pick = ({ key, options, defaultValue }) => ({ key, options: [...options], defaultValue });
+  assert.deepEqual(pick(createQuotaFooterField()), { key: "quotaFooter", options: ["off", "smart", "all"], defaultValue: "off" });
+  assert.deepEqual(pick(createUnsignedToolCallsField()), { key: "unsignedToolCalls", options: ["fail", "skip"], defaultValue: "fail" });
 });
