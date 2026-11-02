@@ -1368,6 +1368,41 @@ test("Seam 1: sentinel is Gemini-scoped, foreign-only and independent of the tur
   assert.equal(violatesThoughtSignatureRule(lostSignatureContents), true);
 });
 
+test("Seam 1: unsignedToolCalls skip opts same-model unsigned Gemini calls into the sentinel", () => {
+  const messages = [
+    { role: "user", content: "clear the tmux status-right" },
+    {
+      role: "assistant",
+      provider: "antigravity",
+      model: "gemini-3.8-flash",
+      content: [
+        { type: "toolCall", id: "call_1", name: "bash", arguments: { command: "true" } },
+        { type: "toolCall", id: "call_2", name: "bash", arguments: { command: "date" }, thoughtSignature: GEMINI_FAMILY_SIGNATURE },
+      ],
+    },
+    { role: "toolResult", toolCallId: "call_1", toolName: "bash", content: "ok" },
+    { role: "toolResult", toolCallId: "call_2", toolName: "bash", content: "ok" },
+  ];
+  const calls = (runtime, unsignedToolCalls) =>
+    buildAntigravityRequestBody({
+      projectId: "aicode-consumers",
+      plan: staticPlan(runtime),
+      context: { messages },
+      unsignedToolCalls,
+    })
+      .request.contents.flatMap((turn) => turn.parts)
+      .filter((p) => p.functionCall)
+      .map((p) => p.thoughtSignature);
+
+  // Default and explicit "fail" keep the ADR-0007 loud failure.
+  assert.deepEqual(calls("gemini-3.8-flash-high"), [undefined, GEMINI_FAMILY_SIGNATURE]);
+  assert.deepEqual(calls("gemini-3.8-flash-high", "fail"), [undefined, GEMINI_FAMILY_SIGNATURE]);
+  // "skip" patches only the unsigned call; a real signature is never replaced.
+  assert.deepEqual(calls("gemini-3.8-flash-high", "skip"), [SKIP_THOUGHT_SIGNATURE_VALIDATOR, GEMINI_FAMILY_SIGNATURE]);
+  // Still Gemini-scoped: Claude requests keep today's shape.
+  assert.equal(calls("claude-sonnet-5-5-high", "skip")[0], undefined);
+});
+
 test("Seam 1: buildAntigravityRequestBody drops foreign reasoning carried only by a JSON summary", () => {
   const openAiJsonSig = JSON.stringify({
     id: "rs_summary_only",

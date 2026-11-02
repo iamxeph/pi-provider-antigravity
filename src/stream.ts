@@ -14,6 +14,11 @@ import {
 import { requireCredentials } from "./auth.ts";
 import { buildAntigravityRequestBody } from "./builder.ts";
 import {
+  defaultConfigFile,
+  loadProviderConfig,
+  resolveUnsignedToolCalls,
+} from "./config.ts";
+import {
   type AntigravityClient,
   defaultAntigravityClient,
   DEFAULT_ENDPOINT,
@@ -324,6 +329,19 @@ export function parseAntigravitySseResponse(
   };
 }
 
+/**
+ * The way out of the backend's 400 for a tool call without a thoughtSignature, which
+ * ADR-0007 keeps loud by default.
+ */
+function unsignedToolCallHint(): string {
+  return (
+    "\n\nA tool call in this turn has no thoughtSignature, usually because another extension rewrote the conversation history. " +
+    "Disable that extension, or set \"Unsigned tool calls\" to \"skip\" in /antigravity settings " +
+    `(or "unsignedToolCalls": "skip" in ${defaultConfigFile()}). ` +
+    "skip sends Google's skip_thought_signature_validator for such calls, which may degrade reasoning for the rest of the turn."
+  );
+}
+
 const NON_OVERFLOW_PATTERN =
   /rate limit|too many requests|quota exceeded|resource_exhausted/i;
 const CONTEXT_OVERFLOW_PATTERN =
@@ -419,6 +437,8 @@ export function streamAntigravity(
   const stream = createAssistantMessageEventStream();
 
   (async () => {
+    // Read per request like every provider setting: edits apply without a restart.
+    const unsignedToolCalls = resolveUnsignedToolCalls(loadProviderConfig());
     const output: AssistantMessage = {
       role: "assistant",
       content: [],
@@ -462,6 +482,7 @@ export function streamAntigravity(
         trajectoryId,
         maxOutputTokens,
         toolChoice: options?.toolChoice,
+        unsignedToolCalls,
       });
 
       if (options?.onPayload) {
@@ -571,6 +592,10 @@ export function streamAntigravity(
       output.stopReason = options?.signal?.aborted ? "aborted" : "error";
       const rawMessage = error instanceof Error ? error.message : String(error);
       output.errorMessage = normalizeOverflowError(rawMessage);
+      // Under "skip" the sentinel was already offered, so the hint would point back at itself.
+      if (unsignedToolCalls === "fail" && rawMessage.includes("missing a thought_signature")) {
+        output.errorMessage += unsignedToolCallHint();
+      }
       stream.push({ type: "error", reason: output.stopReason, error: output });
       stream.end();
     }

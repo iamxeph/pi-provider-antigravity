@@ -344,3 +344,37 @@ test("TUI dialog frames the list with border lines like /settings", async () => 
     globalThis.fetch = realFetch;
   }
 });
+
+test("TUI dialog sets the value note apart from the setting description", async () => {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = stubFetchRouter(lowQuotaJson);
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agy-agent-"));
+  const prev = process.env.PI_CODING_AGENT_DIR;
+  process.env.PI_CODING_AGENT_DIR = dir;
+  try {
+    const file = path.join(dir, "pi-provider-antigravity.json");
+    factories.length = 0;
+    await createAntigravityCommands({ quotaStatus: new QuotaStatusCoordinator(fileQuotaStatusStore(file)), catalog: createModelCatalog() }).handle("settings", makeCtx([]));
+    const comp = await factories[0]({ requestRender() {} }, { fg: (c, s) => s, bold: (s) => s }, {}, () => {});
+    comp.handleInput("\x1b[B"); // down to Unsigned tool calls
+    const described = (lines) => {
+      const at = lines.findIndex((l) => l.includes("What to do when a Gemini tool call"));
+      return lines.slice(at, at + 3).map((l) => l.trim());
+    };
+    assert.deepEqual(described(comp.render(100)), [
+      "What to do when a Gemini tool call has lost its thoughtSignature.",
+      "",
+      "fail: The request fails with 400, so the lost signature stays visible.",
+    ]);
+
+    comp.handleInput("\r"); // fail → skip
+    await flush();
+    await flush();
+    assert.equal(JSON.parse(fs.readFileSync(file, "utf-8")).settings.unsignedToolCalls, "skip");
+    assert.match(described(comp.render(100))[2], /^skip: Sends skip_thought_signature_validator/);
+  } finally {
+    if (prev === undefined) delete process.env.PI_CODING_AGENT_DIR;
+    else process.env.PI_CODING_AGENT_DIR = prev;
+    globalThis.fetch = realFetch;
+  }
+});

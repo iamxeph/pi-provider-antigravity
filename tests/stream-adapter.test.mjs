@@ -1,5 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { MODELS_RESPONSE, SSE_SHORT_ANSWER } from "./samples.mjs";
 import { streamAntigravity, normalizeOverflowError } from "../src/stream.ts";
 import { buildAntigravityRequestBody } from "../src/builder.ts";
@@ -260,6 +263,41 @@ test("Seam 2 (0.86 Parity): mid-conversation system updates collapse into system
     !body.request.contents.some((c) => c.role === "system"),
     "System messages must never leak into wire contents",
   );
+});
+
+test("Seam 2: only a missing thought_signature 400 points at /antigravity settings, and not under skip", async () => {
+  const sig400 = '{"error":{"code":400,"message":"Function call is missing a thought_signature in functionCall parts. ... position 2."}}';
+  const run = async (status, body, settings) => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agy-hint-"));
+    if (settings) fs.writeFileSync(path.join(dir, "pi-provider-antigravity.json"), JSON.stringify({ settings }));
+    const prevDir = process.env.PI_CODING_AGENT_DIR;
+    const realFetch = globalThis.fetch;
+    process.env.PI_CODING_AGENT_DIR = dir;
+    globalThis.fetch = async () => ({ ok: false, status, text: async () => body });
+    try {
+      return (
+        await streamAntigravity(
+          { id: "gemini-3.8-flash", reasoning: true, provider: "antigravity", api: "antigravity-api", maxTokens: 65536 },
+          { messages: [{ role: "user", content: "hi" }] },
+          { apiKey: JSON.stringify({ token: "test-token", projectId: "test-project" }) },
+          store
+        ).result()
+      ).errorMessage;
+    } finally {
+      globalThis.fetch = realFetch;
+      if (prevDir === undefined) delete process.env.PI_CODING_AGENT_DIR;
+      else process.env.PI_CODING_AGENT_DIR = prevDir;
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  };
+
+  const hinted = await run(400, sig400);
+  assert.match(hinted, /missing a thought_signature.*position 2/, "the backend error stays intact");
+  assert.match(hinted, /another extension rewrote the conversation history/);
+  assert.match(hinted, /"Unsigned tool calls" to "skip" in \/antigravity settings/);
+  assert.match(hinted, /"unsignedToolCalls": "skip" in .*pi-provider-antigravity\.json/);
+  assert.doesNotMatch(await run(400, sig400, { unsignedToolCalls: "skip" }), /\/antigravity settings/);
+  assert.doesNotMatch(await run(429, '{"error":{"code":429,"message":"Resource exhausted"}}'), /\/antigravity settings/);
 });
 
 test("Seam 2: normalizeOverflowError adds context_length_exceeded prefix for overflow patterns and ignores rate limits", () => {

@@ -19,6 +19,7 @@ export interface ProviderFileConfig {
 // Pi manages that file and may drop unknown keys). Pi resolves its dir via
 // PI_CODING_AGENT_DIR else ~/.pi/agent:
 //   { "settings": { "quotaFooter": "smart" } }   // off (default) | smart | all
+//   { "settings": { "unsignedToolCalls": "skip" } }   // fail (default) | skip
 // A "states" section holds runtime data namespaced per subsystem
 // (e.g. states.quota); unknown keys and sections pass through untouched. Read per call: tiny file, and edits apply
 // on the next refresh without a restart.
@@ -125,6 +126,31 @@ export function saveSubsystemState<T extends object>(
     config.states = states;
   });
 }
+
+/**
+ * What a Gemini request does with a same-model tool call whose thoughtSignature is
+ * gone (usually another extension rebuilt the history). "fail" (default) lets the
+ * backend's 400 surface the loss (ADR-0007); "skip" opts into Google's
+ * skip_thought_signature_validator for it, trading that turn's reasoning continuity.
+ */
+export type UnsignedToolCallsMode = "fail" | "skip";
+export const UNSIGNED_TOOL_CALLS_OPTIONS: readonly UnsignedToolCallsMode[] = Object.freeze(["fail", "skip"]);
+
+export function resolveUnsignedToolCalls(config?: ProviderFileConfig): UnsignedToolCallsMode {
+  return config?.settings?.unsignedToolCalls === "skip" ? "skip" : "fail";
+}
+
+export const UNSIGNED_TOOL_CALLS_FIELD: SettingsFieldDef = Object.freeze({
+  key: "unsignedToolCalls",
+  label: "Unsigned tool calls",
+  description: "What to do when a Gemini tool call has lost its thoughtSignature.",
+  options: UNSIGNED_TOOL_CALLS_OPTIONS,
+  defaultValue: "fail",
+  optionNotes: Object.freeze({
+    fail: "The request fails with 400, so the lost signature stays visible.",
+    skip: "Sends skip_thought_signature_validator; reasoning may degrade for the rest of the turn.",
+  }),
+});
 
 export interface SettingsFieldDef {
   key: string;
@@ -270,7 +296,8 @@ async function openSettingsDialog(
       const sample = field.renderPreview?.(value, ctx, theme);
       const head = sample && base ? `${base}: ${sample}` : (sample ?? base);
       const note = field.optionNotes?.[value];
-      item.description = note ? `${head}\n${note}` : head;
+      // Blank line + value prefix: the note explains the chosen value, not the setting.
+      item.description = note ? `${head}\n\n${value}: ${note}` : head;
     };
     for (const field of fields) {
       const current = fieldDisplayValue(config, field);
