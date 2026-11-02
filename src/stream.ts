@@ -67,6 +67,7 @@ interface StreamParserState {
   openType: "text" | "thinking" | null;
   lastThoughtSignature?: string;
   responseId?: string;
+  modelVersion?: string;
   buffer: string;
 }
 
@@ -162,6 +163,9 @@ function processLine(
 
   if (response.responseId && !state.responseId) {
     state.responseId = response.responseId;
+  }
+  if (typeof response.modelVersion === "string" && response.modelVersion) {
+    state.modelVersion = response.modelVersion;
   }
 
   // Usage metadata (promptTokenCount includes cached tokens per Google spec).
@@ -391,6 +395,11 @@ async function consumeAntigravityStream(
     }
     if (state.responseId) {
       output.responseId ||= state.responseId;
+    }
+    // The concrete backend variant (e.g. gemini-3.8-flash-n, claude-sonnet-5-5-high);
+    // recorded only when it differs from the requested id, as pi-ai's providers do.
+    if (state.modelVersion && state.modelVersion !== model.id) {
+      output.responseModel = state.modelVersion;
     }
     output.stopReason = state.stopReason;
     if (state.rawStopReason) {
