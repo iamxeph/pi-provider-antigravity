@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.32.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.31.0...v0.32.0) (2026-11-04)
+
+
+### Features
+
+* **package:** ship CHANGELOG.md so pi shows update notes ([#103](https://github.com/iamxeph/pi-provider-antigravity/issues/103)) ([af46012](https://github.com/iamxeph/pi-provider-antigravity/commit/af46012b164074c0228bd908fdd160ebb338927e))
+* **stream:** record the served modelVersion as responseModel ([#105](https://github.com/iamxeph/pi-provider-antigravity/issues/105)) ([aea0b8c](https://github.com/iamxeph/pi-provider-antigravity/commit/aea0b8cbd727efefd0c85481f647cb1bf4acf0d9))
+* **wire:** support agy 1.4.12 ([#106](https://github.com/iamxeph/pi-provider-antigravity/issues/106)) ([b6d4704](https://github.com/iamxeph/pi-provider-antigravity/commit/b6d47045ab720aec77e9d8558a07edeb3794feb0))
+* **wire:** support agy 1.5.0 ([#107](https://github.com/iamxeph/pi-provider-antigravity/issues/107)) ([53cd393](https://github.com/iamxeph/pi-provider-antigravity/commit/53cd3933da2cb1d5c15e18ba83dbc267eb2bea73))
+
 ## [0.31.0](https://github.com/iamxeph/pi-provider-antigravity/compare/v0.30.0...v0.31.0) (2026-11-02)
 
 
